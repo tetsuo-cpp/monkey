@@ -22,6 +22,12 @@ enum class TokenType {
 };
 
 struct Token {
+  Token() = default;
+  template <typename T>
+  Token(TokenType Type, T &&Literal)
+      : Type(Type), Literal(std::forward<T>(Literal)) {}
+  Token(TokenType Type, char Literal) : Type(Type), Literal(1, Literal) {}
+
   TokenType Type;
   std::string Literal;
 };

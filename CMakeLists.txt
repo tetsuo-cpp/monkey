@@ -21,6 +21,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 # Build unit test binary.
 set(
   MONKEY_TEST_SOURCE_FILES
+  lib/Lexer/Lexer.cpp
   lib/Lexer/LexerTest.cpp
   test/test_main.cpp
   )
