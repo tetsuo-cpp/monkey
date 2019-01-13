@@ -13,6 +13,10 @@ public:
 
 private:
   void readChar();
+  char peekChar() const;
+  std::string readIdentifier();
+  std::string readNumber();
+  void skipWhitespace();
 
   const std::string &Input;
   unsigned int Position;

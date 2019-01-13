@@ -18,15 +18,28 @@ set_target_properties(gmock_main PROPERTIES FOLDER extern)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 
+# Build interpreter binary.
+set(
+  MONKEY_SOURCE_FILES
+  Lexer/Lexer.cpp
+  REPL/REPL.cpp
+  Token/Token.cpp
+  main.cpp
+  )
+
+add_executable(monkey ${MONKEY_SOURCE_FILES})
+target_include_directories(monkey PRIVATE .)
+
 # Build unit test binary.
 set(
   MONKEY_TEST_SOURCE_FILES
-  lib/Lexer/Lexer.cpp
-  lib/Lexer/LexerTest.cpp
-  test/test_main.cpp
+  Lexer/Lexer.cpp
+  Lexer/LexerTest.cpp
+  Token/Token.cpp
+  test_main.cpp
   )
 
 add_executable(monkey_test ${MONKEY_TEST_SOURCE_FILES})
 
 target_link_libraries(monkey_test gtest gmock)
-target_include_directories(monkey_test PRIVATE lib)
+target_include_directories(monkey_test PRIVATE .)
