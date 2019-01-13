@@ -19,7 +19,7 @@ Token Lexer::nextToken() {
   skipWhitespace();
 
   Token Tok;
-  if (ReadPosition >= Input.size()) {
+  if (Position >= Input.size()) {
     Tok = Token(TokenType::END_OF_FILE, static_cast<char>(0));
     return Tok;
   }
@@ -138,7 +138,7 @@ std::string Lexer::readNumber() {
 }
 
 void Lexer::skipWhitespace() {
-  if (std::isspace(Current)) {
+  while (std::isspace(Current)) {
     readChar();
   }
 }

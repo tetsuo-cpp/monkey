@@ -10,7 +10,6 @@ void REPL::start() {
   std::string Line;
   while (std::cin) {
     std::getline(std::cin, Line);
-    std::cout << Line << std::endl;
 
     Lexer L(Line);
 
