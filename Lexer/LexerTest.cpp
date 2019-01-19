@@ -5,7 +5,7 @@
 
 namespace monkey::test {
 
-TEST(LexerTests, TestNextToken) {
+TEST(LexerTests, testNextToken) {
   const std::string Input("let five = 5;"
                           "let ten = 10;"
                           "let add = fn(x, y) {"

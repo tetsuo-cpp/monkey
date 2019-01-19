@@ -21,7 +21,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 # Build interpreter binary.
 set(
   MONKEY_SOURCE_FILES
+  AST/AST.cpp
   Lexer/Lexer.cpp
+  Parser/Parser.cpp
   REPL/REPL.cpp
   Token/Token.cpp
   main.cpp
@@ -33,8 +35,11 @@ target_include_directories(monkey PRIVATE .)
 # Build unit test binary.
 set(
   MONKEY_TEST_SOURCE_FILES
+  AST/AST.cpp
   Lexer/Lexer.cpp
   Lexer/LexerTest.cpp
+  Parser/Parser.cpp
+  Parser/ParserTest.cpp
   Token/Token.cpp
   test_main.cpp
   )
