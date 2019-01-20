@@ -52,4 +52,14 @@ struct LetStatement : public Statement {
   std::unique_ptr<Expression> Value;
 };
 
+struct ReturnStatement : public Statement {
+  virtual ~ReturnStatement() = default;
+
+  // Node impl.
+  const std::string &tokenLiteral() const override;
+
+  Token Token;
+  std::unique_ptr<Expression> ReturnValue;
+};
+
 } // namespace monkey

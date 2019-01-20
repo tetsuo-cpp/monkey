@@ -20,4 +20,8 @@ const std::string &Identifier::tokenLiteral() const { return Token.Literal; }
 
 const std::string &LetStatement::tokenLiteral() const { return Token.Literal; }
 
+const std::string &ReturnStatement::tokenLiteral() const {
+  return Token.Literal;
+}
+
 } // namespace monkey

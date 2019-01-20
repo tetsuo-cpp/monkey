@@ -2,6 +2,8 @@
 
 #include <Token/Token.h>
 
+#include <sstream>
+
 namespace monkey {
 
 Parser::Parser(Lexer &L) : L(L) {
@@ -28,6 +30,8 @@ std::unique_ptr<Statement> Parser::parseStatement() {
   switch (CurToken.Type) {
   case TokenType::LET:
     return parseLetStatement();
+  case TokenType::RETURN:
+    return parseReturnStatement();
   default:
     return nullptr;
   }
@@ -61,6 +65,22 @@ std::unique_ptr<LetStatement> Parser::parseLetStatement() {
   return LS;
 }
 
+std::unique_ptr<ReturnStatement> Parser::parseReturnStatement() {
+  auto RS = std::make_unique<ReturnStatement>();
+  RS->Token = CurToken;
+
+  nextToken();
+
+  // TODO: We're skipping the expressions until we encounter a semicolon.
+  while (!curTokenIs(TokenType::SEMICOLON)) {
+    nextToken();
+  }
+
+  nextToken();
+
+  return RS;
+}
+
 void Parser::nextToken() {
   CurToken = PeekToken;
   PeekToken = L.nextToken();
@@ -78,7 +98,18 @@ bool Parser::expectPeek(TokenType Type) {
     return true;
   }
 
+  peekError(Type);
   return false;
 }
+
+void Parser::peekError(TokenType Type) {
+  std::stringstream SS;
+  SS << "expected next token to be " << tokenTypeToString(Type) << ", got "
+     << tokenTypeToString(PeekToken.Type) << " instead";
+
+  Errors.push_back(SS.str());
+}
+
+const std::vector<std::string> &Parser::errors() const { return Errors; }
 
 } // namespace monkey
