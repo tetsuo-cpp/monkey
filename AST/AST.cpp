@@ -9,7 +9,7 @@ const std::string Empty;
 namespace monkey {
 
 const std::string &Program::tokenLiteral() const {
-  if (Statements.empty()) {
+  if (!Statements.empty()) {
     return Statements.front()->tokenLiteral();
   } else {
     return Empty;

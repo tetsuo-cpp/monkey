@@ -35,6 +35,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
 
 std::unique_ptr<LetStatement> Parser::parseLetStatement() {
   auto LS = std::make_unique<LetStatement>();
+  LS->Token = CurToken;
 
   if (!expectPeek(TokenType::IDENT)) {
     return nullptr;
@@ -54,6 +55,8 @@ std::unique_ptr<LetStatement> Parser::parseLetStatement() {
   while (!curTokenIs(TokenType::SEMICOLON)) {
     nextToken();
   }
+
+  nextToken();
 
   return LS;
 }
