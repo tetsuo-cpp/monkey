@@ -36,6 +36,7 @@ target_include_directories(monkey PRIVATE .)
 set(
   MONKEY_TEST_SOURCE_FILES
   AST/AST.cpp
+  AST/ASTTest.cpp
   Lexer/Lexer.cpp
   Lexer/LexerTest.cpp
   Parser/Parser.cpp
