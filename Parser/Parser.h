@@ -36,6 +36,7 @@ public:
   std::unique_ptr<ExpressionStatement> parseExpressionStatement();
   std::unique_ptr<Expression> parseExpression(Precedence);
   std::unique_ptr<Expression> parseIdentifier();
+  std::unique_ptr<IntegerLiteral> parseIntegerLiteral();
   void nextToken();
   bool curTokenIs(TokenType) const;
   bool peekTokenIs(TokenType) const;

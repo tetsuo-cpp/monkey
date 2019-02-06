@@ -76,13 +76,38 @@ TEST(ParserTests, testIdentifierExpression) {
   checkParserErrors(P);
 
   EXPECT_EQ(Program->Statements.size(), 1);
+
   auto *E =
       dynamic_cast<ExpressionStatement *>(Program->Statements.front().get());
   EXPECT_THAT(E, testing::NotNull());
+
   auto *I = dynamic_cast<Identifier *>(E->Expression.get());
   EXPECT_THAT(I, testing::NotNull());
+
   EXPECT_EQ(I->Value, "foobar");
   EXPECT_EQ(I->tokenLiteral(), "foobar");
+}
+
+TEST(ParserTests, testIntegerLiteralExpression) {
+  const std::string Input("5;");
+
+  Lexer L(Input);
+  Parser P(L);
+
+  auto Program = P.parseProgram();
+  checkParserErrors(P);
+
+  EXPECT_EQ(Program->Statements.size(), 1);
+
+  auto *E =
+      dynamic_cast<ExpressionStatement *>(Program->Statements.front().get());
+  EXPECT_THAT(E, testing::NotNull());
+
+  auto *I = dynamic_cast<IntegerLiteral *>(E->Expression.get());
+  EXPECT_THAT(I, testing::NotNull());
+
+  EXPECT_EQ(I->Value, 5);
+  EXPECT_EQ(I->tokenLiteral(), "5");
 }
 
 } // namespace monkey::test

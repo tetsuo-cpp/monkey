@@ -90,4 +90,13 @@ std::string ExpressionStatement::string() const {
   return std::string();
 }
 
+IntegerLiteral::IntegerLiteral(struct Token Token, int64_t Value)
+    : Token(Token), Value(Value) {}
+
+const std::string &IntegerLiteral::tokenLiteral() const {
+  return Token.Literal;
+}
+
+std::string IntegerLiteral::string() const { return Token.Literal; }
+
 } // namespace monkey

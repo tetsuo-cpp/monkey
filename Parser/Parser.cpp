@@ -11,6 +11,7 @@ Parser::Parser(Lexer &L) : L(L) {
   nextToken();
 
   registerPrefix(TokenType::IDENT, [this]() { return parseIdentifier(); });
+  registerPrefix(TokenType::INT, [this]() { return parseIntegerLiteral(); });
 }
 
 std::unique_ptr<Program> Parser::parseProgram() {
@@ -107,6 +108,18 @@ std::unique_ptr<Expression> Parser::parseExpression(Precedence) {
 
 std::unique_ptr<Expression> Parser::parseIdentifier() {
   return std::make_unique<Identifier>(CurToken, CurToken.Literal);
+}
+
+std::unique_ptr<IntegerLiteral> Parser::parseIntegerLiteral() {
+  try {
+    int64_t Value = std::stoll(CurToken.Literal);
+    auto IntLiteral = std::make_unique<IntegerLiteral>(CurToken, Value);
+    return IntLiteral;
+  } catch (const std::invalid_argument &) {
+    std::string Error("Could not parse " + CurToken.Literal + " as integer.");
+    Errors.push_back(std::move(Error));
+    return nullptr;
+  }
 }
 
 void Parser::nextToken() {

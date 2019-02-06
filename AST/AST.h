@@ -89,4 +89,17 @@ struct ExpressionStatement : public Statement {
   std::unique_ptr<Expression> Expression;
 };
 
+struct IntegerLiteral : public Expression {
+  IntegerLiteral() = default;
+  IntegerLiteral(Token, int64_t);
+  virtual ~IntegerLiteral() = default;
+
+  // Node impl.
+  const std::string &tokenLiteral() const override;
+  std::string string() const override;
+
+  Token Token;
+  int64_t Value;
+};
+
 } // namespace monkey
