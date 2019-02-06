@@ -76,9 +76,10 @@ TEST(ParserTests, testIdentifierExpression) {
   checkParserErrors(P);
 
   EXPECT_EQ(Program->Statements.size(), 1);
-  auto *E = dynamic_cast<Expression *>(Program->Statements.front().get());
+  auto *E =
+      dynamic_cast<ExpressionStatement *>(Program->Statements.front().get());
   EXPECT_THAT(E, testing::NotNull());
-  auto *I = dynamic_cast<Identifier *>(E);
+  auto *I = dynamic_cast<Identifier *>(E->Expression.get());
   EXPECT_THAT(I, testing::NotNull());
   EXPECT_EQ(I->Value, "foobar");
   EXPECT_EQ(I->tokenLiteral(), "foobar");
