@@ -22,7 +22,7 @@ Use CMake to generate a platform specific build script and then invoke that.
 cmake .
 make
 ```
-# Usage
+## Usage
 Run the interpreter.
 ```
 ./monkey
