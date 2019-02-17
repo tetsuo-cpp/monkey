@@ -50,8 +50,7 @@ struct Identifier : public Expression {
 
 struct LetStatement : public Statement {
   LetStatement() = default;
-  LetStatement(Token, std::unique_ptr<Identifier> &&,
-               std::unique_ptr<Expression> &&);
+  LetStatement(Token, std::unique_ptr<Identifier>, std::unique_ptr<Expression>);
   virtual ~LetStatement() = default;
 
   // Node impl.
@@ -65,7 +64,7 @@ struct LetStatement : public Statement {
 
 struct ReturnStatement : public Statement {
   ReturnStatement() = default;
-  ReturnStatement(Token, std::unique_ptr<Expression> &&);
+  ReturnStatement(Token, std::unique_ptr<Expression>);
   virtual ~ReturnStatement() = default;
 
   // Node impl.
@@ -78,7 +77,7 @@ struct ReturnStatement : public Statement {
 
 struct ExpressionStatement : public Statement {
   ExpressionStatement() = default;
-  ExpressionStatement(Token, std::unique_ptr<Expression> &&);
+  ExpressionStatement(Token, std::unique_ptr<Expression>);
   virtual ~ExpressionStatement() = default;
 
   // Node impl.

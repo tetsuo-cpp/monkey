@@ -37,9 +37,8 @@ const std::string &Identifier::tokenLiteral() const { return Token.Literal; }
 
 std::string Identifier::string() const { return Value; }
 
-LetStatement::LetStatement(struct Token Token,
-                           std::unique_ptr<Identifier> &&Name,
-                           std::unique_ptr<Expression> &&Value)
+LetStatement::LetStatement(struct Token Token, std::unique_ptr<Identifier> Name,
+                           std::unique_ptr<Expression> Value)
     : Token(Token), Name(std::move(Name)), Value(std::move(Value)) {}
 
 const std::string &LetStatement::tokenLiteral() const { return Token.Literal; }
@@ -56,7 +55,7 @@ std::string LetStatement::string() const {
 }
 
 ReturnStatement::ReturnStatement(struct Token Token,
-                                 std::unique_ptr<Expression> &&ReturnValue)
+                                 std::unique_ptr<Expression> ReturnValue)
     : Token(Token), ReturnValue(std::move(ReturnValue)) {}
 
 const std::string &ReturnStatement::tokenLiteral() const {
@@ -75,7 +74,7 @@ std::string ReturnStatement::string() const {
 }
 
 ExpressionStatement::ExpressionStatement(
-    struct Token Token, std::unique_ptr<struct Expression> &&Expression)
+    struct Token Token, std::unique_ptr<struct Expression> Expression)
     : Token(Token), Expression(std::move(Expression)) {}
 
 const std::string &ExpressionStatement::tokenLiteral() const {
