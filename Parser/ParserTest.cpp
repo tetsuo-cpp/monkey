@@ -16,6 +16,13 @@ void testLetStatement(Statement *S, const std::string &Name) {
   EXPECT_EQ(LetS->Name->tokenLiteral(), Name);
 }
 
+void testIntegerLiteral(Expression *E, int64_t Value) {
+  auto *I = dynamic_cast<IntegerLiteral *>(E);
+  EXPECT_THAT(I, testing::NotNull());
+  EXPECT_EQ(I->Value, Value);
+  EXPECT_EQ(I->tokenLiteral(), std::to_string(Value));
+}
+
 void checkParserErrors(Parser &P) {
   const auto &Errors = P.errors();
   EXPECT_TRUE(Errors.empty());
@@ -108,6 +115,32 @@ TEST(ParserTests, testIntegerLiteralExpression) {
 
   EXPECT_EQ(I->Value, 5);
   EXPECT_EQ(I->tokenLiteral(), "5");
+}
+
+TEST(ParserTests, testingParsingPrefixExpressions) {
+  const std::vector<std::tuple<std::string, std::string, int64_t>> Tests = {
+      {"!5", "!", 5}, {"-15", "-", 15}};
+
+  for (const auto &Test : Tests) {
+    Lexer L(std::get<0>(Test));
+    Parser P(L);
+
+    auto Program = P.parseProgram();
+    checkParserErrors(P);
+
+    EXPECT_EQ(Program->Statements.size(), 1);
+
+    auto *E =
+        dynamic_cast<ExpressionStatement *>(Program->Statements.front().get());
+    EXPECT_THAT(E, testing::NotNull());
+
+    auto *PE = dynamic_cast<PrefixExpression *>(E->Expression.get());
+    EXPECT_THAT(PE, testing::NotNull());
+
+    EXPECT_EQ(PE->Operator, std::get<1>(Test));
+
+    testIntegerLiteral(PE->Right.get(), std::get<2>(Test));
+  }
 }
 
 } // namespace monkey::test

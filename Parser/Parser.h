@@ -40,6 +40,7 @@ private:
   std::unique_ptr<Expression> parseExpression(Precedence);
   std::unique_ptr<Expression> parseIdentifier();
   std::unique_ptr<IntegerLiteral> parseIntegerLiteral();
+  std::unique_ptr<Expression> parsePrefixExpression();
   void nextToken();
   bool curTokenIs(TokenType) const;
   bool peekTokenIs(TokenType) const;
@@ -47,6 +48,7 @@ private:
   void peekError(TokenType);
   void registerPrefix(TokenType, PrefixParseFn);
   void registerInfix(TokenType, InfixParseFn);
+  void noPrefixParseFnError(TokenType);
 
   Lexer L;
   Token CurToken;

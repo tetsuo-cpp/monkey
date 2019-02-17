@@ -12,6 +12,9 @@ Parser::Parser(Lexer &L) : L(L) {
 
   registerPrefix(TokenType::IDENT, [this]() { return parseIdentifier(); });
   registerPrefix(TokenType::INT, [this]() { return parseIntegerLiteral(); });
+  registerPrefix(TokenType::BANG, [this]() { return parsePrefixExpression(); });
+  registerPrefix(TokenType::MINUS,
+                 [this]() { return parsePrefixExpression(); });
 }
 
 std::unique_ptr<Program> Parser::parseProgram() {
@@ -99,6 +102,8 @@ std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
 std::unique_ptr<Expression> Parser::parseExpression(Precedence) {
   auto FnIter = PrefixParseFns.find(CurToken.Type);
   if (FnIter == PrefixParseFns.end()) {
+    noPrefixParseFnError(CurToken.Type);
+
     return nullptr;
   }
 
@@ -120,6 +125,18 @@ std::unique_ptr<IntegerLiteral> Parser::parseIntegerLiteral() {
     Errors.push_back(std::move(Error));
     return nullptr;
   }
+}
+
+std::unique_ptr<Expression> Parser::parsePrefixExpression() {
+  auto Prefix = std::make_unique<PrefixExpression>();
+  Prefix->Token = CurToken;
+  Prefix->Operator = CurToken.Literal;
+
+  nextToken();
+
+  Prefix->Right = parseExpression(Precedence::PREFIX);
+
+  return Prefix;
 }
 
 void Parser::nextToken() {
@@ -159,6 +176,14 @@ void Parser::registerPrefix(TokenType Type, PrefixParseFn Prefix) {
 
 void Parser::registerInfix(TokenType Type, InfixParseFn Infix) {
   InfixParseFns.emplace(Type, Infix);
+}
+
+void Parser::noPrefixParseFnError(TokenType Type) {
+  std::stringstream SS;
+  SS << "no prefix parse function found for " << tokenTypeToString(Type)
+     << " found";
+
+  Errors.push_back(SS.str());
 }
 
 } // namespace monkey

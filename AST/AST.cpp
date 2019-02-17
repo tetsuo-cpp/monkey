@@ -99,4 +99,22 @@ const std::string &IntegerLiteral::tokenLiteral() const {
 
 std::string IntegerLiteral::string() const { return Token.Literal; }
 
+PrefixExpression::PrefixExpression(struct Token Token,
+                                   const std::string &Operator,
+                                   std::unique_ptr<Expression> Right)
+    : Token(Token), Operator(Operator), Right(std::move(Right)) {}
+
+const std::string &PrefixExpression::tokenLiteral() const {
+  return Token.Literal;
+}
+
+std::string PrefixExpression::string() const {
+  std::stringstream SS;
+  SS << "(";
+  SS << Operator;
+  SS << Right->string();
+  SS << ")";
+  return SS.str();
+}
+
 } // namespace monkey

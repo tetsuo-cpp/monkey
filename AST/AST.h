@@ -102,4 +102,18 @@ struct IntegerLiteral : public Expression {
   int64_t Value;
 };
 
+struct PrefixExpression : public Expression {
+  PrefixExpression() = default;
+  PrefixExpression(Token, const std::string &, std::unique_ptr<Expression>);
+  virtual ~PrefixExpression() = default;
+
+  // Node impl.
+  const std::string &tokenLiteral() const override;
+  std::string string() const override;
+
+  Token Token;
+  std::string Operator;
+  std::unique_ptr<Expression> Right;
+};
+
 } // namespace monkey
