@@ -1,8 +1,6 @@
 # Monkey
-Since I've been wanting to learn about compilers, I recently picked up copies of Thorsten Ball's books "Writing an Interpreter In Go" and "Writing a Compiler In Go".
-By the end of the series, I should have a working interpreter, bytecode compiler and virtual machine for the Monkey programming language.
-
-I've tried to keep my C++ as a relatively direct translation of the author's Go code so it may look unidiomatic in some places.
+This project includes an interpreter, bytecode compiler and virtual machine for the Monkey programming language described in Thorsten Ball's books: "Writing an Interpreter In Go" and "Writing a Compiler In Go".
+ language.
 ## Progress
 * Interpreter (In Progress).
 * Compiler.
