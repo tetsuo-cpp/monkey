@@ -1,6 +1,5 @@
 # Monkey
-This project includes an interpreter, bytecode compiler and virtual machine for the Monkey programming language described in Thorsten Ball's books: "Writing an Interpreter In Go" and "Writing a Compiler In Go".
- language.
+This project includes C++ implementations of an interpreter, bytecode compiler and virtual machine for the Monkey programming language described in Thorsten Ball's books: "Writing an Interpreter In Go" and "Writing a Compiler In Go".
 ## Progress
 * Interpreter (In Progress).
 * Compiler.
