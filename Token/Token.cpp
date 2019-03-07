@@ -86,6 +86,8 @@ const char *tokenTypeToString(TokenType Type) {
   case TokenType::RETURN:
     return "RETURN";
   }
+
+  return "UNKNOWN";
 }
 
 } // namespace monkey

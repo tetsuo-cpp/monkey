@@ -88,7 +88,7 @@ TEST(ParserTests, testIdentifierExpression) {
       dynamic_cast<ExpressionStatement *>(Program->Statements.front().get());
   EXPECT_THAT(E, testing::NotNull());
 
-  auto *I = dynamic_cast<Identifier *>(E->Expression.get());
+  auto *I = dynamic_cast<Identifier *>(E->Expr.get());
   EXPECT_THAT(I, testing::NotNull());
 
   EXPECT_EQ(I->Value, "foobar");
@@ -110,7 +110,7 @@ TEST(ParserTests, testIntegerLiteralExpression) {
       dynamic_cast<ExpressionStatement *>(Program->Statements.front().get());
   EXPECT_THAT(E, testing::NotNull());
 
-  auto *I = dynamic_cast<IntegerLiteral *>(E->Expression.get());
+  auto *I = dynamic_cast<IntegerLiteral *>(E->Expr.get());
   EXPECT_THAT(I, testing::NotNull());
 
   EXPECT_EQ(I->Value, 5);
@@ -134,7 +134,7 @@ TEST(ParserTests, testingParsingPrefixExpressions) {
         dynamic_cast<ExpressionStatement *>(Program->Statements.front().get());
     EXPECT_THAT(E, testing::NotNull());
 
-    auto *PE = dynamic_cast<PrefixExpression *>(E->Expression.get());
+    auto *PE = dynamic_cast<PrefixExpression *>(E->Expr.get());
     EXPECT_THAT(PE, testing::NotNull());
 
     EXPECT_EQ(PE->Operator, std::get<1>(Test));

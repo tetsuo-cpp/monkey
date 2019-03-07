@@ -44,7 +44,7 @@ struct Identifier : public Expression {
   const std::string &tokenLiteral() const override;
   std::string string() const override;
 
-  Token Token;
+  Token Tok;
   std::string Value;
 };
 
@@ -57,7 +57,7 @@ struct LetStatement : public Statement {
   const std::string &tokenLiteral() const override;
   std::string string() const override;
 
-  Token Token;
+  Token Tok;
   std::unique_ptr<Identifier> Name;
   std::unique_ptr<Expression> Value;
 };
@@ -71,7 +71,7 @@ struct ReturnStatement : public Statement {
   const std::string &tokenLiteral() const override;
   std::string string() const override;
 
-  Token Token;
+  Token Tok;
   std::unique_ptr<Expression> ReturnValue;
 };
 
@@ -84,8 +84,8 @@ struct ExpressionStatement : public Statement {
   const std::string &tokenLiteral() const override;
   std::string string() const override;
 
-  Token Token;
-  std::unique_ptr<Expression> Expression;
+  Token Tok;
+  std::unique_ptr<Expression> Expr;
 };
 
 struct IntegerLiteral : public Expression {
@@ -97,7 +97,7 @@ struct IntegerLiteral : public Expression {
   const std::string &tokenLiteral() const override;
   std::string string() const override;
 
-  Token Token;
+  Token Tok;
   int64_t Value;
 };
 
@@ -110,7 +110,7 @@ struct PrefixExpression : public Expression {
   const std::string &tokenLiteral() const override;
   std::string string() const override;
 
-  Token Token;
+  Token Tok;
   std::string Operator;
   std::unique_ptr<Expression> Right;
 };

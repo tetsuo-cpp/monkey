@@ -45,14 +45,14 @@ std::unique_ptr<Statement> Parser::parseStatement() {
 
 std::unique_ptr<LetStatement> Parser::parseLetStatement() {
   auto LS = std::make_unique<LetStatement>();
-  LS->Token = CurToken;
+  LS->Tok = CurToken;
 
   if (!expectPeek(TokenType::IDENT)) {
     return nullptr;
   }
 
   auto Name = std::make_unique<Identifier>();
-  Name->Token = CurToken;
+  Name->Tok = CurToken;
   Name->Value = CurToken.Literal;
 
   LS->Name = std::move(Name);
@@ -73,7 +73,7 @@ std::unique_ptr<LetStatement> Parser::parseLetStatement() {
 
 std::unique_ptr<ReturnStatement> Parser::parseReturnStatement() {
   auto RS = std::make_unique<ReturnStatement>();
-  RS->Token = CurToken;
+  RS->Tok = CurToken;
 
   nextToken();
 
@@ -89,8 +89,8 @@ std::unique_ptr<ReturnStatement> Parser::parseReturnStatement() {
 
 std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
   auto ES = std::make_unique<ExpressionStatement>();
-  ES->Token = CurToken;
-  ES->Expression = parseExpression(Precedence::LOWEST);
+  ES->Tok = CurToken;
+  ES->Expr = parseExpression(Precedence::LOWEST);
 
   if (peekTokenIs(TokenType::SEMICOLON)) {
     nextToken();
@@ -129,7 +129,7 @@ std::unique_ptr<IntegerLiteral> Parser::parseIntegerLiteral() {
 
 std::unique_ptr<Expression> Parser::parsePrefixExpression() {
   auto Prefix = std::make_unique<PrefixExpression>();
-  Prefix->Token = CurToken;
+  Prefix->Tok = CurToken;
   Prefix->Operator = CurToken.Literal;
 
   nextToken();

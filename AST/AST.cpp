@@ -30,18 +30,18 @@ std::string Program::string() const {
   return SS.str();
 }
 
-Identifier::Identifier(struct Token Token, const std::string &Value)
-    : Token(Token), Value(Value) {}
+Identifier::Identifier(struct Token Tok, const std::string &Value)
+    : Tok(Tok), Value(Value) {}
 
-const std::string &Identifier::tokenLiteral() const { return Token.Literal; }
+const std::string &Identifier::tokenLiteral() const { return Tok.Literal; }
 
 std::string Identifier::string() const { return Value; }
 
-LetStatement::LetStatement(struct Token Token, std::unique_ptr<Identifier> Name,
+LetStatement::LetStatement(struct Token Tok, std::unique_ptr<Identifier> Name,
                            std::unique_ptr<Expression> Value)
-    : Token(Token), Name(std::move(Name)), Value(std::move(Value)) {}
+    : Tok(Tok), Name(std::move(Name)), Value(std::move(Value)) {}
 
-const std::string &LetStatement::tokenLiteral() const { return Token.Literal; }
+const std::string &LetStatement::tokenLiteral() const { return Tok.Literal; }
 
 std::string LetStatement::string() const {
   std::stringstream SS;
@@ -54,13 +54,11 @@ std::string LetStatement::string() const {
   return SS.str();
 }
 
-ReturnStatement::ReturnStatement(struct Token Token,
+ReturnStatement::ReturnStatement(struct Token Tok,
                                  std::unique_ptr<Expression> ReturnValue)
-    : Token(Token), ReturnValue(std::move(ReturnValue)) {}
+    : Tok(Tok), ReturnValue(std::move(ReturnValue)) {}
 
-const std::string &ReturnStatement::tokenLiteral() const {
-  return Token.Literal;
-}
+const std::string &ReturnStatement::tokenLiteral() const { return Tok.Literal; }
 
 std::string ReturnStatement::string() const {
   std::stringstream SS;
@@ -74,37 +72,35 @@ std::string ReturnStatement::string() const {
 }
 
 ExpressionStatement::ExpressionStatement(
-    struct Token Token, std::unique_ptr<struct Expression> Expression)
-    : Token(Token), Expression(std::move(Expression)) {}
+    struct Token Tok, std::unique_ptr<struct Expression> Expr)
+    : Tok(Tok), Expr(std::move(Expr)) {}
 
 const std::string &ExpressionStatement::tokenLiteral() const {
-  return Token.Literal;
+  return Tok.Literal;
 }
 
 std::string ExpressionStatement::string() const {
-  if (Expression) {
-    return Expression->string();
+  if (Expr) {
+    return Expr->string();
   }
 
   return std::string();
 }
 
-IntegerLiteral::IntegerLiteral(struct Token Token, int64_t Value)
-    : Token(Token), Value(Value) {}
+IntegerLiteral::IntegerLiteral(struct Token Tok, int64_t Value)
+    : Tok(Tok), Value(Value) {}
 
-const std::string &IntegerLiteral::tokenLiteral() const {
-  return Token.Literal;
-}
+const std::string &IntegerLiteral::tokenLiteral() const { return Tok.Literal; }
 
-std::string IntegerLiteral::string() const { return Token.Literal; }
+std::string IntegerLiteral::string() const { return Tok.Literal; }
 
-PrefixExpression::PrefixExpression(struct Token Token,
+PrefixExpression::PrefixExpression(struct Token Tok,
                                    const std::string &Operator,
                                    std::unique_ptr<Expression> Right)
-    : Token(Token), Operator(Operator), Right(std::move(Right)) {}
+    : Tok(Tok), Operator(Operator), Right(std::move(Right)) {}
 
 const std::string &PrefixExpression::tokenLiteral() const {
-  return Token.Literal;
+  return Tok.Literal;
 }
 
 std::string PrefixExpression::string() const {
