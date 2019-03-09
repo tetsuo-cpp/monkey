@@ -23,6 +23,32 @@ void testIntegerLiteral(Expression *E, int64_t Value) {
   EXPECT_EQ(I->tokenLiteral(), std::to_string(Value));
 }
 
+void testIdentifier(Expression *E, const std::string &Value) {
+  auto *I = dynamic_cast<Identifier *>(E);
+  EXPECT_THAT(I, testing::NotNull());
+  EXPECT_EQ(I->Value, Value);
+  EXPECT_EQ(I->tokenLiteral(), Value);
+}
+
+void testLiteralExpression(Expression *E, int Expected) {
+  testIntegerLiteral(E, Expected);
+}
+
+void testLiteralExpression(Expression *E, const std::string &Expected) {
+  testIdentifier(E, Expected);
+}
+
+template <typename T0, typename T1>
+void testInfixExpression(Expression *E, const T0 &Left,
+                         const std::string &Operator, const T1 &Right) {
+  auto *IE = dynamic_cast<InfixExpression *>(E);
+  EXPECT_THAT(IE, testing::NotNull());
+
+  testLiteralExpression(IE->Left.get(), Left);
+  EXPECT_EQ(IE->Operator, Operator);
+  testLiteralExpression(IE->Right.get(), Right);
+}
+
 void checkParserErrors(Parser &P) {
   const auto &Errors = P.errors();
   EXPECT_TRUE(Errors.empty());
@@ -163,12 +189,8 @@ TEST(ParserTests, testingParsingInfixExpressions) {
         dynamic_cast<ExpressionStatement *>(Program->Statements.front().get());
     EXPECT_THAT(E, testing::NotNull());
 
-    auto *IE = dynamic_cast<InfixExpression *>(E->Expr.get());
-    EXPECT_THAT(IE, testing::NotNull());
-
-    testIntegerLiteral(IE->Left.get(), std::get<1>(Test));
-    EXPECT_EQ(IE->Operator, std::get<2>(Test));
-    testIntegerLiteral(IE->Right.get(), std::get<3>(Test));
+    testInfixExpression(E->Expr.get(), std::get<1>(Test), std::get<2>(Test),
+                        std::get<3>(Test));
   }
 }
 
