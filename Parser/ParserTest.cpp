@@ -143,4 +143,60 @@ TEST(ParserTests, testingParsingPrefixExpressions) {
   }
 }
 
+TEST(ParserTests, testingParsingInfixExpressions) {
+  const std::vector<std::tuple<std::string, int64_t, std::string, int64_t>>
+      Tests = {{"5 + 5", 5, "+", 5},   {"5 - 5", 5, "-", 5},
+               {"5 * 5", 5, "*", 5},   {"5 / 5", 5, "/", 5},
+               {"5 > 5", 5, ">", 5},   {"5 < 5", 5, "<", 5},
+               {"5 == 5", 5, "==", 5}, {"5 != 5", 5, "!=", 5}};
+
+  for (const auto &Test : Tests) {
+    Lexer L(std::get<0>(Test));
+    Parser P(L);
+
+    auto Program = P.parseProgram();
+    checkParserErrors(P);
+
+    EXPECT_EQ(Program->Statements.size(), 1);
+
+    auto *E =
+        dynamic_cast<ExpressionStatement *>(Program->Statements.front().get());
+    EXPECT_THAT(E, testing::NotNull());
+
+    auto *IE = dynamic_cast<InfixExpression *>(E->Expr.get());
+    EXPECT_THAT(IE, testing::NotNull());
+
+    testIntegerLiteral(IE->Left.get(), std::get<1>(Test));
+    EXPECT_EQ(IE->Operator, std::get<2>(Test));
+    testIntegerLiteral(IE->Right.get(), std::get<3>(Test));
+  }
+}
+
+TEST(ParserTests, testOperatorPrecedenceParsing) {
+  const std::vector<std::pair<std::string, std::string>> Tests = {
+      {"-a * b", "((-a) * b)"},
+      {"!-a", "(!(-a))"},
+      {"a + b + c", "((a + b) + c)"},
+      {"a + b - c", "((a + b) - c)"},
+      {"a * b * c", "((a * b) * c)"},
+      {"a * b / c", "((a * b) / c)"},
+      {"a + b / c", "(a + (b / c))"},
+      {"a + b * c + d / e -f", "(((a + (b * c)) + (d / e)) - f)"},
+      {"3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"},
+      {"5 > 4 == 3 > 4", "((5 > 4) == (3 > 4))"},
+      {"5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"},
+      {"3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"}};
+
+  for (const auto &Test : Tests) {
+    Lexer L(std::get<0>(Test));
+    Parser P(L);
+
+    auto Program = P.parseProgram();
+    checkParserErrors(P);
+
+    auto Actual = Program->string();
+    EXPECT_EQ(Actual, std::get<1>(Test));
+  }
+}
+
 } // namespace monkey::test

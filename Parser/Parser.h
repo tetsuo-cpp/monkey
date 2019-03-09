@@ -12,7 +12,7 @@ namespace monkey {
 
 using PrefixParseFn = std::function<std::unique_ptr<Expression>()>;
 using InfixParseFn =
-    std::function<std::unique_ptr<Expression>(std::unique_ptr<Expression> &)>;
+    std::function<std::unique_ptr<Expression>(std::unique_ptr<Expression>)>;
 
 enum class Precedence {
   LOWEST,
@@ -41,6 +41,7 @@ private:
   std::unique_ptr<Expression> parseIdentifier();
   std::unique_ptr<IntegerLiteral> parseIntegerLiteral();
   std::unique_ptr<Expression> parsePrefixExpression();
+  std::unique_ptr<Expression> parseInfixExpression(std::unique_ptr<Expression>);
   void nextToken();
   bool curTokenIs(TokenType) const;
   bool peekTokenIs(TokenType) const;
@@ -49,6 +50,8 @@ private:
   void registerPrefix(TokenType, PrefixParseFn);
   void registerInfix(TokenType, InfixParseFn);
   void noPrefixParseFnError(TokenType);
+  Precedence peekPrecedence() const;
+  Precedence curPrecedence() const;
 
   Lexer L;
   Token CurToken;

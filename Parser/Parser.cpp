@@ -6,6 +6,20 @@
 
 namespace monkey {
 
+namespace {
+
+const std::vector<std::pair<TokenType, Precedence>> Precedences = {
+    {TokenType::EQ, Precedence::EQUALS},
+    {TokenType::NOT_EQ, Precedence::EQUALS},
+    {TokenType::LT, Precedence::LESSGREATER},
+    {TokenType::GT, Precedence::LESSGREATER},
+    {TokenType::PLUS, Precedence::SUM},
+    {TokenType::MINUS, Precedence::SUM},
+    {TokenType::SLASH, Precedence::PRODUCT},
+    {TokenType::ASTERISK, Precedence::PRODUCT}};
+
+} // namespace
+
 Parser::Parser(Lexer &L) : L(L) {
   nextToken();
   nextToken();
@@ -15,6 +29,30 @@ Parser::Parser(Lexer &L) : L(L) {
   registerPrefix(TokenType::BANG, [this]() { return parsePrefixExpression(); });
   registerPrefix(TokenType::MINUS,
                  [this]() { return parsePrefixExpression(); });
+  registerInfix(TokenType::PLUS, [this](std::unique_ptr<Expression> Left) {
+    return parseInfixExpression(std::move(Left));
+  });
+  registerInfix(TokenType::MINUS, [this](std::unique_ptr<Expression> Left) {
+    return parseInfixExpression(std::move(Left));
+  });
+  registerInfix(TokenType::SLASH, [this](std::unique_ptr<Expression> Left) {
+    return parseInfixExpression(std::move(Left));
+  });
+  registerInfix(TokenType::ASTERISK, [this](std::unique_ptr<Expression> Left) {
+    return parseInfixExpression(std::move(Left));
+  });
+  registerInfix(TokenType::EQ, [this](std::unique_ptr<Expression> Left) {
+    return parseInfixExpression(std::move(Left));
+  });
+  registerInfix(TokenType::NOT_EQ, [this](std::unique_ptr<Expression> Left) {
+    return parseInfixExpression(std::move(Left));
+  });
+  registerInfix(TokenType::LT, [this](std::unique_ptr<Expression> Left) {
+    return parseInfixExpression(std::move(Left));
+  });
+  registerInfix(TokenType::GT, [this](std::unique_ptr<Expression> Left) {
+    return parseInfixExpression(std::move(Left));
+  });
 }
 
 std::unique_ptr<Program> Parser::parseProgram() {
@@ -99,15 +137,24 @@ std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
   return ES;
 }
 
-std::unique_ptr<Expression> Parser::parseExpression(Precedence) {
+std::unique_ptr<Expression> Parser::parseExpression(Precedence Prec) {
   auto FnIter = PrefixParseFns.find(CurToken.Type);
   if (FnIter == PrefixParseFns.end()) {
     noPrefixParseFnError(CurToken.Type);
-
     return nullptr;
   }
 
   auto LeftExp = FnIter->second();
+  while (!peekTokenIs(TokenType::SEMICOLON) && Prec < peekPrecedence()) {
+    auto InfixIter = InfixParseFns.find(PeekToken.Type);
+    if (InfixIter == InfixParseFns.end()) {
+      return LeftExp;
+    }
+
+    nextToken();
+    LeftExp = InfixIter->second(std::move(LeftExp));
+  }
+
   return LeftExp;
 }
 
@@ -137,6 +184,18 @@ std::unique_ptr<Expression> Parser::parsePrefixExpression() {
   Prefix->Right = parseExpression(Precedence::PREFIX);
 
   return Prefix;
+}
+
+std::unique_ptr<Expression>
+Parser::parseInfixExpression(std::unique_ptr<Expression> Left) {
+  auto Infix = std::make_unique<InfixExpression>(CurToken, CurToken.Literal,
+                                                 std::move(Left), nullptr);
+
+  auto Precedence = curPrecedence();
+  nextToken();
+  Infix->Right = parseExpression(Precedence);
+
+  return Infix;
 }
 
 void Parser::nextToken() {
@@ -184,6 +243,32 @@ void Parser::noPrefixParseFnError(TokenType Type) {
      << " found";
 
   Errors.push_back(SS.str());
+}
+
+Precedence Parser::peekPrecedence() const {
+  auto Iter = std::find_if(Precedences.begin(), Precedences.end(),
+                           [this](const std::pair<TokenType, Precedence> &P) {
+                             return P.first == PeekToken.Type;
+                           });
+
+  if (Iter != Precedences.end()) {
+    return Iter->second;
+  }
+
+  return Precedence::LOWEST;
+}
+
+Precedence Parser::curPrecedence() const {
+  auto Iter = std::find_if(Precedences.begin(), Precedences.end(),
+                           [this](const std::pair<TokenType, Precedence> &P) {
+                             return P.first == CurToken.Type;
+                           });
+
+  if (Iter != Precedences.end()) {
+    return Iter->second;
+  }
+
+  return Precedence::LOWEST;
 }
 
 } // namespace monkey

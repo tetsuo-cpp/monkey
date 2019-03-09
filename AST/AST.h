@@ -115,4 +115,19 @@ struct PrefixExpression : public Expression {
   std::unique_ptr<Expression> Right;
 };
 
+struct InfixExpression : public Expression {
+  InfixExpression() = default;
+  InfixExpression(Token, const std::string &, std::unique_ptr<Expression>,
+                  std::unique_ptr<Expression>);
+  virtual ~InfixExpression() = default;
+
+  // Node impl.
+  const std::string &tokenLiteral() const override;
+  std::string string() const override;
+
+  Token Tok;
+  std::string Operator;
+  std::unique_ptr<Expression> Left, Right;
+};
+
 } // namespace monkey

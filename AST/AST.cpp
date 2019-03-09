@@ -112,4 +112,22 @@ std::string PrefixExpression::string() const {
   return SS.str();
 }
 
+InfixExpression::InfixExpression(Token Tok, const std::string &Operator,
+                                 std::unique_ptr<Expression> Left,
+                                 std::unique_ptr<Expression> Right)
+    : Tok(Tok), Operator(Operator), Left(std::move(Left)),
+      Right(std::move(Right)) {}
+
+const std::string &InfixExpression::tokenLiteral() const { return Tok.Literal; }
+
+std::string InfixExpression::string() const {
+  std::stringstream SS;
+  SS << "(";
+  SS << Left->string();
+  SS << " " << Operator << " ";
+  SS << Right->string();
+  SS << ")";
+  return SS.str();
+}
+
 } // namespace monkey
