@@ -30,14 +30,14 @@ std::string Program::string() const {
   return SS.str();
 }
 
-Identifier::Identifier(struct Token Tok, const std::string &Value)
+Identifier::Identifier(Token Tok, const std::string &Value)
     : Tok(Tok), Value(Value) {}
 
 const std::string &Identifier::tokenLiteral() const { return Tok.Literal; }
 
 std::string Identifier::string() const { return Value; }
 
-LetStatement::LetStatement(struct Token Tok, std::unique_ptr<Identifier> Name,
+LetStatement::LetStatement(Token Tok, std::unique_ptr<Identifier> Name,
                            std::unique_ptr<Expression> Value)
     : Tok(Tok), Name(std::move(Name)), Value(std::move(Value)) {}
 
@@ -54,7 +54,7 @@ std::string LetStatement::string() const {
   return SS.str();
 }
 
-ReturnStatement::ReturnStatement(struct Token Tok,
+ReturnStatement::ReturnStatement(Token Tok,
                                  std::unique_ptr<Expression> ReturnValue)
     : Tok(Tok), ReturnValue(std::move(ReturnValue)) {}
 
@@ -71,8 +71,8 @@ std::string ReturnStatement::string() const {
   return SS.str();
 }
 
-ExpressionStatement::ExpressionStatement(
-    struct Token Tok, std::unique_ptr<struct Expression> Expr)
+ExpressionStatement::ExpressionStatement(Token Tok,
+                                         std::unique_ptr<Expression> Expr)
     : Tok(Tok), Expr(std::move(Expr)) {}
 
 const std::string &ExpressionStatement::tokenLiteral() const {
@@ -87,15 +87,43 @@ std::string ExpressionStatement::string() const {
   return std::string();
 }
 
-IntegerLiteral::IntegerLiteral(struct Token Tok, int64_t Value)
+IntegerLiteral::IntegerLiteral(Token Tok, int64_t Value)
     : Tok(Tok), Value(Value) {}
 
 const std::string &IntegerLiteral::tokenLiteral() const { return Tok.Literal; }
 
 std::string IntegerLiteral::string() const { return Tok.Literal; }
 
-PrefixExpression::PrefixExpression(struct Token Tok,
-                                   const std::string &Operator,
+Boolean::Boolean(Token Tok, bool Value) : Tok(Tok), Value(Value) {}
+
+const std::string &Boolean::tokenLiteral() const { return Tok.Literal; }
+
+std::string Boolean::string() const { return Tok.Literal; }
+
+FunctionLiteral::FunctionLiteral(
+    Token Tok, std::vector<std::unique_ptr<Identifier>> &&Parameters,
+    std::unique_ptr<BlockStatement> Body)
+    : Tok(Tok), Parameters(std::move(Parameters)), Body(std::move(Body)) {}
+
+const std::string &FunctionLiteral::tokenLiteral() const { return Tok.Literal; }
+
+std::string FunctionLiteral::string() const {
+  std::stringstream SS;
+  SS << tokenLiteral();
+  SS << "(";
+  for (const auto &Param : Parameters) {
+    SS << Param->string();
+    if (Param.get() != Parameters.back().get()) {
+      SS << ", ";
+    }
+  }
+
+  SS << ")";
+  SS << Body->string();
+  return SS.str();
+}
+
+PrefixExpression::PrefixExpression(Token Tok, const std::string &Operator,
                                    std::unique_ptr<Expression> Right)
     : Tok(Tok), Operator(Operator), Right(std::move(Right)) {}
 
@@ -126,6 +154,67 @@ std::string InfixExpression::string() const {
   SS << Left->string();
   SS << " " << Operator << " ";
   SS << Right->string();
+  SS << ")";
+  return SS.str();
+}
+
+BlockStatement::BlockStatement(
+    Token Tok, std::vector<std::unique_ptr<Statement>> &&Statements)
+    : Tok(Tok), Statements(std::move(Statements)) {}
+
+const std::string &BlockStatement::tokenLiteral() const { return Tok.Literal; }
+
+std::string BlockStatement::string() const {
+  std::stringstream SS;
+  for (const auto &S : Statements) {
+    SS << S->string();
+  }
+
+  return SS.str();
+}
+
+IfExpression::IfExpression(Token Tok, std::unique_ptr<Expression> Condition,
+                           std::unique_ptr<BlockStatement> Consequence,
+                           std::unique_ptr<BlockStatement> Alternative)
+    : Tok(Tok), Condition(std::move(Condition)),
+      Consequence(std::move(Consequence)), Alternative(std::move(Alternative)) {
+}
+
+const std::string &IfExpression::tokenLiteral() const { return Tok.Literal; }
+
+std::string IfExpression::string() const {
+  std::stringstream SS;
+  SS << "if";
+  SS << Condition->string();
+  SS << " ";
+  SS << Consequence->string();
+  if (Alternative) {
+    SS << "else ";
+    SS << Alternative->string();
+  }
+
+  return SS.str();
+}
+
+CallExpression::CallExpression(
+    Token Tok, std::unique_ptr<Expression> Function,
+    std::vector<std::unique_ptr<Expression>> &&Arguments)
+    : Tok(Tok), Function(std::move(Function)), Arguments(std::move(Arguments)) {
+}
+
+const std::string &CallExpression::tokenLiteral() const { return Tok.Literal; }
+
+std::string CallExpression::string() const {
+  std::stringstream SS;
+  SS << Function->string();
+  SS << "(";
+  for (const auto &Arg : Arguments) {
+    SS << Arg->string();
+    if (Arg.get() != Arguments.back().get()) {
+      SS << ", ";
+    }
+  }
+
   SS << ")";
   return SS.str();
 }

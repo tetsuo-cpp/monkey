@@ -42,6 +42,14 @@ private:
   std::unique_ptr<IntegerLiteral> parseIntegerLiteral();
   std::unique_ptr<Expression> parsePrefixExpression();
   std::unique_ptr<Expression> parseInfixExpression(std::unique_ptr<Expression>);
+  std::unique_ptr<Expression> parseBoolean();
+  std::unique_ptr<Expression> parseGroupedExpression();
+  std::unique_ptr<Expression> parseIfExpression();
+  std::unique_ptr<BlockStatement> parseBlockStatement();
+  std::unique_ptr<Expression> parseFunctionLiteral();
+  std::vector<std::unique_ptr<Identifier>> parseFunctionParameters();
+  std::unique_ptr<Expression> parseCallExpression(std::unique_ptr<Expression>);
+  std::vector<std::unique_ptr<Expression>> parseCallArguments();
   void nextToken();
   bool curTokenIs(TokenType) const;
   bool peekTokenIs(TokenType) const;

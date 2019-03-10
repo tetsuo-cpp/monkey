@@ -8,6 +8,8 @@
 
 namespace monkey {
 
+struct BlockStatement;
+
 struct Node {
   virtual ~Node() = default;
 
@@ -101,6 +103,34 @@ struct IntegerLiteral : public Expression {
   int64_t Value;
 };
 
+struct Boolean : public Expression {
+  Boolean() = default;
+  Boolean(Token, bool);
+  virtual ~Boolean() = default;
+
+  // Node impl.
+  const std::string &tokenLiteral() const override;
+  std::string string() const override;
+
+  Token Tok;
+  bool Value;
+};
+
+struct FunctionLiteral : public Expression {
+  FunctionLiteral() = default;
+  FunctionLiteral(Token, std::vector<std::unique_ptr<Identifier>> &&,
+                  std::unique_ptr<BlockStatement>);
+  virtual ~FunctionLiteral() = default;
+
+  // Node impl.
+  const std::string &tokenLiteral() const override;
+  std::string string() const override;
+
+  Token Tok;
+  std::vector<std::unique_ptr<Identifier>> Parameters;
+  std::unique_ptr<BlockStatement> Body;
+};
+
 struct PrefixExpression : public Expression {
   PrefixExpression() = default;
   PrefixExpression(Token, const std::string &, std::unique_ptr<Expression>);
@@ -128,6 +158,50 @@ struct InfixExpression : public Expression {
   Token Tok;
   std::string Operator;
   std::unique_ptr<Expression> Left, Right;
+};
+
+struct BlockStatement : public Statement {
+  BlockStatement() = default;
+  BlockStatement(Token, std::vector<std::unique_ptr<Statement>> &&);
+  virtual ~BlockStatement() = default;
+
+  // Node impl.
+  const std::string &tokenLiteral() const override;
+  std::string string() const override;
+
+  Token Tok;
+  std::vector<std::unique_ptr<Statement>> Statements;
+};
+
+struct IfExpression : public Expression {
+  IfExpression() = default;
+  IfExpression(Token, std::unique_ptr<Expression>,
+               std::unique_ptr<BlockStatement>,
+               std::unique_ptr<BlockStatement>);
+  virtual ~IfExpression() = default;
+
+  // Node impl.
+  const std::string &tokenLiteral() const override;
+  std::string string() const override;
+
+  Token Tok; // The 'if' token.
+  std::unique_ptr<Expression> Condition;
+  std::unique_ptr<BlockStatement> Consequence, Alternative;
+};
+
+struct CallExpression : public Expression {
+  CallExpression() = default;
+  CallExpression(Token, std::unique_ptr<Expression>,
+                 std::vector<std::unique_ptr<Expression>> &&);
+  virtual ~CallExpression() = default;
+
+  // Node impl.
+  const std::string &tokenLiteral() const override;
+  std::string string() const override;
+
+  Token Tok;
+  std::unique_ptr<Expression> Function;
+  std::vector<std::unique_ptr<Expression>> Arguments;
 };
 
 } // namespace monkey

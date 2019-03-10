@@ -16,7 +16,8 @@ const std::vector<std::pair<TokenType, Precedence>> Precedences = {
     {TokenType::PLUS, Precedence::SUM},
     {TokenType::MINUS, Precedence::SUM},
     {TokenType::SLASH, Precedence::PRODUCT},
-    {TokenType::ASTERISK, Precedence::PRODUCT}};
+    {TokenType::ASTERISK, Precedence::PRODUCT},
+    {TokenType::LPAREN, Precedence::CALL}};
 
 } // namespace
 
@@ -29,6 +30,13 @@ Parser::Parser(Lexer &L) : L(L) {
   registerPrefix(TokenType::BANG, [this]() { return parsePrefixExpression(); });
   registerPrefix(TokenType::MINUS,
                  [this]() { return parsePrefixExpression(); });
+  registerPrefix(TokenType::TRUE, [this]() { return parseBoolean(); });
+  registerPrefix(TokenType::FALSE, [this]() { return parseBoolean(); });
+  registerPrefix(TokenType::LPAREN,
+                 [this]() { return parseGroupedExpression(); });
+  registerPrefix(TokenType::IF, [this]() { return parseIfExpression(); });
+  registerPrefix(TokenType::FUNCTION,
+                 [this]() { return parseFunctionLiteral(); });
   registerInfix(TokenType::PLUS, [this](std::unique_ptr<Expression> Left) {
     return parseInfixExpression(std::move(Left));
   });
@@ -52,6 +60,9 @@ Parser::Parser(Lexer &L) : L(L) {
   });
   registerInfix(TokenType::GT, [this](std::unique_ptr<Expression> Left) {
     return parseInfixExpression(std::move(Left));
+  });
+  registerInfix(TokenType::LPAREN, [this](std::unique_ptr<Expression> Left) {
+    return parseCallExpression(std::move(Left));
   });
 }
 
@@ -99,28 +110,26 @@ std::unique_ptr<LetStatement> Parser::parseLetStatement() {
     return nullptr;
   }
 
-  // TODO: We're skipping the expressions until we encounter a semicolon.
-  while (!curTokenIs(TokenType::SEMICOLON)) {
+  nextToken();
+  LS->Value = parseExpression(Precedence::LOWEST);
+
+  if (peekTokenIs(TokenType::SEMICOLON)) {
     nextToken();
   }
-
-  nextToken();
 
   return LS;
 }
 
 std::unique_ptr<ReturnStatement> Parser::parseReturnStatement() {
-  auto RS = std::make_unique<ReturnStatement>();
-  RS->Tok = CurToken;
+  auto RS = std::make_unique<ReturnStatement>(CurToken, nullptr);
 
   nextToken();
 
-  // TODO: We're skipping the expressions until we encounter a semicolon.
-  while (!curTokenIs(TokenType::SEMICOLON)) {
+  RS->ReturnValue = parseExpression(Precedence::LOWEST);
+
+  if (peekTokenIs(TokenType::SEMICOLON)) {
     nextToken();
   }
-
-  nextToken();
 
   return RS;
 }
@@ -198,12 +207,157 @@ Parser::parseInfixExpression(std::unique_ptr<Expression> Left) {
   return Infix;
 }
 
+std::unique_ptr<Expression> Parser::parseBoolean() {
+  return std::make_unique<Boolean>(CurToken, curTokenIs(TokenType::TRUE));
+}
+
+std::unique_ptr<Expression> Parser::parseGroupedExpression() {
+  nextToken();
+
+  auto Exp = parseExpression(Precedence::LOWEST);
+  if (!expectPeek(TokenType::RPAREN)) {
+    return nullptr;
+  }
+
+  return Exp;
+}
+
+std::unique_ptr<Expression> Parser::parseIfExpression() {
+  auto IfE = std::make_unique<IfExpression>();
+  IfE->Tok = CurToken;
+
+  if (!expectPeek(TokenType::LPAREN)) {
+    return nullptr;
+  }
+
+  nextToken();
+  IfE->Condition = parseExpression(Precedence::LOWEST);
+
+  if (!expectPeek(TokenType::RPAREN)) {
+    return nullptr;
+  }
+
+  if (!expectPeek(TokenType::LBRACE)) {
+    return nullptr;
+  }
+
+  IfE->Consequence = parseBlockStatement();
+
+  if (peekTokenIs(TokenType::ELSE)) {
+    nextToken();
+
+    if (!expectPeek(TokenType::LBRACE)) {
+      return nullptr;
+    }
+
+    IfE->Alternative = parseBlockStatement();
+  }
+
+  return IfE;
+}
+
+std::unique_ptr<BlockStatement> Parser::parseBlockStatement() {
+  auto BlockTok = CurToken;
+  std::vector<std::unique_ptr<Statement>> Statements;
+
+  nextToken();
+
+  while (!curTokenIs(TokenType::RBRACE) &&
+         !curTokenIs(TokenType::END_OF_FILE)) {
+    auto Statement = parseStatement();
+    if (Statement) {
+      Statements.push_back(std::move(Statement));
+    }
+
+    nextToken();
+  }
+
+  return std::make_unique<BlockStatement>(BlockTok, std::move(Statements));
+}
+
+std::unique_ptr<Expression> Parser::parseFunctionLiteral() {
+  auto FunctionTok = CurToken;
+
+  if (!expectPeek(TokenType::LPAREN)) {
+    return nullptr;
+  }
+
+  auto Parameters = parseFunctionParameters();
+
+  if (!expectPeek(TokenType::LBRACE)) {
+    return nullptr;
+  }
+
+  auto Body = parseBlockStatement();
+
+  return std::make_unique<FunctionLiteral>(FunctionTok, std::move(Parameters),
+                                           std::move(Body));
+}
+
+std::vector<std::unique_ptr<Identifier>> Parser::parseFunctionParameters() {
+  std::vector<std::unique_ptr<Identifier>> Identifiers;
+
+  if (peekTokenIs(TokenType::RPAREN)) {
+    nextToken();
+    return Identifiers;
+  }
+
+  nextToken();
+
+  auto I = std::make_unique<Identifier>(CurToken, CurToken.Literal);
+  Identifiers.push_back(std::move(I));
+
+  while (peekTokenIs(TokenType::COMMA)) {
+    nextToken();
+    nextToken();
+    auto I = std::make_unique<Identifier>(CurToken, CurToken.Literal);
+    Identifiers.push_back(std::move(I));
+  }
+
+  if (!expectPeek(TokenType::RPAREN)) {
+    return {};
+  }
+
+  return Identifiers;
+}
+
+std::unique_ptr<Expression>
+Parser::parseCallExpression(std::unique_ptr<Expression> Function) {
+  auto FunctionTok = CurToken;
+  return std::make_unique<CallExpression>(FunctionTok, std::move(Function),
+                                          parseCallArguments());
+}
+
+std::vector<std::unique_ptr<Expression>> Parser::parseCallArguments() {
+  std::vector<std::unique_ptr<Expression>> Args;
+
+  if (peekTokenIs(TokenType::RPAREN)) {
+    nextToken();
+    return Args;
+  }
+
+  nextToken();
+  Args.push_back(parseExpression(Precedence::LOWEST));
+
+  while (peekTokenIs(TokenType::COMMA)) {
+    nextToken();
+    nextToken();
+    Args.push_back(parseExpression(Precedence::LOWEST));
+  }
+
+  if (!expectPeek(TokenType::RPAREN)) {
+    return {};
+  }
+
+  return Args;
+}
+
 void Parser::nextToken() {
   CurToken = PeekToken;
   PeekToken = L.nextToken();
 }
 
-bool Parser::curTokenIs(TokenType Type) const { return PeekToken.Type == Type; }
+bool Parser::curTokenIs(TokenType Type) const { return CurToken.Type == Type; }
 
 bool Parser::peekTokenIs(TokenType Type) const {
   return PeekToken.Type == Type;

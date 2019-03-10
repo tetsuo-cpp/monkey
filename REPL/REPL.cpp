@@ -19,11 +19,24 @@ void REPL::start() {
     std::getline(std::cin, Line);
 
     Lexer L(Line);
+    Parser P(L);
 
-    for (Token Tok = L.nextToken(); Tok.Type != TokenType::END_OF_FILE;
-         Tok = L.nextToken()) {
-      std::cout << Tok << "\n";
+    auto Program = P.parseProgram();
+    if (!P.errors().empty()) {
+      printParserErrors(P);
+      continue;
     }
+
+    std::cout << Program->string() << "\n";
+  }
+}
+
+void REPL::printParserErrors(Parser &P) const {
+  std::cout << "Woops! We ran into some Monkey business here.\n";
+  std::cout << " parser errors:\n";
+
+  for (const auto &Error : P.errors()) {
+    std::cout << "\t" << Error << "\n";
   }
 }
 
