@@ -31,7 +31,7 @@ void REPL::start() {
   }
 }
 
-void REPL::printParserErrors(Parser &P) const {
+void REPL::printParserErrors(const Parser &P) const {
   std::cout << "Woops! We ran into some Monkey business here.\n";
   std::cout << " parser errors:\n";
 

@@ -11,7 +11,7 @@ public:
   void start();
 
 private:
-  void printParserErrors(Parser &) const;
+  void printParserErrors(const Parser &) const;
 };
 
 } // namespace monkey
