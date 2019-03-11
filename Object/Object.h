@@ -4,6 +4,10 @@
 
 namespace monkey::object {
 
+extern const std::string INTEGER_OBJ;
+extern const std::string BOOLEAN_OBJ;
+extern const std::string NULL_OBJ;
+
 using ObjectType = std::string;
 
 struct Object {

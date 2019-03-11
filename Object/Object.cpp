@@ -2,13 +2,9 @@
 
 namespace monkey::object {
 
-namespace {
-
 const std::string INTEGER_OBJ("INTEGER");
 const std::string BOOLEAN_OBJ("BOOLEAN");
 const std::string NULL_OBJ("NULL");
-
-} // namespace
 
 Integer::Integer(int64_t Value) : Value(Value) {}
 
