@@ -33,6 +33,11 @@ std::unique_ptr<object::Object> eval(const ast::Node *Node) {
     return std::make_unique<object::Integer>(IntegerL->Value);
   }
 
+  const auto *BooleanL = dynamic_cast<const ast::Boolean *>(Node);
+  if (BooleanL) {
+    return std::make_unique<object::Boolean>(BooleanL->Value);
+  }
+
   return nullptr;
 }
 
