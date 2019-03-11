@@ -22,7 +22,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 set(
   MONKEY_SOURCE_FILES
   AST/AST.cpp
+  Evaluator/Evaluator.cpp
   Lexer/Lexer.cpp
+  Object/Object.cpp
   Parser/Parser.cpp
   REPL/REPL.cpp
   Token/Token.cpp
@@ -37,8 +39,11 @@ set(
   MONKEY_TEST_SOURCE_FILES
   AST/AST.cpp
   AST/ASTTest.cpp
+  Evaluator/Evaluator.cpp
+  Evaluator/EvaluatorTest.cpp
   Lexer/Lexer.cpp
   Lexer/LexerTest.cpp
+  Object/Object.cpp
   Parser/Parser.cpp
   Parser/ParserTest.cpp
   Token/Token.cpp

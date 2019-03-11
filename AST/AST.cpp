@@ -8,7 +8,7 @@ const std::string Empty;
 
 } // namespace
 
-namespace monkey {
+namespace monkey::ast {
 
 Program::Program(std::vector<std::unique_ptr<Statement>> &&Statements)
     : Statements(std::move(Statements)) {}
@@ -219,4 +219,4 @@ std::string CallExpression::string() const {
   return SS.str();
 }
 
-} // namespace monkey
+} // namespace monkey::ast

@@ -2,7 +2,7 @@
 
 #include <Token/Token.h>
 
-namespace monkey {
+namespace monkey::lexer {
 
 class Lexer {
 public:
@@ -24,4 +24,4 @@ private:
   char Current;
 };
 
-} // namespace monkey
+} // namespace monkey::lexer

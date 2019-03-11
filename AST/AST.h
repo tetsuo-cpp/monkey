@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace monkey {
+namespace monkey::ast {
 
 struct BlockStatement;
 
@@ -204,4 +204,4 @@ struct CallExpression : public Expression {
   std::vector<std::unique_ptr<Expression>> Arguments;
 };
 
-} // namespace monkey
+} // namespace monkey::ast

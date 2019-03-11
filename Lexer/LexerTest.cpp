@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-namespace monkey::test {
+namespace monkey::lexer::test {
 
 TEST(LexerTests, testNextToken) {
   const std::string Input("let five = 5;"
@@ -71,4 +71,4 @@ TEST(LexerTests, testNextToken) {
   }
 }
 
-} // namespace monkey::test
+} // namespace monkey::lexer::test

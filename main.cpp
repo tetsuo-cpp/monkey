@@ -8,6 +8,6 @@ int main(int, char **) {
             << "! This is the Monkey programming language!\n";
   std::cout << "Feel free to type in commands\n";
 
-  monkey::REPL R;
+  monkey::repl::REPL R;
   R.start();
 }

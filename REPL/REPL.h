@@ -2,7 +2,7 @@
 
 #include <Parser/Parser.h>
 
-namespace monkey {
+namespace monkey::repl {
 
 class REPL {
 public:
@@ -11,7 +11,7 @@ public:
   void start();
 
 private:
-  void printParserErrors(const Parser &) const;
+  void printParserErrors(const parser::Parser &) const;
 };
 
-} // namespace monkey
+} // namespace monkey::repl

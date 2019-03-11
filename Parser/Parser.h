@@ -8,11 +8,11 @@
 #include <memory>
 #include <string>
 
-namespace monkey {
+namespace monkey::parser {
 
-using PrefixParseFn = std::function<std::unique_ptr<Expression>()>;
-using InfixParseFn =
-    std::function<std::unique_ptr<Expression>(std::unique_ptr<Expression>)>;
+using PrefixParseFn = std::function<std::unique_ptr<ast::Expression>()>;
+using InfixParseFn = std::function<std::unique_ptr<ast::Expression>(
+    std::unique_ptr<ast::Expression>)>;
 
 enum class Precedence {
   LOWEST,
@@ -26,30 +26,32 @@ enum class Precedence {
 
 class Parser {
 public:
-  Parser(Lexer &L);
+  Parser(lexer::Lexer &L);
   virtual ~Parser() = default;
 
-  std::unique_ptr<Program> parseProgram();
+  std::unique_ptr<ast::Program> parseProgram();
   const std::vector<std::string> &errors() const;
 
 private:
-  std::unique_ptr<Statement> parseStatement();
-  std::unique_ptr<LetStatement> parseLetStatement();
-  std::unique_ptr<ReturnStatement> parseReturnStatement();
-  std::unique_ptr<ExpressionStatement> parseExpressionStatement();
-  std::unique_ptr<Expression> parseExpression(Precedence);
-  std::unique_ptr<Expression> parseIdentifier();
-  std::unique_ptr<IntegerLiteral> parseIntegerLiteral();
-  std::unique_ptr<Expression> parsePrefixExpression();
-  std::unique_ptr<Expression> parseInfixExpression(std::unique_ptr<Expression>);
-  std::unique_ptr<Expression> parseBoolean();
-  std::unique_ptr<Expression> parseGroupedExpression();
-  std::unique_ptr<Expression> parseIfExpression();
-  std::unique_ptr<BlockStatement> parseBlockStatement();
-  std::unique_ptr<Expression> parseFunctionLiteral();
-  std::vector<std::unique_ptr<Identifier>> parseFunctionParameters();
-  std::unique_ptr<Expression> parseCallExpression(std::unique_ptr<Expression>);
-  std::vector<std::unique_ptr<Expression>> parseCallArguments();
+  std::unique_ptr<ast::Statement> parseStatement();
+  std::unique_ptr<ast::LetStatement> parseLetStatement();
+  std::unique_ptr<ast::ReturnStatement> parseReturnStatement();
+  std::unique_ptr<ast::ExpressionStatement> parseExpressionStatement();
+  std::unique_ptr<ast::Expression> parseExpression(Precedence);
+  std::unique_ptr<ast::Expression> parseIdentifier();
+  std::unique_ptr<ast::IntegerLiteral> parseIntegerLiteral();
+  std::unique_ptr<ast::Expression> parsePrefixExpression();
+  std::unique_ptr<ast::Expression>
+      parseInfixExpression(std::unique_ptr<ast::Expression>);
+  std::unique_ptr<ast::Expression> parseBoolean();
+  std::unique_ptr<ast::Expression> parseGroupedExpression();
+  std::unique_ptr<ast::Expression> parseIfExpression();
+  std::unique_ptr<ast::BlockStatement> parseBlockStatement();
+  std::unique_ptr<ast::Expression> parseFunctionLiteral();
+  std::vector<std::unique_ptr<ast::Identifier>> parseFunctionParameters();
+  std::unique_ptr<ast::Expression>
+      parseCallExpression(std::unique_ptr<ast::Expression>);
+  std::vector<std::unique_ptr<ast::Expression>> parseCallArguments();
   void nextToken();
   bool curTokenIs(TokenType) const;
   bool peekTokenIs(TokenType) const;
@@ -61,7 +63,7 @@ private:
   Precedence peekPrecedence() const;
   Precedence curPrecedence() const;
 
-  Lexer L;
+  lexer::Lexer L;
   Token CurToken;
   Token PeekToken;
   std::vector<std::string> Errors;
@@ -69,4 +71,4 @@ private:
   std::map<TokenType, InfixParseFn> InfixParseFns;
 };
 
-} // namespace monkey
+} // namespace monkey::parser

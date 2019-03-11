@@ -6,7 +6,7 @@
 
 #include <memory>
 
-namespace monkey::test {
+namespace monkey::ast::test {
 
 TEST(ASTTests, testString) {
   std::vector<std::unique_ptr<Statement>> Statements;
@@ -20,4 +20,4 @@ TEST(ASTTests, testString) {
   EXPECT_EQ(P->string(), "let myVar = anotherVar;");
 }
 
-} // namespace monkey::test
+} // namespace monkey::ast::test

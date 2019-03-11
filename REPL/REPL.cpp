@@ -1,5 +1,6 @@
 #include "REPL.h"
 
+#include <Evaluator/Evaluator.h>
 #include <Lexer/Lexer.h>
 
 #include <iostream>
@@ -10,7 +11,7 @@ const std::string Prompt(">> ");
 
 } // namespace
 
-namespace monkey {
+namespace monkey::repl {
 
 void REPL::start() {
   std::string Line;
@@ -18,8 +19,8 @@ void REPL::start() {
     std::cout << Prompt;
     std::getline(std::cin, Line);
 
-    Lexer L(Line);
-    Parser P(L);
+    lexer::Lexer L(Line);
+    parser::Parser P(L);
 
     auto Program = P.parseProgram();
     if (!P.errors().empty()) {
@@ -27,11 +28,14 @@ void REPL::start() {
       continue;
     }
 
-    std::cout << Program->string() << "\n";
+    auto Evaluated = evaluator::eval(Program.get());
+    if (Evaluated) {
+      std::cout << Evaluated->inspect() << "\n";
+    }
   }
 }
 
-void REPL::printParserErrors(const Parser &P) const {
+void REPL::printParserErrors(const parser::Parser &P) const {
   std::cout << "Woops! We ran into some Monkey business here.\n";
   std::cout << " parser errors:\n";
 
@@ -40,4 +44,4 @@ void REPL::printParserErrors(const Parser &P) const {
   }
 }
 
-} // namespace monkey
+} // namespace monkey::repl

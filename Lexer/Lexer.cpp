@@ -8,7 +8,7 @@ bool isLetter(char C) { return std::isalpha(C) || C == '_'; }
 
 } // namespace
 
-namespace monkey {
+namespace monkey::lexer {
 
 Lexer::Lexer(const std::string &Input)
     : Input(Input), Position(0), ReadPosition(0), Current(0) {
@@ -143,4 +143,4 @@ void Lexer::skipWhitespace() {
   }
 }
 
-} // namespace monkey
+} // namespace monkey::lexer
