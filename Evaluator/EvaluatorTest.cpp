@@ -25,6 +25,11 @@ void testBooleanObject(const object::Object *Obj, bool Expected) {
   EXPECT_EQ(BooleanObj->Value, Expected);
 }
 
+void testNullObject(const object::Object *Obj) {
+  const auto *NullObj = dynamic_cast<const object::Null *>(Obj);
+  EXPECT_THAT(NullObj, testing::NotNull());
+}
+
 TEST(EvaluatorTests, testEvalIntegerExpressions) {
   const std::vector<std::pair<std::string, int64_t>> Tests = {
       {"5", 5},
@@ -51,9 +56,25 @@ TEST(EvaluatorTests, testEvalIntegerExpressions) {
 
 TEST(EvaluatorTests, testEvalBooleanExpressions) {
   const std::vector<std::pair<std::string, bool>> Tests = {
-      {"true", true},    {"false", false}, {"1 < 2", true},  {"1 > 2", false},
-      {"1 < 1", false},  {"1 > 1", false}, {"1 == 1", true}, {"1 != 1", false},
-      {"1 == 2", false}, {"1 != 2", true}};
+      {"true", true},
+      {"false", false},
+      {"1 < 2", true},
+      {"1 > 2", false},
+      {"1 < 1", false},
+      {"1 > 1", false},
+      {"1 == 1", true},
+      {"1 != 1", false},
+      {"1 == 2", false},
+      {"1 != 2", true},
+      {"true == true", true},
+      {"false == false", true},
+      {"true == false", false},
+      {"true != false", true},
+      {"false != true", true},
+      {"(1 < 2) = true", true},
+      {"(1 < 2) == false", false},
+      {"(1 > 2) == true", false},
+      {"(1 > 2) == false", true}};
 
   for (const auto &Test : Tests) {
     auto Evaluated = testEval(std::get<0>(Test));
@@ -69,6 +90,63 @@ TEST(EvaluatorTests, testBangOperator) {
   for (const auto &Test : Tests) {
     auto Evaluated = testEval(std::get<0>(Test));
     testBooleanObject(Evaluated.get(), std::get<1>(Test));
+  }
+}
+
+void testIfElseExpressionInteger(const std::string &Input, int64_t Expected) {
+  auto Evaluated = testEval(Input);
+  testIntegerObject(Evaluated.get(), Expected);
+}
+
+void testIfElseExpressionNull(const std::string &Input) {
+  auto Evaluated = testEval(Input);
+  testNullObject(Evaluated.get());
+}
+
+TEST(EvaluatorTests, testIfElseExpressions) {
+  testIfElseExpressionInteger("if (true) { 10 }", 10);
+  testIfElseExpressionNull("if (false) { 10 }");
+  testIfElseExpressionInteger("if (1) { 10 }", 10);
+  testIfElseExpressionInteger("if (1 < 2) { 10 }", 10);
+  testIfElseExpressionNull("if (1 > 2) { 10 }");
+  testIfElseExpressionInteger("if (1 > 2) { 10 } else { 20 }", 20);
+  testIfElseExpressionInteger("if (1 < 2) { 10 } else { 20 }", 10);
+}
+
+TEST(EvaluatorTests, testReturnStatements) {
+  const std::vector<std::pair<std::string, int64_t>> Tests = {
+      {"return 10;", 10},
+      {"return 10; 9", 10},
+      {"return 2 * 5; 9", 10},
+      {"9; return 2 * 5; 9", 10}};
+
+  for (const auto &Test : Tests) {
+    auto Evaluated = testEval(std::get<0>(Test));
+    testIntegerObject(Evaluated.get(), std::get<1>(Test));
+  }
+}
+
+TEST(EvaluatorTests, testErrorHandling) {
+  const std::vector<std::pair<std::string, std::string>> Tests = {
+      {"5 + true;", "type mismatch: INTEGER + BOOLEAN"},
+      {"5 + true; 5;", "type mismatch: INTEGER + BOOLEAN"},
+      {"-true", "unknown operator: -BOOLEAN"},
+      {"true + false;", "unknown operator: BOOLEAN + BOOLEAN"},
+      {"5; true + false; 5", "unknown operator: BOOLEAN + BOOLEAN"},
+      {"if (10 > 1) { true + false; }", "unknown operator: BOOLEAN + BOOLEAN"},
+      {"if (10 > 1) {"
+       "if (10 > 1) {"
+       "return true + false;"
+       "}"
+       "return 1;"
+       "}",
+       "unknown operator: BOOLEAN + BOOLEAN"}};
+
+  for (const auto &Test : Tests) {
+    auto Evaluated = testEval(std::get<0>(Test));
+    const auto *Error = dynamic_cast<object::Error *>(Evaluated.get());
+    EXPECT_THAT(Error, testing::NotNull());
+    EXPECT_EQ(Error->Message, std::get<1>(Test));
   }
 }
 
