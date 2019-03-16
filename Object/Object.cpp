@@ -1,5 +1,7 @@
 #include "Object.h"
 
+#include <sstream>
+
 namespace monkey::object {
 
 const std::string INTEGER_OBJ("INTEGER");
@@ -7,6 +9,7 @@ const std::string BOOLEAN_OBJ("BOOLEAN");
 const std::string NULL_OBJ("NULL");
 const std::string RETURN_VALUE_OBJ("RETURN_VALUE");
 const std::string ERROR_OBJ("ERROR");
+const std::string FUNCTION_OBJ("FUNCTION");
 
 Integer::Integer(int64_t Value) : Value(Value) {}
 
@@ -24,7 +27,7 @@ const ObjectType &Null::type() const { return NULL_OBJ; }
 
 std::string Null::inspect() const { return "null"; }
 
-ReturnValue::ReturnValue(std::unique_ptr<object::Object> Value)
+ReturnValue::ReturnValue(std::shared_ptr<object::Object> Value)
     : Value(std::move(Value)) {}
 
 const ObjectType &ReturnValue::type() const { return RETURN_VALUE_OBJ; }
@@ -34,5 +37,28 @@ std::string ReturnValue::inspect() const { return Value->inspect(); }
 const ObjectType &Error::type() const { return ERROR_OBJ; }
 
 std::string Error::inspect() const { return "ERROR: " + Message; }
+
+Function::Function(std::vector<std::unique_ptr<ast::Identifier>> &&Parameters,
+                   std::unique_ptr<ast::BlockStatement> Body,
+                   environment::Environment &Env)
+    : Parameters(std::move(Parameters)), Body(std::move(Body)), Env(Env) {}
+
+const ObjectType &Function::type() const { return FUNCTION_OBJ; }
+
+std::string Function::inspect() const {
+  std::stringstream SS;
+  SS << "fn(";
+  for (const auto &Param : Parameters) {
+    SS << Param->string();
+    if (&Param != &Parameters.back()) {
+      SS << ", ";
+    }
+  }
+
+  SS << ") {\n";
+  SS << Body->string();
+  SS << "\n}";
+  return SS.str();
+}
 
 } // namespace monkey::object

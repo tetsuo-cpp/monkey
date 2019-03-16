@@ -1,10 +1,11 @@
 #pragma once
 
 #include <AST/AST.h>
+#include <Environment/Environment.h>
 #include <Object/Object.h>
 
 namespace monkey::evaluator {
 
-std::unique_ptr<object::Object> eval(const ast::Node *);
+std::shared_ptr<object::Object> eval(ast::Node *, environment::Environment &);
 
 } // namespace monkey::evaluator

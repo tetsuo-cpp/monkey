@@ -15,6 +15,7 @@ namespace monkey::repl {
 
 void REPL::start() {
   std::string Line;
+  environment::Environment Env;
   while (std::cin) {
     std::cout << Prompt;
     std::getline(std::cin, Line);
@@ -28,7 +29,7 @@ void REPL::start() {
       continue;
     }
 
-    auto Evaluated = evaluator::eval(Program.get());
+    auto Evaluated = evaluator::eval(Program.get(), Env);
     if (Evaluated) {
       std::cout << Evaluated->inspect() << "\n";
     }

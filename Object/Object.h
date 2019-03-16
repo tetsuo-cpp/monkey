@@ -1,7 +1,11 @@
 #pragma once
 
+#include "ObjectInterface.h"
+
+#include <AST/AST.h>
+#include <Environment/Environment.h>
+
 #include <memory>
-#include <string>
 
 namespace monkey::object {
 
@@ -10,15 +14,7 @@ extern const std::string BOOLEAN_OBJ;
 extern const std::string NULL_OBJ;
 extern const std::string RETURN_VALUE_OBJ;
 extern const std::string ERROR_OBJ;
-
-using ObjectType = std::string;
-
-struct Object {
-  virtual ~Object() = default;
-
-  virtual const ObjectType &type() const = 0;
-  virtual std::string inspect() const = 0;
-};
+extern const std::string FUNCTION_OBJ;
 
 struct Integer : public Object {
   explicit Integer(int64_t);
@@ -52,14 +48,14 @@ struct Null : public Object {
 };
 
 struct ReturnValue : public Object {
-  explicit ReturnValue(std::unique_ptr<object::Object>);
+  explicit ReturnValue(std::shared_ptr<object::Object>);
   virtual ~ReturnValue() = default;
 
   // Object impl.
   const ObjectType &type() const override;
   std::string inspect() const override;
 
-  std::unique_ptr<object::Object> Value;
+  std::shared_ptr<object::Object> Value;
 };
 
 struct Error : public Object {
@@ -72,6 +68,20 @@ struct Error : public Object {
   std::string inspect() const override;
 
   const std::string Message;
+};
+
+struct Function : public Object {
+  Function(std::vector<std::unique_ptr<ast::Identifier>> &&,
+           std::unique_ptr<ast::BlockStatement>, environment::Environment &);
+  virtual ~Function() = default;
+
+  // Object impl.
+  const ObjectType &type() const override;
+  std::string inspect() const override;
+
+  std::vector<std::unique_ptr<ast::Identifier>> Parameters;
+  std::unique_ptr<ast::BlockStatement> Body;
+  environment::Environment &Env;
 };
 
 } // namespace monkey::object

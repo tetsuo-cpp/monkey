@@ -6,11 +6,12 @@
 
 namespace monkey::evaluator {
 
-std::unique_ptr<object::Object> testEval(const std::string &Input) {
+std::shared_ptr<object::Object> testEval(const std::string &Input) {
   lexer::Lexer L(Input);
   parser::Parser P(L);
   auto Program = P.parseProgram();
-  return eval(Program.get());
+  environment::Environment Env;
+  return eval(Program.get(), Env);
 }
 
 void testIntegerObject(const object::Object *Obj, int64_t Expected) {
@@ -140,13 +141,52 @@ TEST(EvaluatorTests, testErrorHandling) {
        "}"
        "return 1;"
        "}",
-       "unknown operator: BOOLEAN + BOOLEAN"}};
+       "unknown operator: BOOLEAN + BOOLEAN"},
+      {"foobar", "identifier not found: foobar"}};
 
   for (const auto &Test : Tests) {
     auto Evaluated = testEval(std::get<0>(Test));
     const auto *Error = dynamic_cast<object::Error *>(Evaluated.get());
     EXPECT_THAT(Error, testing::NotNull());
     EXPECT_EQ(Error->Message, std::get<1>(Test));
+  }
+}
+
+TEST(EvaluatorTests, testLetStatements) {
+  const std::vector<std::pair<std::string, int64_t>> Tests = {
+      {"let a = 5; a;", 5},
+      {"let a = 5 * 5; a;", 25},
+      {"let a = 5; let b = a; b;", 5},
+      {"let a = 5; let b = a; let c = a + b + 5; c;", 15}};
+
+  for (const auto &Test : Tests) {
+    testIntegerObject(testEval(std::get<0>(Test)).get(), std::get<1>(Test));
+  }
+}
+
+TEST(EvaluatorTests, testFunctionObject) {
+  const std::string Input("fn(x) { x + 2; };");
+  auto Evaluated = testEval(Input);
+  const auto *Function = dynamic_cast<object::Function *>(Evaluated.get());
+  EXPECT_THAT(Function, testing::NotNull());
+  EXPECT_EQ(Function->Parameters.size(), 1);
+  EXPECT_EQ(Function->Parameters.front()->string(), "x");
+
+  const std::string ExpectedBody("(x + 2)");
+  EXPECT_EQ(Function->Body->string(), ExpectedBody);
+}
+
+TEST(EvaluatorTests, testFunctionApplication) {
+  const std::vector<std::pair<std::string, int64_t>> Tests = {
+      {"let identity = fn(x) { x; }; identity(5);", 5},
+      {"let identity = fn(x) { return x; }; identity(5);", 5},
+      {"let double = fn(x) { x * 2; }; double(5);", 10},
+      {"let add = fn(x, y) { x + y; }; add(5, 5);", 10},
+      {"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+      {"fn(x) { x; }(5)", 5}};
+
+  for (const auto &Test : Tests) {
+    testIntegerObject(testEval(std::get<0>(Test)).get(), std::get<1>(Test));
   }
 }
 
