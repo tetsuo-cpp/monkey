@@ -17,6 +17,7 @@ private:
   std::string readIdentifier();
   std::string readNumber();
   void skipWhitespace();
+  std::string readString();
 
   const std::string &Input;
   unsigned int Position;

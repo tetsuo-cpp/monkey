@@ -142,7 +142,8 @@ TEST(EvaluatorTests, testErrorHandling) {
        "return 1;"
        "}",
        "unknown operator: BOOLEAN + BOOLEAN"},
-      {"foobar", "identifier not found: foobar"}};
+      {"foobar", "identifier not found: foobar"},
+      {"\"Hello\" - \"World\"", "unknown operator: STRING - STRING"}};
 
   for (const auto &Test : Tests) {
     auto Evaluated = testEval(std::get<0>(Test));
@@ -188,6 +189,34 @@ TEST(EvaluatorTests, testFunctionApplication) {
   for (const auto &Test : Tests) {
     testIntegerObject(testEval(std::get<0>(Test)).get(), std::get<1>(Test));
   }
+}
+
+TEST(EvaluatorTests, testClosures) {
+  const std::string Input("let newAdder = fn(x) {"
+                          "fn(y) { x + y };"
+                          "};"
+                          "let addTwo = newAdder(2);"
+                          "addTwo(2);");
+
+  testIntegerObject(testEval(Input).get(), 4);
+}
+
+TEST(EvaluatorTests, testStringLiteral) {
+  const std::string Input("\"Hello World\"");
+
+  auto Evaluated = testEval(Input);
+  const auto *S = dynamic_cast<const object::String *>(Evaluated.get());
+  EXPECT_THAT(S, testing::NotNull());
+  EXPECT_EQ(S->Value, "Hello World");
+}
+
+TEST(EvaluatorTests, testStringConcatenation) {
+  const std::string Input("\"Hello\" + \" \" + \"World\"");
+
+  auto Evaluated = testEval(Input);
+  const auto *S = dynamic_cast<const object::String *>(Evaluated.get());
+  EXPECT_THAT(S, testing::NotNull());
+  EXPECT_EQ(S->Value, "Hello World");
 }
 
 } // namespace monkey::evaluator

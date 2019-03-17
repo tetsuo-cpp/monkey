@@ -44,6 +44,7 @@ private:
   std::unique_ptr<ast::Expression>
       parseInfixExpression(std::unique_ptr<ast::Expression>);
   std::unique_ptr<ast::Expression> parseBoolean();
+  std::unique_ptr<ast::Expression> parseStringLiteral();
   std::unique_ptr<ast::Expression> parseGroupedExpression();
   std::unique_ptr<ast::Expression> parseIfExpression();
   std::unique_ptr<ast::BlockStatement> parseBlockStatement();

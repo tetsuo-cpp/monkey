@@ -116,6 +116,20 @@ struct Boolean : public Expression {
   bool Value;
 };
 
+struct String : public Expression {
+  template <typename T>
+  explicit String(Token Tok, T &&Value)
+      : Tok(Tok), Value(std::forward<T>(Value)) {}
+  virtual ~String() = default;
+
+  // Node impl.
+  const std::string &tokenLiteral() const override;
+  std::string string() const override;
+
+  Token Tok;
+  const std::string Value;
+};
+
 struct FunctionLiteral : public Expression {
   FunctionLiteral() = default;
   FunctionLiteral(Token, std::vector<std::unique_ptr<Identifier>> &&,

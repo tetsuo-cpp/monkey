@@ -10,6 +10,7 @@ const std::string NULL_OBJ("NULL");
 const std::string RETURN_VALUE_OBJ("RETURN_VALUE");
 const std::string ERROR_OBJ("ERROR");
 const std::string FUNCTION_OBJ("FUNCTION");
+const std::string STRING_OBJ("STRING");
 
 Integer::Integer(int64_t Value) : Value(Value) {}
 
@@ -60,5 +61,9 @@ std::string Function::inspect() const {
   SS << "\n}";
   return SS.str();
 }
+
+const ObjectType &String::type() const { return STRING_OBJ; }
+
+std::string String::inspect() const { return Value; }
 
 } // namespace monkey::object

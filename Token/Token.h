@@ -33,7 +33,8 @@ enum class TokenType {
   FALSE,
   IF,
   ELSE,
-  RETURN
+  RETURN,
+  STRING
 };
 
 const char *tokenTypeToString(TokenType Type);

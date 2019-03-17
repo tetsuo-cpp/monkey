@@ -457,4 +457,23 @@ TEST(ParserTests, testCallExpressionParsing) {
   testInfixExpression(Call->Arguments[2].get(), (int64_t)4, "+", (int64_t)5);
 }
 
+TEST(ParserTests, testStringLiteralExpression) {
+  const std::string Input("\"hello world\";");
+
+  lexer::Lexer L(Input);
+  parser::Parser P(L);
+  auto Program = P.parseProgram();
+  checkParserErrors(P);
+
+  EXPECT_EQ(Program->Statements.size(), 1);
+
+  const auto *ES = dynamic_cast<const ast::ExpressionStatement *>(
+      Program->Statements.front().get());
+  EXPECT_THAT(ES, testing::NotNull());
+
+  const auto *StringLiteral = dynamic_cast<const ast::String *>(ES->Expr.get());
+  EXPECT_THAT(StringLiteral, testing::NotNull());
+  EXPECT_EQ(StringLiteral->Value, "hello world");
+}
+
 } // namespace monkey::parser::test

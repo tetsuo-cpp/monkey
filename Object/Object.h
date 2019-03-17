@@ -15,6 +15,7 @@ extern const std::string NULL_OBJ;
 extern const std::string RETURN_VALUE_OBJ;
 extern const std::string ERROR_OBJ;
 extern const std::string FUNCTION_OBJ;
+extern const std::string STRING_OBJ;
 
 struct Integer : public Object {
   explicit Integer(int64_t);
@@ -81,7 +82,19 @@ struct Function : public Object {
 
   std::vector<std::unique_ptr<ast::Identifier>> Parameters;
   std::unique_ptr<ast::BlockStatement> Body;
-  environment::Environment &Env;
+  environment::Environment Env;
+};
+
+struct String : public Object {
+  template <typename T>
+  explicit String(T &&Value) : Value(std::forward<T>(Value)) {}
+  virtual ~String() = default;
+
+  // Object impl.
+  const ObjectType &type() const override;
+  std::string inspect() const override;
+
+  const std::string Value;
 };
 
 } // namespace monkey::object

@@ -181,6 +181,22 @@ evalNullInfixExpression(const std::string &Operator,
 }
 
 std::shared_ptr<object::Object>
+evalStringInfixExpression(const std::string &Operator,
+                          const std::shared_ptr<object::Object> &Left,
+                          const std::shared_ptr<object::Object> &Right) {
+  if (Operator != "+") {
+    return newError("unknown operator: %s %s %s", Left->type().c_str(),
+                    Operator.c_str(), Right->type().c_str());
+  }
+
+  const auto *LeftS = dynamic_cast<const object::String *>(Left.get());
+  const auto *RightS = dynamic_cast<const object::String *>(Right.get());
+  assert(LeftS);
+  assert(RightS);
+  return std::make_shared<object::String>(LeftS->Value + RightS->Value);
+}
+
+std::shared_ptr<object::Object>
 evalInfixExpression(const std::string &Operator,
                     const std::shared_ptr<object::Object> &Left,
                     const std::shared_ptr<object::Object> &Right) {
@@ -193,6 +209,9 @@ evalInfixExpression(const std::string &Operator,
   } else if (Left->type() == object::BOOLEAN_OBJ ||
              Right->type() == object::BOOLEAN_OBJ) {
     return evalBooleanInfixExpression(Operator, Left, Right);
+  } else if (Left->type() == object::STRING_OBJ ||
+             Right->type() == object::STRING_OBJ) {
+    return evalStringInfixExpression(Operator, Left, Right);
   } else if (Left->type() != Right->type()) {
     return newError("type mismatch: %s %s %s", Left->type().c_str(),
                     Operator.c_str(), Right->type().c_str());
@@ -258,6 +277,44 @@ evalExpressions(const std::vector<std::unique_ptr<ast::Expression>> &Arguments,
   }
 
   return Results;
+}
+
+environment::Environment
+extendFunctionEnv(const object::Function *Fn,
+                  const std::vector<std::shared_ptr<object::Object>> &Args) {
+  environment::Environment Env(Fn->Env);
+  assert(Fn->Parameters.size() == Args.size());
+  for (size_t Index = 0; Index < Args.size(); ++Index) {
+    const auto &ParamName = Fn->Parameters.at(Index)->Value;
+    const auto &Arg = Args.at(Index);
+    Env.set(ParamName, Arg);
+  }
+
+  return Env;
+}
+
+std::shared_ptr<object::Object>
+unwrapReturnValue(const std::shared_ptr<object::Object> &Obj) {
+  const auto *ReturnValue =
+      dynamic_cast<const object::ReturnValue *>(Obj.get());
+  if (ReturnValue) {
+    return ReturnValue->Value;
+  }
+
+  return Obj;
+}
+
+std::shared_ptr<object::Object>
+applyFunction(const std::shared_ptr<object::Object> &Fn,
+              const std::vector<std::shared_ptr<object::Object>> &Args) {
+  const auto *Function = dynamic_cast<object::Function *>(Fn.get());
+  if (!Function) {
+    return newError("not a function %s", Fn->type().c_str());
+  }
+
+  auto ExtendedEnv = extendFunctionEnv(Function, Args);
+  auto Evaluated = eval(Function->Body.get(), ExtendedEnv);
+  return unwrapReturnValue(Evaluated);
 }
 
 } // namespace
@@ -362,6 +419,13 @@ std::shared_ptr<object::Object> eval(ast::Node *Node,
     if (Args.size() == 1 && isError(Args.front())) {
       return Args.front();
     }
+
+    return applyFunction(Function, Args);
+  }
+
+  const auto *String = dynamic_cast<const ast::String *>(Node);
+  if (String) {
+    return std::make_shared<object::String>(String->Value);
   }
 
   return nullptr;

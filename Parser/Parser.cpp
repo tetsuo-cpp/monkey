@@ -32,6 +32,7 @@ Parser::Parser(lexer::Lexer &L) : L(L) {
                  [this]() { return parsePrefixExpression(); });
   registerPrefix(TokenType::TRUE, [this]() { return parseBoolean(); });
   registerPrefix(TokenType::FALSE, [this]() { return parseBoolean(); });
+  registerPrefix(TokenType::STRING, [this]() { return parseStringLiteral(); });
   registerPrefix(TokenType::LPAREN,
                  [this]() { return parseGroupedExpression(); });
   registerPrefix(TokenType::IF, [this]() { return parseIfExpression(); });
@@ -214,6 +215,10 @@ Parser::parseInfixExpression(std::unique_ptr<ast::Expression> Left) {
 
 std::unique_ptr<ast::Expression> Parser::parseBoolean() {
   return std::make_unique<ast::Boolean>(CurToken, curTokenIs(TokenType::TRUE));
+}
+
+std::unique_ptr<ast::Expression> Parser::parseStringLiteral() {
+  return std::make_unique<ast::String>(CurToken, CurToken.Literal);
 }
 
 std::unique_ptr<ast::Expression> Parser::parseGroupedExpression() {

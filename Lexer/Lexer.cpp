@@ -79,6 +79,10 @@ Token Lexer::nextToken() {
   case '}':
     Tok = Token(TokenType::RBRACE, Current);
     break;
+  case '\"':
+    Tok.Type = TokenType::STRING;
+    Tok.Literal = readString();
+    break;
   default:
     if (isLetter(Current)) {
       Tok.Literal = readIdentifier();
@@ -141,6 +145,19 @@ void Lexer::skipWhitespace() {
   while (std::isspace(Current)) {
     readChar();
   }
+}
+
+std::string Lexer::readString() {
+  std::string Value;
+  assert(Current == '\"');
+  readChar();
+
+  while (Current != '\"' && Current != 0) {
+    Value.push_back(Current);
+    readChar();
+  }
+
+  return Value;
 }
 
 } // namespace monkey::lexer

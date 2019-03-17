@@ -85,6 +85,8 @@ const char *tokenTypeToString(TokenType Type) {
     return "ELSE";
   case TokenType::RETURN:
     return "RETURN";
+  case TokenType::STRING:
+    return "STRING";
   }
 
   return "UNKNOWN";

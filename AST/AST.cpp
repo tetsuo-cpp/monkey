@@ -100,6 +100,10 @@ const std::string &Boolean::tokenLiteral() const { return Tok.Literal; }
 
 std::string Boolean::string() const { return Tok.Literal; }
 
+const std::string &String::tokenLiteral() const { return Tok.Literal; }
+
+std::string String::string() const { return Tok.Literal; }
+
 FunctionLiteral::FunctionLiteral(
     Token Tok, std::vector<std::unique_ptr<Identifier>> &&Parameters,
     std::unique_ptr<BlockStatement> Body)
