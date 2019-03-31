@@ -16,6 +16,131 @@ std::shared_ptr<object::Error> newError(const char *Format, ...) {
   return std::make_shared<object::Error>(Error);
 }
 
+const std::vector<std::pair<std::string, std::shared_ptr<object::BuiltIn>>>
+    BuiltIns = {
+        {"len",
+         std::make_shared<object::BuiltIn>(
+             [](const std::vector<std::shared_ptr<object::Object>> &Args)
+                 -> std::shared_ptr<object::Object> {
+               if (Args.size() != 1) {
+                 return newError("wrong number of arguments. got=%d, want=1",
+                                 Args.size());
+               }
+
+               const auto *String =
+                   dynamic_cast<const object::String *>(Args.front().get());
+               if (String) {
+                 return std::make_shared<object::Integer>(String->Value.size());
+               }
+
+               const auto *Array =
+                   dynamic_cast<const object::Array *>(Args.front().get());
+               if (Array) {
+                 return std::make_shared<object::Integer>(
+                     Array->Elements.size());
+               }
+
+               return newError("argument to \"len\" not supported, got %s",
+                               Args.front()->type().c_str());
+             })},
+        {"first",
+         std::make_shared<object::BuiltIn>(
+             [](const std::vector<std::shared_ptr<object::Object>> &Args)
+                 -> std::shared_ptr<object::Object> {
+               if (Args.size() != 1) {
+                 return newError("wrong number of arguments. got=%d, want=1",
+                                 Args.size());
+               }
+
+               if (Args.front()->type() != object::ARRAY_OBJ) {
+                 return newError("argument to \"first\" must be ARRAY, got %s",
+                                 Args.front()->type().c_str());
+               }
+
+               const auto *Array =
+                   dynamic_cast<const object::Array *>(Args.front().get());
+               assert(Array);
+               if (!Array->Elements.empty()) {
+                 return Array->Elements.front();
+               }
+
+               return std::make_shared<object::Null>();
+             })},
+        {"last",
+         std::make_shared<object::BuiltIn>(
+             [](const std::vector<std::shared_ptr<object::Object>> &Args)
+                 -> std::shared_ptr<object::Object> {
+               if (Args.size() != 1) {
+                 return newError("wrong number of arguments. got=%d, want=1",
+                                 Args.size());
+               }
+
+               if (Args.front()->type() != object::ARRAY_OBJ) {
+                 return newError("argument to \"last\" must be ARRAY, got %s",
+                                 Args.front()->type().c_str());
+               }
+
+               const auto *Array =
+                   dynamic_cast<const object::Array *>(Args.front().get());
+               assert(Array);
+               if (!Array->Elements.empty()) {
+                 return Array->Elements.back();
+               }
+
+               return std::make_shared<object::Null>();
+             })},
+        {"rest",
+         std::make_shared<object::BuiltIn>(
+             [](const std::vector<std::shared_ptr<object::Object>> &Args)
+                 -> std::shared_ptr<object::Object> {
+               if (Args.size() != 1) {
+                 return newError("wrong number of arguments. got=%d, want=1",
+                                 Args.size());
+               }
+
+               if (Args.front()->type() != object::ARRAY_OBJ) {
+                 return newError("argument to \"rest\" must be ARRAY, got %s",
+                                 Args.front()->type().c_str());
+               }
+
+               const auto *Array =
+                   dynamic_cast<const object::Array *>(Args.front().get());
+               assert(Array);
+               if (!Array->Elements.empty()) {
+                 std::vector<std::shared_ptr<object::Object>> Rest;
+                 std::copy(Array->Elements.begin() + 1, Array->Elements.end(),
+                           std::back_inserter(Rest));
+                 return std::make_shared<object::Array>(std::move(Rest));
+               }
+
+               return std::make_shared<object::Null>();
+             })},
+        {"push",
+         std::make_shared<object::BuiltIn>(
+             [](const std::vector<std::shared_ptr<object::Object>> &Args)
+                 -> std::shared_ptr<object::Object> {
+               if (Args.size() != 2) {
+                 return newError("wrong number of arguments. got=%d, want=2",
+                                 Args.size());
+               }
+
+               if (Args.front()->type() != object::ARRAY_OBJ) {
+                 return newError("argument to \"push\" must be ARRAY, got %s",
+                                 Args.front()->type().c_str());
+               }
+
+               const auto *Array =
+                   dynamic_cast<const object::Array *>(Args.front().get());
+               assert(Array);
+               if (!Array->Elements.empty()) {
+                 auto Pushed = Array->Elements;
+                 Pushed.push_back(Args.at(1));
+                 return std::make_shared<object::Array>(std::move(Pushed));
+               }
+
+               return std::make_shared<object::Null>();
+             })}};
+
 bool isError(const std::shared_ptr<object::Object> &Obj) {
   return Obj && Obj->type() == object::ERROR_OBJ;
 }
@@ -255,11 +380,22 @@ std::shared_ptr<object::Object>
 evalIdentifier(const ast::Identifier *Identifier,
                environment::Environment &Env) {
   const auto &Value = Env.get(Identifier->Value);
-  if (!Value) {
-    return newError("identifier not found: %s", Identifier->Value.c_str());
+  if (Value) {
+    return Value;
   }
 
-  return Value;
+  const auto BIter = std::find_if(
+      BuiltIns.begin(), BuiltIns.end(),
+      [Identifier](
+          const std::pair<std::string, std::shared_ptr<object::BuiltIn>> &Fn) {
+        return Fn.first == Identifier->Value;
+      });
+
+  if (BIter != BuiltIns.end()) {
+    return BIter->second;
+  }
+
+  return newError("identifier not found: %s", Identifier->Value.c_str());
 }
 
 std::vector<std::shared_ptr<object::Object>>
@@ -277,6 +413,33 @@ evalExpressions(const std::vector<std::unique_ptr<ast::Expression>> &Arguments,
   }
 
   return Results;
+}
+
+std::shared_ptr<object::Object>
+evalArrayIndexExpression(const std::shared_ptr<object::Object> &Array,
+                         const std::shared_ptr<object::Object> &Index) {
+  const auto *ArrayObj = dynamic_cast<const object::Array *>(Array.get());
+  assert(ArrayObj);
+  const auto *Idx = dynamic_cast<const object::Integer *>(Index.get());
+  assert(Idx);
+
+  if (Idx->Value < 0 ||
+      Idx->Value >= static_cast<int64_t>(ArrayObj->Elements.size())) {
+    return std::make_shared<object::Null>();
+  }
+
+  return ArrayObj->Elements.at(Idx->Value);
+}
+
+std::shared_ptr<object::Object>
+evalIndexExpression(const std::shared_ptr<object::Object> &Left,
+                    const std::shared_ptr<object::Object> &Index) {
+  if (Left->type() == object::ARRAY_OBJ &&
+      Index->type() == object::INTEGER_OBJ) {
+    return evalArrayIndexExpression(Left, Index);
+  }
+
+  return newError("index operator not supported: %s", Left->type().c_str());
 }
 
 environment::Environment
@@ -308,13 +471,18 @@ std::shared_ptr<object::Object>
 applyFunction(const std::shared_ptr<object::Object> &Fn,
               const std::vector<std::shared_ptr<object::Object>> &Args) {
   const auto *Function = dynamic_cast<object::Function *>(Fn.get());
-  if (!Function) {
-    return newError("not a function %s", Fn->type().c_str());
+  if (Function) {
+    auto ExtendedEnv = extendFunctionEnv(Function, Args);
+    auto Evaluated = eval(Function->Body.get(), ExtendedEnv);
+    return unwrapReturnValue(Evaluated);
   }
 
-  auto ExtendedEnv = extendFunctionEnv(Function, Args);
-  auto Evaluated = eval(Function->Body.get(), ExtendedEnv);
-  return unwrapReturnValue(Evaluated);
+  const auto *BuiltIn = dynamic_cast<object::BuiltIn *>(Fn.get());
+  if (BuiltIn) {
+    return BuiltIn->Fn(Args);
+  }
+
+  return newError("not a function %s", Fn->type().c_str());
 }
 
 } // namespace
@@ -426,6 +594,31 @@ std::shared_ptr<object::Object> eval(ast::Node *Node,
   const auto *String = dynamic_cast<const ast::String *>(Node);
   if (String) {
     return std::make_shared<object::String>(String->Value);
+  }
+
+  const auto *Array = dynamic_cast<const ast::ArrayLiteral *>(Node);
+  if (Array) {
+    auto Elements = evalExpressions(Array->Elements, Env);
+    if (Elements.size() == 1 && isError(Elements.front())) {
+      return Elements.front();
+    }
+
+    return std::make_shared<object::Array>(std::move(Elements));
+  }
+
+  const auto *IndexExp = dynamic_cast<const ast::IndexExpression *>(Node);
+  if (IndexExp) {
+    auto Left = eval(IndexExp->Left.get(), Env);
+    if (isError(Left)) {
+      return Left;
+    }
+
+    auto Index = eval(IndexExp->Index.get(), Env);
+    if (isError(Index)) {
+      return Index;
+    }
+
+    return evalIndexExpression(Left, Index);
   }
 
   return nullptr;

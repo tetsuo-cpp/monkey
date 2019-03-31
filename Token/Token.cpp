@@ -63,6 +63,8 @@ const char *tokenTypeToString(TokenType Type) {
     return ",";
   case TokenType::SEMICOLON:
     return ";";
+  case TokenType::COLON:
+    return ":";
   case TokenType::LPAREN:
     return "(";
   case TokenType::RPAREN:
@@ -87,6 +89,10 @@ const char *tokenTypeToString(TokenType Type) {
     return "RETURN";
   case TokenType::STRING:
     return "STRING";
+  case TokenType::LBRACKET:
+    return "[";
+  case TokenType::RBRACKET:
+    return "]";
   }
 
   return "UNKNOWN";

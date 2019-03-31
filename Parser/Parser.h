@@ -21,7 +21,8 @@ enum class Precedence {
   SUM,
   PRODUCT,
   PREFIX,
-  CALL
+  CALL,
+  INDEX
 };
 
 class Parser {
@@ -52,7 +53,10 @@ private:
   std::vector<std::unique_ptr<ast::Identifier>> parseFunctionParameters();
   std::unique_ptr<ast::Expression>
       parseCallExpression(std::unique_ptr<ast::Expression>);
-  std::vector<std::unique_ptr<ast::Expression>> parseCallArguments();
+  std::unique_ptr<ast::Expression> parseArrayLiteral();
+  std::vector<std::unique_ptr<ast::Expression>> parseExpressionList(TokenType);
+  std::unique_ptr<ast::Expression>
+      parseIndexExpression(std::unique_ptr<ast::Expression>);
   void nextToken();
   bool curTokenIs(TokenType) const;
   bool peekTokenIs(TokenType) const;

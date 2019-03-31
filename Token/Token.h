@@ -22,6 +22,7 @@ enum class TokenType {
   NOT_EQ,
   COMMA,
   SEMICOLON,
+  COLON,
   LPAREN,
   RPAREN,
   LBRACE,
@@ -34,7 +35,9 @@ enum class TokenType {
   IF,
   ELSE,
   RETURN,
-  STRING
+  STRING,
+  LBRACKET,
+  RBRACKET
 };
 
 const char *tokenTypeToString(TokenType Type);

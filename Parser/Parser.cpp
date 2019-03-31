@@ -17,7 +17,8 @@ const std::vector<std::pair<TokenType, Precedence>> Precedences = {
     {TokenType::MINUS, Precedence::SUM},
     {TokenType::SLASH, Precedence::PRODUCT},
     {TokenType::ASTERISK, Precedence::PRODUCT},
-    {TokenType::LPAREN, Precedence::CALL}};
+    {TokenType::LPAREN, Precedence::CALL},
+    {TokenType::LBRACKET, Precedence::INDEX}};
 
 } // namespace
 
@@ -38,6 +39,7 @@ Parser::Parser(lexer::Lexer &L) : L(L) {
   registerPrefix(TokenType::IF, [this]() { return parseIfExpression(); });
   registerPrefix(TokenType::FUNCTION,
                  [this]() { return parseFunctionLiteral(); });
+  registerPrefix(TokenType::LBRACKET, [this]() { return parseArrayLiteral(); });
   registerInfix(TokenType::PLUS, [this](std::unique_ptr<ast::Expression> Left) {
     return parseInfixExpression(std::move(Left));
   });
@@ -69,6 +71,10 @@ Parser::Parser(lexer::Lexer &L) : L(L) {
   registerInfix(TokenType::LPAREN,
                 [this](std::unique_ptr<ast::Expression> Left) {
                   return parseCallExpression(std::move(Left));
+                });
+  registerInfix(TokenType::LBRACKET,
+                [this](std::unique_ptr<ast::Expression> Left) {
+                  return parseIndexExpression(std::move(Left));
                 });
 }
 
@@ -335,32 +341,52 @@ Parser::parseFunctionParameters() {
 std::unique_ptr<ast::Expression>
 Parser::parseCallExpression(std::unique_ptr<ast::Expression> Function) {
   auto FunctionTok = CurToken;
-  return std::make_unique<ast::CallExpression>(FunctionTok, std::move(Function),
-                                               parseCallArguments());
+  return std::make_unique<ast::CallExpression>(
+      FunctionTok, std::move(Function), parseExpressionList(TokenType::RPAREN));
 }
 
-std::vector<std::unique_ptr<ast::Expression>> Parser::parseCallArguments() {
-  std::vector<std::unique_ptr<ast::Expression>> Args;
+std::unique_ptr<ast::Expression> Parser::parseArrayLiteral() {
+  return std::make_unique<ast::ArrayLiteral>(
+      CurToken, parseExpressionList(TokenType::RBRACKET));
+}
 
-  if (peekTokenIs(TokenType::RPAREN)) {
+std::vector<std::unique_ptr<ast::Expression>>
+Parser::parseExpressionList(TokenType End) {
+  std::vector<std::unique_ptr<ast::Expression>> List;
+
+  if (peekTokenIs(End)) {
     nextToken();
-    return Args;
+    return List;
   }
 
   nextToken();
-  Args.push_back(parseExpression(Precedence::LOWEST));
+  List.push_back(parseExpression(Precedence::LOWEST));
 
   while (peekTokenIs(TokenType::COMMA)) {
     nextToken();
     nextToken();
-    Args.push_back(parseExpression(Precedence::LOWEST));
+    List.push_back(parseExpression(Precedence::LOWEST));
   }
 
-  if (!expectPeek(TokenType::RPAREN)) {
+  if (!expectPeek(End)) {
     return {};
   }
 
-  return Args;
+  return List;
+}
+
+std::unique_ptr<ast::Expression>
+Parser::parseIndexExpression(std::unique_ptr<ast::Expression> Left) {
+  auto Exp = std::make_unique<ast::IndexExpression>(CurToken, std::move(Left),
+                                                    nullptr);
+
+  nextToken();
+  Exp->Index = parseExpression(Precedence::LOWEST);
+  if (!expectPeek(TokenType::RBRACKET)) {
+    return nullptr;
+  }
+
+  return Exp;
 }
 
 void Parser::nextToken() {

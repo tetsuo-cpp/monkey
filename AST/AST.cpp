@@ -223,4 +223,34 @@ std::string CallExpression::string() const {
   return SS.str();
 }
 
+ArrayLiteral::ArrayLiteral(Token Tok,
+                           std::vector<std::unique_ptr<Expression>> &&Elements)
+    : Tok(Tok), Elements(std::move(Elements)) {}
+
+const std::string &ArrayLiteral::tokenLiteral() const { return Tok.Literal; }
+
+std::string ArrayLiteral::string() const {
+  std::stringstream SS;
+  SS << "[";
+  for (const auto &E : Elements) {
+    SS << E->string();
+    if (E.get() != Elements.back().get()) {
+      SS << ", ";
+    }
+  }
+
+  SS << "]";
+  return SS.str();
+}
+
+IndexExpression::IndexExpression(Token Tok, std::unique_ptr<Expression> Left,
+                                 std::unique_ptr<Expression> Index)
+    : Tok(Tok), Left(std::move(Left)), Index(std::move(Index)) {}
+
+const std::string &IndexExpression::tokenLiteral() const { return Tok.Literal; }
+
+std::string IndexExpression::string() const {
+  return "(" + Left->string() + "[" + Index->string() + "])";
+}
+
 } // namespace monkey::ast

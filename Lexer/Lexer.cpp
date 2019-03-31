@@ -64,6 +64,9 @@ Token Lexer::nextToken() {
   case ';':
     Tok = Token(TokenType::SEMICOLON, Current);
     break;
+  case ':':
+    Tok = Token(TokenType::COLON, Current);
+    break;
   case '(':
     Tok = Token(TokenType::LPAREN, Current);
     break;
@@ -78,6 +81,12 @@ Token Lexer::nextToken() {
     break;
   case '}':
     Tok = Token(TokenType::RBRACE, Current);
+    break;
+  case '[':
+    Tok = Token(TokenType::LBRACKET, Current);
+    break;
+  case ']':
+    Tok = Token(TokenType::RBRACKET, Current);
     break;
   case '\"':
     Tok.Type = TokenType::STRING;

@@ -11,6 +11,8 @@ const std::string RETURN_VALUE_OBJ("RETURN_VALUE");
 const std::string ERROR_OBJ("ERROR");
 const std::string FUNCTION_OBJ("FUNCTION");
 const std::string STRING_OBJ("STRING");
+const std::string BUILTIN_OBJ("BUILTIN");
+const std::string ARRAY_OBJ("ARRAY");
 
 Integer::Integer(int64_t Value) : Value(Value) {}
 
@@ -65,5 +67,30 @@ std::string Function::inspect() const {
 const ObjectType &String::type() const { return STRING_OBJ; }
 
 std::string String::inspect() const { return Value; }
+
+BuiltIn::BuiltIn(const BuiltInFunction &Fn) : Fn(Fn) {}
+
+const ObjectType &BuiltIn::type() const { return BUILTIN_OBJ; }
+
+std::string BuiltIn::inspect() const { return "builtin string"; }
+
+Array::Array(std::vector<std::shared_ptr<object::Object>> &&Elements)
+    : Elements(std::move(Elements)) {}
+
+const ObjectType &Array::type() const { return ARRAY_OBJ; }
+
+std::string Array::inspect() const {
+  std::stringstream SS;
+  SS << "[";
+  for (const auto &E : Elements) {
+    SS << E->inspect();
+    if (E.get() != Elements.back().get()) {
+      SS << ", ";
+    }
+  }
+
+  SS << "]";
+  return SS.str();
+}
 
 } // namespace monkey::object

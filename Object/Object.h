@@ -16,6 +16,8 @@ extern const std::string RETURN_VALUE_OBJ;
 extern const std::string ERROR_OBJ;
 extern const std::string FUNCTION_OBJ;
 extern const std::string STRING_OBJ;
+extern const std::string BUILTIN_OBJ;
+extern const std::string ARRAY_OBJ;
 
 struct Integer : public Object {
   explicit Integer(int64_t);
@@ -95,6 +97,31 @@ struct String : public Object {
   std::string inspect() const override;
 
   const std::string Value;
+};
+
+using BuiltInFunction = std::function<std::shared_ptr<Object>(
+    const std::vector<std::shared_ptr<Object>> &)>;
+
+struct BuiltIn : public Object {
+  explicit BuiltIn(const BuiltInFunction &);
+  virtual ~BuiltIn() = default;
+
+  // Object impl.
+  const ObjectType &type() const override;
+  std::string inspect() const override;
+
+  BuiltInFunction Fn;
+};
+
+struct Array : public Object {
+  Array(std::vector<std::shared_ptr<object::Object>> &&);
+  virtual ~Array() = default;
+
+  // Object impl.
+  const ObjectType &type() const override;
+  std::string inspect() const override;
+
+  const std::vector<std::shared_ptr<object::Object>> Elements;
 };
 
 } // namespace monkey::object

@@ -143,7 +143,9 @@ TEST(EvaluatorTests, testErrorHandling) {
        "}",
        "unknown operator: BOOLEAN + BOOLEAN"},
       {"foobar", "identifier not found: foobar"},
-      {"\"Hello\" - \"World\"", "unknown operator: STRING - STRING"}};
+      {"\"Hello\" - \"World\"", "unknown operator: STRING - STRING"},
+      {"len(1)", "argument to \"len\" not supported, got INTEGER"},
+      {"len(\"one\", \"two\")", "wrong number of arguments. got=2, want=1"}};
 
   for (const auto &Test : Tests) {
     auto Evaluated = testEval(std::get<0>(Test));
@@ -217,6 +219,54 @@ TEST(EvaluatorTests, testStringConcatenation) {
   const auto *S = dynamic_cast<const object::String *>(Evaluated.get());
   EXPECT_THAT(S, testing::NotNull());
   EXPECT_EQ(S->Value, "Hello World");
+}
+
+TEST(EvaluatorTests, testBuiltinFunctions) {
+  const std::vector<std::pair<std::string, int64_t>> Tests = {
+      {"len(\"\")", 0}, {"len(\"four\")", 4}, {"len(\"hello world\")", 11}};
+
+  for (const auto &Test : Tests) {
+    auto Evaluated = testEval(std::get<0>(Test));
+    const auto *S = dynamic_cast<const object::Integer *>(Evaluated.get());
+    EXPECT_THAT(S, testing::NotNull());
+    EXPECT_EQ(S->Value, std::get<1>(Test));
+  }
+}
+
+TEST(EvaluatorTests, testArrayLiterals) {
+  const std::string Input("[1, 2 * 2, 3 + 3]");
+
+  auto Evaluated = testEval(Input);
+  const auto *AL = dynamic_cast<const object::Array *>(Evaluated.get());
+  EXPECT_THAT(AL, testing::NotNull());
+  EXPECT_EQ(AL->Elements.size(), 3);
+  testIntegerObject(AL->Elements.at(0).get(), 1);
+  testIntegerObject(AL->Elements.at(1).get(), 4);
+  testIntegerObject(AL->Elements.at(2).get(), 6);
+}
+
+TEST(EvaluatorTests, testArrayIndexExpressions) {
+  const std::vector<std::pair<std::string, int64_t>> Tests = {
+      {"[1, 2, 3][0]", 1},
+      {"[1, 2, 3][1]", 2},
+      {"[1, 2, 3][2]", 3},
+      {"let i = 0; [1][i];", 1},
+      {"[1, 2, 3][1 + 1]", 3},
+      {"let myArray = [1, 2, 3]; myArray[2];", 3},
+      {"let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6},
+      {"let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2}};
+
+  for (const auto &Test : Tests) {
+    auto Evaluated = testEval(std::get<0>(Test));
+    testIntegerObject(Evaluated.get(), std::get<1>(Test));
+  }
+
+  const std::vector<std::string> NullTests = {"[1, 2, 3][3]", "[1, 2, 3][-1]"};
+
+  for (const auto &NullTest : NullTests) {
+    auto Evaluated = testEval(NullTest);
+    testNullObject(Evaluated.get());
+  }
 }
 
 } // namespace monkey::evaluator

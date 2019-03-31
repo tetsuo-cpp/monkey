@@ -218,4 +218,32 @@ struct CallExpression : public Expression {
   std::vector<std::unique_ptr<Expression>> Arguments;
 };
 
+struct ArrayLiteral : public Expression {
+  ArrayLiteral() = default;
+  ArrayLiteral(Token, std::vector<std::unique_ptr<Expression>> &&);
+  virtual ~ArrayLiteral() = default;
+
+  // Node impl.
+  const std::string &tokenLiteral() const override;
+  std::string string() const override;
+
+  Token Tok;
+  std::vector<std::unique_ptr<Expression>> Elements;
+};
+
+struct IndexExpression : public Expression {
+  IndexExpression() = default;
+  IndexExpression(Token, std::unique_ptr<Expression>,
+                  std::unique_ptr<Expression>);
+  ~IndexExpression() = default;
+
+  // Node impl.
+  const std::string &tokenLiteral() const override;
+  std::string string() const override;
+
+  Token Tok;
+  std::unique_ptr<Expression> Left;
+  std::unique_ptr<Expression> Index;
+};
+
 } // namespace monkey::ast

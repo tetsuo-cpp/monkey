@@ -289,7 +289,10 @@ TEST(ParserTests, testOperatorPrecedenceParsing) {
       {"a + add(b * c) + d", "((a + add((b * c))) + d)"},
       {"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
        "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"},
-      {"add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))"}};
+      {"add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))"},
+      {"a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)"},
+      {"add(a * b[2], b[1], 2 * [1, 2][1])",
+       "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))"}};
 
   for (const auto &Test : Tests) {
     lexer::Lexer L(std::get<0>(Test));
@@ -474,6 +477,48 @@ TEST(ParserTests, testStringLiteralExpression) {
   const auto *StringLiteral = dynamic_cast<const ast::String *>(ES->Expr.get());
   EXPECT_THAT(StringLiteral, testing::NotNull());
   EXPECT_EQ(StringLiteral->Value, "hello world");
+}
+
+TEST(ParserTests, testParsingArrayLiterals) {
+  const std::string Input("[1, 2 * 2, 3 + 3]");
+
+  lexer::Lexer L(Input);
+  parser::Parser P(L);
+  auto Program = P.parseProgram();
+  checkParserErrors(P);
+
+  EXPECT_EQ(Program->Statements.size(), 1);
+
+  const auto *ES = dynamic_cast<const ast::ExpressionStatement *>(
+      Program->Statements.front().get());
+  EXPECT_THAT(ES, testing::NotNull());
+
+  const auto *AL = dynamic_cast<const ast::ArrayLiteral *>(ES->Expr.get());
+  EXPECT_THAT(AL, testing::NotNull());
+  EXPECT_EQ(AL->Elements.size(), 3);
+  testIntegerLiteral(AL->Elements.at(0).get(), 1);
+  testInfixExpression(AL->Elements.at(1).get(), (int64_t)2, "*", (int64_t)2);
+  testInfixExpression(AL->Elements.at(2).get(), (int64_t)3, "+", (int64_t)3);
+}
+
+TEST(ParserTests, testParsingIndexExpressions) {
+  const std::string Input("myArray[1 + 1]");
+
+  lexer::Lexer L(Input);
+  parser::Parser P(L);
+  auto Program = P.parseProgram();
+  checkParserErrors(P);
+
+  EXPECT_EQ(Program->Statements.size(), 1);
+
+  const auto *ES = dynamic_cast<const ast::ExpressionStatement *>(
+      Program->Statements.front().get());
+  EXPECT_THAT(ES, testing::NotNull());
+
+  const auto *IE = dynamic_cast<const ast::IndexExpression *>(ES->Expr.get());
+  EXPECT_THAT(IE, testing::NotNull());
+  testIdentifier(IE->Left.get(), "myArray");
+  testInfixExpression(IE->Index.get(), (int64_t)1, "+", (int64_t)1);
 }
 
 } // namespace monkey::parser::test
