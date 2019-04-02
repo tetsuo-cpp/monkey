@@ -130,10 +130,7 @@ struct Array : public Object {
 struct HashKey {
   explicit HashKey(const std::shared_ptr<object::Object> &);
 
-  bool operator==(const HashKey &Other) {
-    static_cast<void>(Other);
-    return true;
-  }
+  bool operator==(const HashKey &);
 
   const ObjectType Type;
   const std::shared_ptr<object::Object> Key;
@@ -142,10 +139,7 @@ struct HashKey {
 bool hasHashKey(const HashKey &);
 
 struct HashKeyHasher {
-  size_t operator()(const HashKey &Hash) const {
-    const auto TypeHash = std::hash<std::string>{}(Hash.Type);
-    return std::hash<size_t>{}(TypeHash + Hash.Key->hash());
-  }
+  size_t operator()(const HashKey &) const;
 };
 
 struct Hash : public Object {

@@ -102,9 +102,18 @@ std::string Array::inspect() const {
 HashKey::HashKey(const std::shared_ptr<object::Object> &Key)
     : Type(Key->type()), Key(Key) {}
 
+bool HashKey::operator==(const HashKey &Other) {
+  return Type == Other.Type && Key->hash() == Other.Key->hash();
+}
+
 bool hasHashKey(const HashKey &Hash) {
   return Hash.Key->type() == BOOLEAN_OBJ || Hash.Key->type() == INTEGER_OBJ ||
          Hash.Key->type() == STRING_OBJ;
+}
+
+size_t HashKeyHasher::operator()(const HashKey &Hash) const {
+  const auto TypeHash = std::hash<std::string>{}(Hash.Type);
+  return std::hash<size_t>{}(TypeHash + Hash.Key->hash());
 }
 
 } // namespace monkey::object
