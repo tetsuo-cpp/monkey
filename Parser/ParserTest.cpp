@@ -521,4 +521,106 @@ TEST(ParserTests, testParsingIndexExpressions) {
   testInfixExpression(IE->Index.get(), (int64_t)1, "+", (int64_t)1);
 }
 
+TEST(ParserTests, testParsingHashLiteralsStringKeys) {
+  const std::string Input("{\"one\": 1, \"two\": 2, \"three\": 3}");
+
+  lexer::Lexer L(Input);
+  parser::Parser P(L);
+  auto Program = P.parseProgram();
+  checkParserErrors(P);
+
+  EXPECT_EQ(Program->Statements.size(), 1);
+
+  const auto *ES = dynamic_cast<const ast::ExpressionStatement *>(
+      Program->Statements.front().get());
+  EXPECT_THAT(ES, testing::NotNull());
+
+  const auto *HL = dynamic_cast<const ast::HashLiteral *>(ES->Expr.get());
+  EXPECT_THAT(HL, testing::NotNull());
+  EXPECT_EQ(HL->Pairs.size(), 3);
+
+  const std::vector<std::pair<std::string, int64_t>> Expected = {
+      {"one", 1}, {"two", 2}, {"three", 3}};
+
+  for (const auto &P : HL->Pairs) {
+    const auto *Key = dynamic_cast<const ast::String *>(P.first.get());
+    EXPECT_THAT(Key, testing::NotNull());
+    const auto &KeyVal = Key->Value;
+
+    const auto Iter =
+        std::find_if(Expected.begin(), Expected.end(),
+                     [&KeyVal](const std::pair<std::string, int64_t> &E) {
+                       return E.first == KeyVal;
+                     });
+
+    EXPECT_NE(Iter, Expected.end());
+    EXPECT_EQ(Iter->first, KeyVal);
+    testIntegerLiteral(P.second.get(), Iter->second);
+  }
+}
+
+TEST(ParserTests, testParsingEmptyHashLiteral) {
+  const std::string Input("{}");
+
+  lexer::Lexer L(Input);
+  parser::Parser P(L);
+  auto Program = P.parseProgram();
+  checkParserErrors(P);
+
+  const auto *ES = dynamic_cast<const ast::ExpressionStatement *>(
+      Program->Statements.front().get());
+  EXPECT_THAT(ES, testing::NotNull());
+
+  const auto *HL = dynamic_cast<const ast::HashLiteral *>(ES->Expr.get());
+  EXPECT_THAT(HL, testing::NotNull());
+  EXPECT_TRUE(HL->Pairs.empty());
+}
+
+TEST(ParserTests, testParsingHashLiteralsWithExpressions) {
+  const std::string Input(
+      "{\"one\": 0 + 1, \"two\": 10 - 8, \"three\": 15 / 5}");
+
+  lexer::Lexer L(Input);
+  parser::Parser P(L);
+  auto Program = P.parseProgram();
+  checkParserErrors(P);
+
+  const auto *ES = dynamic_cast<const ast::ExpressionStatement *>(
+      Program->Statements.front().get());
+  EXPECT_THAT(ES, testing::NotNull());
+
+  const auto *HL = dynamic_cast<const ast::HashLiteral *>(ES->Expr.get());
+  EXPECT_THAT(HL, testing::NotNull());
+  EXPECT_EQ(HL->Pairs.size(), 3);
+
+  std::vector<std::pair<std::string, std::function<void(ast::Expression *)>>>
+      TestFuncs = {{"one",
+                    [](ast::Expression *Expr) {
+                      testInfixExpression(Expr, (int64_t)0, "+", (int64_t)1);
+                    }},
+                   {"two",
+                    [](ast::Expression *Expr) {
+                      testInfixExpression(Expr, (int64_t)10, "-", (int64_t)8);
+                    }},
+                   {"three", [](ast::Expression *Expr) {
+                      testInfixExpression(Expr, (int64_t)15, "/", (int64_t)5);
+                    }}};
+
+  for (const auto &P : HL->Pairs) {
+    const auto *Key = dynamic_cast<const ast::String *>(P.first.get());
+    EXPECT_THAT(Key, testing::NotNull());
+    const auto &KeyVal = Key->Value;
+
+    const auto Iter = std::find_if(
+        TestFuncs.begin(), TestFuncs.end(),
+        [&KeyVal](
+            const std::pair<std::string, std::function<void(ast::Expression *)>>
+                &F) { return F.first == KeyVal; });
+
+    EXPECT_NE(Iter, TestFuncs.end());
+    EXPECT_EQ(Iter->first, KeyVal);
+    Iter->second(P.second.get());
+  }
+}
+
 } // namespace monkey::parser::test

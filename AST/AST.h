@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace monkey::ast {
@@ -244,6 +245,20 @@ struct IndexExpression : public Expression {
   Token Tok;
   std::unique_ptr<Expression> Left;
   std::unique_ptr<Expression> Index;
+};
+
+class HashLiteral : public Expression {
+public:
+  HashLiteral(Token);
+  virtual ~HashLiteral() = default;
+
+  // Node impl.
+  const std::string &tokenLiteral() const override;
+  std::string string() const override;
+
+  Token Tok;
+  std::unordered_map<std::unique_ptr<Expression>, std::unique_ptr<Expression>>
+      Pairs;
 };
 
 } // namespace monkey::ast

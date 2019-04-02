@@ -40,6 +40,7 @@ Parser::Parser(lexer::Lexer &L) : L(L) {
   registerPrefix(TokenType::FUNCTION,
                  [this]() { return parseFunctionLiteral(); });
   registerPrefix(TokenType::LBRACKET, [this]() { return parseArrayLiteral(); });
+  registerPrefix(TokenType::LBRACE, [this]() { return parseHashLiteral(); });
   registerInfix(TokenType::PLUS, [this](std::unique_ptr<ast::Expression> Left) {
     return parseInfixExpression(std::move(Left));
   });
@@ -387,6 +388,33 @@ Parser::parseIndexExpression(std::unique_ptr<ast::Expression> Left) {
   }
 
   return Exp;
+}
+
+std::unique_ptr<ast::Expression> Parser::parseHashLiteral() {
+  auto Hash = std::make_unique<ast::HashLiteral>(CurToken);
+
+  while (!peekTokenIs(TokenType::RBRACE)) {
+    nextToken();
+    auto Key = parseExpression(Precedence::LOWEST);
+
+    if (!expectPeek(TokenType::COLON)) {
+      return nullptr;
+    }
+
+    nextToken();
+    auto Value = parseExpression(Precedence::LOWEST);
+
+    Hash->Pairs[std::move(Key)] = std::move(Value);
+
+    if (!peekTokenIs(TokenType::RBRACE) && !expectPeek(TokenType::COMMA)) {
+      return nullptr;
+    }
+  }
+  if (!expectPeek(TokenType::RBRACE)) {
+    return nullptr;
+  }
+
+  return Hash;
 }
 
 void Parser::nextToken() {

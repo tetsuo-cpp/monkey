@@ -26,6 +26,7 @@ struct Integer : public Object {
   // Object impl.
   const ObjectType &type() const override;
   std::string inspect() const override;
+  size_t hash() const override;
 
   int64_t Value;
 };
@@ -37,6 +38,7 @@ struct Boolean : public Object {
   // Object impl.
   const ObjectType &type() const override;
   std::string inspect() const override;
+  size_t hash() const override;
 
   bool Value;
 };
@@ -95,6 +97,7 @@ struct String : public Object {
   // Object impl.
   const ObjectType &type() const override;
   std::string inspect() const override;
+  size_t hash() const override;
 
   const std::string Value;
 };
@@ -114,7 +117,7 @@ struct BuiltIn : public Object {
 };
 
 struct Array : public Object {
-  Array(std::vector<std::shared_ptr<object::Object>> &&);
+  explicit Array(std::vector<std::shared_ptr<object::Object>> &&);
   virtual ~Array() = default;
 
   // Object impl.
@@ -122,6 +125,40 @@ struct Array : public Object {
   std::string inspect() const override;
 
   const std::vector<std::shared_ptr<object::Object>> Elements;
+};
+
+struct HashKey {
+  explicit HashKey(const std::shared_ptr<object::Object> &);
+
+  bool operator==(const HashKey &Other) {
+    static_cast<void>(Other);
+    return true;
+  }
+
+  const ObjectType Type;
+  const std::shared_ptr<object::Object> Key;
+};
+
+bool hasHashKey(const HashKey &);
+
+struct HashKeyHasher {
+  size_t operator()(const HashKey &Hash) const {
+    const auto TypeHash = std::hash<std::string>{}(Hash.Type);
+    return std::hash<size_t>{}(TypeHash + Hash.Key->hash());
+  }
+};
+
+struct Hash : public Object {
+  explicit Hash(
+      std::unordered_map<HashKey, std::shared_ptr<object::Object>> &&);
+
+  // Object impl.
+  const ObjectType &type() const override;
+  std::string inspect() const override;
+
+  const std::unordered_map<HashKey, std::shared_ptr<object::Object>,
+                           HashKeyHasher>
+      Pairs;
 };
 
 } // namespace monkey::object

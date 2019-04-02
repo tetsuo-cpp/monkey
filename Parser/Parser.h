@@ -57,6 +57,7 @@ private:
   std::vector<std::unique_ptr<ast::Expression>> parseExpressionList(TokenType);
   std::unique_ptr<ast::Expression>
       parseIndexExpression(std::unique_ptr<ast::Expression>);
+  std::unique_ptr<ast::Expression> parseHashLiteral();
   void nextToken();
   bool curTokenIs(TokenType) const;
   bool peekTokenIs(TokenType) const;

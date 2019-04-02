@@ -253,4 +253,23 @@ std::string IndexExpression::string() const {
   return "(" + Left->string() + "[" + Index->string() + "])";
 }
 
+HashLiteral::HashLiteral(Token Tok) : Tok(Tok) {}
+
+const std::string &HashLiteral::tokenLiteral() const { return Tok.Literal; }
+
+std::string HashLiteral::string() const {
+  std::stringstream SS;
+  SS << "{";
+  for (const auto &P : Pairs) {
+    if (&P != &*Pairs.end()) {
+      SS << ", ";
+    }
+
+    SS << P.first->string() << ":" << P.second->string();
+  }
+
+  SS << "}";
+  return SS.str();
+}
+
 } // namespace monkey::ast

@@ -20,11 +20,15 @@ const ObjectType &Integer::type() const { return INTEGER_OBJ; }
 
 std::string Integer::inspect() const { return std::to_string(Value); }
 
+size_t Integer::hash() const { return std::hash<int64_t>{}(Value); }
+
 Boolean::Boolean(bool Value) : Value(Value) {}
 
 const ObjectType &Boolean::type() const { return BOOLEAN_OBJ; }
 
 std::string Boolean::inspect() const { return Value ? "true" : "false"; }
+
+size_t Boolean::hash() const { return std::hash<bool>{}(Value); }
 
 const ObjectType &Null::type() const { return NULL_OBJ; }
 
@@ -68,6 +72,8 @@ const ObjectType &String::type() const { return STRING_OBJ; }
 
 std::string String::inspect() const { return Value; }
 
+size_t String::hash() const { return std::hash<std::string>{}(Value); }
+
 BuiltIn::BuiltIn(const BuiltInFunction &Fn) : Fn(Fn) {}
 
 const ObjectType &BuiltIn::type() const { return BUILTIN_OBJ; }
@@ -91,6 +97,14 @@ std::string Array::inspect() const {
 
   SS << "]";
   return SS.str();
+}
+
+HashKey::HashKey(const std::shared_ptr<object::Object> &Key)
+    : Type(Key->type()), Key(Key) {}
+
+bool hasHashKey(const HashKey &Hash) {
+  return Hash.Key->type() == BOOLEAN_OBJ || Hash.Key->type() == INTEGER_OBJ ||
+         Hash.Key->type() == STRING_OBJ;
 }
 
 } // namespace monkey::object
