@@ -13,6 +13,7 @@ const std::string FUNCTION_OBJ("FUNCTION");
 const std::string STRING_OBJ("STRING");
 const std::string BUILTIN_OBJ("BUILTIN");
 const std::string ARRAY_OBJ("ARRAY");
+const std::string HASH_OBJ("HASH");
 
 Integer::Integer(int64_t Value) : Value(Value) {}
 
@@ -102,7 +103,7 @@ std::string Array::inspect() const {
 HashKey::HashKey(const std::shared_ptr<object::Object> &Key)
     : Type(Key->type()), Key(Key) {}
 
-bool HashKey::operator==(const HashKey &Other) {
+bool HashKey::operator==(const HashKey &Other) const {
   return Type == Other.Type && Key->hash() == Other.Key->hash();
 }
 
@@ -114,6 +115,30 @@ bool hasHashKey(const HashKey &Hash) {
 size_t HashKeyHasher::operator()(const HashKey &Hash) const {
   const auto TypeHash = std::hash<std::string>{}(Hash.Type);
   return std::hash<size_t>{}(TypeHash + Hash.Key->hash());
+}
+
+Hash::Hash(std::unordered_map<HashKey, std::shared_ptr<object::Object>,
+                              HashKeyHasher> &&Pairs)
+    : Pairs(std::move(Pairs)) {}
+
+const ObjectType &Hash::type() const { return HASH_OBJ; }
+
+std::string Hash::inspect() const {
+  std::stringstream SS;
+  SS << "{";
+
+  bool First = true;
+  for (const auto &P : Pairs) {
+    if (!First) {
+      SS << ", ";
+    }
+
+    First = false;
+    SS << P.first.Key->inspect() << ": " << P.second->inspect();
+  }
+
+  SS << "}";
+  return SS.str();
 }
 
 } // namespace monkey::object

@@ -442,6 +442,34 @@ evalIndexExpression(const std::shared_ptr<object::Object> &Left,
   return newError("index operator not supported: %s", Left->type().c_str());
 }
 
+std::shared_ptr<object::Object> evalHashLiteral(const ast::HashLiteral *Hash,
+                                                environment::Environment &Env) {
+  std::unordered_map<object::HashKey, std::shared_ptr<object::Object>,
+                     object::HashKeyHasher>
+      Pairs;
+
+  for (const auto &P : Hash->Pairs) {
+    auto Key = eval(P.first.get(), Env);
+    if (isError(Key)) {
+      return Key;
+    }
+
+    object::HashKey HK(Key);
+    if (!object::hasHashKey(HK)) {
+      return newError("unusable as hash key: %s", Key->type().c_str());
+    }
+
+    auto Value = eval(P.second.get(), Env);
+    if (isError(Value)) {
+      return Value;
+    }
+
+    Pairs.emplace(std::move(HK), Value);
+  }
+
+  return std::make_shared<object::Hash>(std::move(Pairs));
+}
+
 environment::Environment
 extendFunctionEnv(const object::Function *Fn,
                   const std::vector<std::shared_ptr<object::Object>> &Args) {
@@ -619,6 +647,11 @@ std::shared_ptr<object::Object> eval(ast::Node *Node,
     }
 
     return evalIndexExpression(Left, Index);
+  }
+
+  const auto *Hash = dynamic_cast<const ast::HashLiteral *>(Node);
+  if (Hash) {
+    return evalHashLiteral(Hash, Env);
   }
 
   return nullptr;

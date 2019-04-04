@@ -18,6 +18,7 @@ extern const std::string FUNCTION_OBJ;
 extern const std::string STRING_OBJ;
 extern const std::string BUILTIN_OBJ;
 extern const std::string ARRAY_OBJ;
+extern const std::string HASH_OBJ;
 
 struct Integer : public Object {
   explicit Integer(int64_t);
@@ -130,7 +131,7 @@ struct Array : public Object {
 struct HashKey {
   explicit HashKey(const std::shared_ptr<object::Object> &);
 
-  bool operator==(const HashKey &);
+  bool operator==(const HashKey &) const;
 
   const ObjectType Type;
   const std::shared_ptr<object::Object> Key;
@@ -143,8 +144,8 @@ struct HashKeyHasher {
 };
 
 struct Hash : public Object {
-  explicit Hash(
-      std::unordered_map<HashKey, std::shared_ptr<object::Object>> &&);
+  explicit Hash(std::unordered_map<HashKey, std::shared_ptr<object::Object>,
+                                   HashKeyHasher> &&);
 
   // Object impl.
   const ObjectType &type() const override;

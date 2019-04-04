@@ -269,4 +269,36 @@ TEST(EvaluatorTests, testArrayIndexExpressions) {
   }
 }
 
+TEST(EvaluatorTests, testHashLiterals) {
+  const std::string Input("let two = \"two\";"
+                          "{"
+                          "\"one\": 10 - 9,"
+                          "\"two\": 1 + 1,"
+                          "\"thr\" + \"ee\": 6 / 2,"
+                          "4: 4,"
+                          "true: 5,"
+                          "false: 6"
+                          "}");
+
+  auto Evaluated = testEval(Input);
+  const auto *Hash = dynamic_cast<const object::Hash *>(Evaluated.get());
+  EXPECT_THAT(Hash, testing::NotNull());
+
+  const std::vector<std::pair<object::HashKey, int64_t>> Expected = {
+      {object::HashKey(std::make_shared<object::String>("one")), 1},
+      {object::HashKey(std::make_shared<object::String>("two")), 2},
+      {object::HashKey(std::make_shared<object::String>("three")), 3},
+      {object::HashKey(std::make_shared<object::Integer>(4)), 4},
+      {object::HashKey(std::make_shared<object::Boolean>(true)), 5},
+      {object::HashKey(std::make_shared<object::Boolean>(false)), 6}};
+
+  EXPECT_EQ(Hash->Pairs.size(), Expected.size());
+
+  for (const auto &E : Expected) {
+    const auto Iter = Hash->Pairs.find(E.first);
+    EXPECT_NE(Iter, Hash->Pairs.end());
+    testIntegerObject(Iter->second.get(), E.second);
+  }
+}
+
 } // namespace monkey::evaluator
