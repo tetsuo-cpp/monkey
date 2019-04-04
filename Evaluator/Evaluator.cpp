@@ -139,6 +139,16 @@ const std::vector<std::pair<std::string, std::shared_ptr<object::BuiltIn>>>
                }
 
                return std::make_shared<object::Null>();
+             })},
+        {"puts",
+         std::make_shared<object::BuiltIn>(
+             [](const std::vector<std::shared_ptr<object::Object>> &Args)
+                 -> std::shared_ptr<object::Object> {
+               for (const auto &Arg : Args) {
+                 printf("%s\n", Arg->inspect().c_str());
+               }
+
+               return std::make_shared<object::Null>();
              })}};
 
 bool isError(const std::shared_ptr<object::Object> &Obj) {
@@ -432,11 +442,32 @@ evalArrayIndexExpression(const std::shared_ptr<object::Object> &Array,
 }
 
 std::shared_ptr<object::Object>
+evalHashIndexExpression(const std::shared_ptr<object::Object> &Hash,
+                        const std::shared_ptr<object::Object> &Index) {
+  const auto *HashObj = dynamic_cast<const object::Hash *>(Hash.get());
+  assert(HashObj);
+
+  const object::HashKey HK(Index);
+  if (!hasHashKey(HK)) {
+    return newError("unusable as hash key: %s", Index->type().c_str());
+  }
+
+  const auto Iter = HashObj->Pairs.find(HK);
+  if (Iter == HashObj->Pairs.end()) {
+    return std::make_shared<object::Null>();
+  }
+
+  return Iter->second;
+}
+
+std::shared_ptr<object::Object>
 evalIndexExpression(const std::shared_ptr<object::Object> &Left,
                     const std::shared_ptr<object::Object> &Index) {
   if (Left->type() == object::ARRAY_OBJ &&
       Index->type() == object::INTEGER_OBJ) {
     return evalArrayIndexExpression(Left, Index);
+  } else if (Left->type() == object::HASH_OBJ) {
+    return evalHashIndexExpression(Left, Index);
   }
 
   return newError("index operator not supported: %s", Left->type().c_str());

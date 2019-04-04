@@ -145,7 +145,9 @@ TEST(EvaluatorTests, testErrorHandling) {
       {"foobar", "identifier not found: foobar"},
       {"\"Hello\" - \"World\"", "unknown operator: STRING - STRING"},
       {"len(1)", "argument to \"len\" not supported, got INTEGER"},
-      {"len(\"one\", \"two\")", "wrong number of arguments. got=2, want=1"}};
+      {"len(\"one\", \"two\")", "wrong number of arguments. got=2, want=1"},
+      {"{\"name\": \"Monkey\"}[fn(x) { x }];",
+       "unusable as hash key: FUNCTION"}};
 
   for (const auto &Test : Tests) {
     auto Evaluated = testEval(std::get<0>(Test));
@@ -298,6 +300,28 @@ TEST(EvaluatorTests, testHashLiterals) {
     const auto Iter = Hash->Pairs.find(E.first);
     EXPECT_NE(Iter, Hash->Pairs.end());
     testIntegerObject(Iter->second.get(), E.second);
+  }
+}
+
+TEST(EvaluatorTests, testHashIndexExpressions) {
+  const std::vector<std::pair<std::string, int64_t>> Tests = {
+      {"{\"foo\": 5}[\"foo\"]", 5},
+      {"let key = \"foo\"; {\"foo\": 5}[key]", 5},
+      {"{5: 5}[5]", 5},
+      {"{true: 5}[true]", 5},
+      {"{false: 5}[false]", 5}};
+
+  for (const auto &Test : Tests) {
+    auto Evaluated = testEval(std::get<0>(Test));
+    testIntegerObject(Evaluated.get(), std::get<1>(Test));
+  }
+
+  const std::vector<std::string> NullTests = {"{\"foo\": 5}[\"bar\"]",
+                                              "{}[\"foo\"]"};
+
+  for (const auto &Test : NullTests) {
+    auto Evaluated = testEval(Test);
+    testNullObject(Evaluated.get());
   }
 }
 
