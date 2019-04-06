@@ -84,9 +84,8 @@ std::unique_ptr<ast::Program> Parser::parseProgram() {
 
   while (CurToken.Type != TokenType::END_OF_FILE) {
     auto S = parseStatement();
-    if (S) {
+    if (S)
       P->Statements.push_back(std::move(S));
-    }
 
     nextToken();
   }
@@ -109,9 +108,8 @@ std::unique_ptr<ast::LetStatement> Parser::parseLetStatement() {
   auto LS = std::make_unique<ast::LetStatement>();
   LS->Tok = CurToken;
 
-  if (!expectPeek(TokenType::IDENT)) {
+  if (!expectPeek(TokenType::IDENT))
     return nullptr;
-  }
 
   auto Name = std::make_unique<ast::Identifier>();
   Name->Tok = CurToken;
@@ -119,16 +117,14 @@ std::unique_ptr<ast::LetStatement> Parser::parseLetStatement() {
 
   LS->Name = std::move(Name);
 
-  if (!expectPeek(TokenType::ASSIGN)) {
+  if (!expectPeek(TokenType::ASSIGN))
     return nullptr;
-  }
 
   nextToken();
   LS->Value = parseExpression(Precedence::LOWEST);
 
-  if (peekTokenIs(TokenType::SEMICOLON)) {
+  if (peekTokenIs(TokenType::SEMICOLON))
     nextToken();
-  }
 
   return LS;
 }
@@ -140,9 +136,8 @@ std::unique_ptr<ast::ReturnStatement> Parser::parseReturnStatement() {
 
   RS->ReturnValue = parseExpression(Precedence::LOWEST);
 
-  if (peekTokenIs(TokenType::SEMICOLON)) {
+  if (peekTokenIs(TokenType::SEMICOLON))
     nextToken();
-  }
 
   return RS;
 }
@@ -152,9 +147,8 @@ std::unique_ptr<ast::ExpressionStatement> Parser::parseExpressionStatement() {
   ES->Tok = CurToken;
   ES->Expr = parseExpression(Precedence::LOWEST);
 
-  if (peekTokenIs(TokenType::SEMICOLON)) {
+  if (peekTokenIs(TokenType::SEMICOLON))
     nextToken();
-  }
 
   return ES;
 }
@@ -169,9 +163,8 @@ std::unique_ptr<ast::Expression> Parser::parseExpression(Precedence Prec) {
   auto LeftExp = FnIter->second();
   while (!peekTokenIs(TokenType::SEMICOLON) && Prec < peekPrecedence()) {
     auto InfixIter = InfixParseFns.find(PeekToken.Type);
-    if (InfixIter == InfixParseFns.end()) {
+    if (InfixIter == InfixParseFns.end())
       return LeftExp;
-    }
 
     nextToken();
     LeftExp = InfixIter->second(std::move(LeftExp));
@@ -232,9 +225,8 @@ std::unique_ptr<ast::Expression> Parser::parseGroupedExpression() {
   nextToken();
 
   auto Exp = parseExpression(Precedence::LOWEST);
-  if (!expectPeek(TokenType::RPAREN)) {
+  if (!expectPeek(TokenType::RPAREN))
     return nullptr;
-  }
 
   return Exp;
 }
@@ -243,29 +235,25 @@ std::unique_ptr<ast::Expression> Parser::parseIfExpression() {
   auto IfE = std::make_unique<ast::IfExpression>();
   IfE->Tok = CurToken;
 
-  if (!expectPeek(TokenType::LPAREN)) {
+  if (!expectPeek(TokenType::LPAREN))
     return nullptr;
-  }
 
   nextToken();
   IfE->Condition = parseExpression(Precedence::LOWEST);
 
-  if (!expectPeek(TokenType::RPAREN)) {
+  if (!expectPeek(TokenType::RPAREN))
     return nullptr;
-  }
 
-  if (!expectPeek(TokenType::LBRACE)) {
+  if (!expectPeek(TokenType::LBRACE))
     return nullptr;
-  }
 
   IfE->Consequence = parseBlockStatement();
 
   if (peekTokenIs(TokenType::ELSE)) {
     nextToken();
 
-    if (!expectPeek(TokenType::LBRACE)) {
+    if (!expectPeek(TokenType::LBRACE))
       return nullptr;
-    }
 
     IfE->Alternative = parseBlockStatement();
   }
@@ -282,9 +270,8 @@ std::unique_ptr<ast::BlockStatement> Parser::parseBlockStatement() {
   while (!curTokenIs(TokenType::RBRACE) &&
          !curTokenIs(TokenType::END_OF_FILE)) {
     auto Statement = parseStatement();
-    if (Statement) {
+    if (Statement)
       Statements.push_back(std::move(Statement));
-    }
 
     nextToken();
   }
@@ -295,15 +282,13 @@ std::unique_ptr<ast::BlockStatement> Parser::parseBlockStatement() {
 std::unique_ptr<ast::Expression> Parser::parseFunctionLiteral() {
   auto FunctionTok = CurToken;
 
-  if (!expectPeek(TokenType::LPAREN)) {
+  if (!expectPeek(TokenType::LPAREN))
     return nullptr;
-  }
 
   auto Parameters = parseFunctionParameters();
 
-  if (!expectPeek(TokenType::LBRACE)) {
+  if (!expectPeek(TokenType::LBRACE))
     return nullptr;
-  }
 
   auto Body = parseBlockStatement();
 
@@ -332,9 +317,8 @@ Parser::parseFunctionParameters() {
     Identifiers.push_back(std::move(I));
   }
 
-  if (!expectPeek(TokenType::RPAREN)) {
+  if (!expectPeek(TokenType::RPAREN))
     return {};
-  }
 
   return Identifiers;
 }
@@ -369,9 +353,8 @@ Parser::parseExpressionList(TokenType End) {
     List.push_back(parseExpression(Precedence::LOWEST));
   }
 
-  if (!expectPeek(End)) {
+  if (!expectPeek(End))
     return {};
-  }
 
   return List;
 }
@@ -383,9 +366,8 @@ Parser::parseIndexExpression(std::unique_ptr<ast::Expression> Left) {
 
   nextToken();
   Exp->Index = parseExpression(Precedence::LOWEST);
-  if (!expectPeek(TokenType::RBRACKET)) {
+  if (!expectPeek(TokenType::RBRACKET))
     return nullptr;
-  }
 
   return Exp;
 }
@@ -397,22 +379,20 @@ std::unique_ptr<ast::Expression> Parser::parseHashLiteral() {
     nextToken();
     auto Key = parseExpression(Precedence::LOWEST);
 
-    if (!expectPeek(TokenType::COLON)) {
+    if (!expectPeek(TokenType::COLON))
       return nullptr;
-    }
 
     nextToken();
     auto Value = parseExpression(Precedence::LOWEST);
 
     Hash->Pairs[std::move(Key)] = std::move(Value);
 
-    if (!peekTokenIs(TokenType::RBRACE) && !expectPeek(TokenType::COMMA)) {
+    if (!peekTokenIs(TokenType::RBRACE) && !expectPeek(TokenType::COMMA))
       return nullptr;
-    }
   }
-  if (!expectPeek(TokenType::RBRACE)) {
+
+  if (!expectPeek(TokenType::RBRACE))
     return nullptr;
-  }
 
   return Hash;
 }
@@ -470,9 +450,8 @@ Precedence Parser::peekPrecedence() const {
                              return P.first == PeekToken.Type;
                            });
 
-  if (Iter != Precedences.end()) {
+  if (Iter != Precedences.end())
     return Iter->second;
-  }
 
   return Precedence::LOWEST;
 }
@@ -483,9 +462,8 @@ Precedence Parser::curPrecedence() const {
                              return P.first == CurToken.Type;
                            });
 
-  if (Iter != Precedences.end()) {
+  if (Iter != Precedences.end())
     return Iter->second;
-  }
 
   return Precedence::LOWEST;
 }

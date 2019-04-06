@@ -22,9 +22,8 @@ TokenType lookupIdentifier(const std::string &Identifier) {
                      return K.first == Identifier;
                    });
 
-  if (Iter != Keywords.end()) {
+  if (Iter != Keywords.end())
     return Iter->second;
-  }
 
   return TokenType::IDENT;
 }

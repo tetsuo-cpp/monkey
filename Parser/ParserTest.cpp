@@ -6,35 +6,35 @@
 namespace monkey::parser::test {
 
 void testLetStatement(ast::Statement *S, const std::string &Name) {
-  EXPECT_THAT(S, testing::NotNull());
-  EXPECT_EQ(S->tokenLiteral(), "let");
+  ASSERT_THAT(S, testing::NotNull());
+  ASSERT_EQ(S->tokenLiteral(), "let");
 
   auto *LetS = dynamic_cast<ast::LetStatement *>(S);
-  EXPECT_THAT(LetS, testing::NotNull());
+  ASSERT_THAT(LetS, testing::NotNull());
 
-  EXPECT_EQ(LetS->Name->Value, Name);
-  EXPECT_EQ(LetS->Name->tokenLiteral(), Name);
+  ASSERT_EQ(LetS->Name->Value, Name);
+  ASSERT_EQ(LetS->Name->tokenLiteral(), Name);
 }
 
 void testIntegerLiteral(ast::Expression *E, int64_t Value) {
   auto *I = dynamic_cast<ast::IntegerLiteral *>(E);
-  EXPECT_THAT(I, testing::NotNull());
-  EXPECT_EQ(I->Value, Value);
-  EXPECT_EQ(I->tokenLiteral(), std::to_string(Value));
+  ASSERT_THAT(I, testing::NotNull());
+  ASSERT_EQ(I->Value, Value);
+  ASSERT_EQ(I->tokenLiteral(), std::to_string(Value));
 }
 
 void testIdentifier(ast::Expression *E, const std::string &Value) {
   auto *I = dynamic_cast<ast::Identifier *>(E);
-  EXPECT_THAT(I, testing::NotNull());
-  EXPECT_EQ(I->Value, Value);
-  EXPECT_EQ(I->tokenLiteral(), Value);
+  ASSERT_THAT(I, testing::NotNull());
+  ASSERT_EQ(I->Value, Value);
+  ASSERT_EQ(I->tokenLiteral(), Value);
 }
 
 void testBooleanLiteral(ast::Expression *E, bool Value) {
   auto *B = dynamic_cast<ast::Boolean *>(E);
-  EXPECT_THAT(B, testing::NotNull());
-  EXPECT_EQ(B->Value, Value);
-  EXPECT_EQ(B->tokenLiteral(), Value ? "true" : "false");
+  ASSERT_THAT(B, testing::NotNull());
+  ASSERT_EQ(B->Value, Value);
+  ASSERT_EQ(B->tokenLiteral(), Value ? "true" : "false");
 }
 
 void testLiteralExpression(ast::Expression *E, int64_t Expected) {
@@ -57,16 +57,16 @@ template <typename T0, typename T1>
 void testInfixExpression(ast::Expression *E, const T0 &Left,
                          const std::string &Operator, const T1 &Right) {
   auto *IE = dynamic_cast<ast::InfixExpression *>(E);
-  EXPECT_THAT(IE, testing::NotNull());
+  ASSERT_THAT(IE, testing::NotNull());
 
   testLiteralExpression(IE->Left.get(), Left);
-  EXPECT_EQ(IE->Operator, Operator);
+  ASSERT_EQ(IE->Operator, Operator);
   testLiteralExpression(IE->Right.get(), Right);
 }
 
 void checkParserErrors(Parser &P) {
   const auto &Errors = P.errors();
-  EXPECT_TRUE(Errors.empty());
+  ASSERT_TRUE(Errors.empty());
   for (const auto &E : Errors) {
     std::cout << "parser error: " << E << "\n";
   }
@@ -80,14 +80,14 @@ void testLetStatementsImpl(
 
   auto Program = P.parseProgram();
   checkParserErrors(P);
-  EXPECT_THAT(Program.get(), testing::NotNull());
-  EXPECT_EQ(Program->Statements.size(), 1);
+  ASSERT_THAT(Program.get(), testing::NotNull());
+  ASSERT_EQ(Program->Statements.size(), 1);
 
   testLetStatement(Program->Statements.front().get(), std::get<1>(Test));
 
   auto *LetS =
       dynamic_cast<ast::LetStatement *>(Program->Statements.front().get());
-  EXPECT_THAT(LetS, testing::NotNull());
+  ASSERT_THAT(LetS, testing::NotNull());
   testLiteralExpression(LetS->Value.get(), std::get<2>(Test));
 }
 
@@ -106,13 +106,13 @@ void testReturnStatementsImpl(const std::pair<std::string, T> &Test) {
 
   auto Program = P.parseProgram();
   checkParserErrors(P);
-  EXPECT_THAT(Program.get(), testing::NotNull());
-  EXPECT_EQ(Program->Statements.size(), 1);
+  ASSERT_THAT(Program.get(), testing::NotNull());
+  ASSERT_EQ(Program->Statements.size(), 1);
 
   auto *Return =
       dynamic_cast<ast::ReturnStatement *>(Program->Statements.front().get());
-  EXPECT_THAT(Return, testing::NotNull());
-  EXPECT_EQ(Return->tokenLiteral(), "return");
+  ASSERT_THAT(Return, testing::NotNull());
+  ASSERT_EQ(Return->tokenLiteral(), "return");
   testLiteralExpression(Return->ReturnValue.get(), std::get<1>(Test));
 }
 
@@ -131,17 +131,17 @@ TEST(ParserTests, testIdentifierExpression) {
   auto Program = P.parseProgram();
   checkParserErrors(P);
 
-  EXPECT_EQ(Program->Statements.size(), 1);
+  ASSERT_EQ(Program->Statements.size(), 1);
 
   auto *E = dynamic_cast<ast::ExpressionStatement *>(
       Program->Statements.front().get());
-  EXPECT_THAT(E, testing::NotNull());
+  ASSERT_THAT(E, testing::NotNull());
 
   auto *I = dynamic_cast<ast::Identifier *>(E->Expr.get());
-  EXPECT_THAT(I, testing::NotNull());
+  ASSERT_THAT(I, testing::NotNull());
 
-  EXPECT_EQ(I->Value, "foobar");
-  EXPECT_EQ(I->tokenLiteral(), "foobar");
+  ASSERT_EQ(I->Value, "foobar");
+  ASSERT_EQ(I->tokenLiteral(), "foobar");
 }
 
 TEST(ParserTests, testIntegerLiteralExpression) {
@@ -153,17 +153,17 @@ TEST(ParserTests, testIntegerLiteralExpression) {
   auto Program = P.parseProgram();
   checkParserErrors(P);
 
-  EXPECT_EQ(Program->Statements.size(), 1);
+  ASSERT_EQ(Program->Statements.size(), 1);
 
   auto *E = dynamic_cast<ast::ExpressionStatement *>(
       Program->Statements.front().get());
-  EXPECT_THAT(E, testing::NotNull());
+  ASSERT_THAT(E, testing::NotNull());
 
   auto *I = dynamic_cast<ast::IntegerLiteral *>(E->Expr.get());
-  EXPECT_THAT(I, testing::NotNull());
+  ASSERT_THAT(I, testing::NotNull());
 
-  EXPECT_EQ(I->Value, 5);
-  EXPECT_EQ(I->tokenLiteral(), "5");
+  ASSERT_EQ(I->Value, 5);
+  ASSERT_EQ(I->tokenLiteral(), "5");
 }
 
 TEST(ParserTests, testParsingPrefixExpressions) {
@@ -177,16 +177,16 @@ TEST(ParserTests, testParsingPrefixExpressions) {
     auto Program = P.parseProgram();
     checkParserErrors(P);
 
-    EXPECT_EQ(Program->Statements.size(), 1);
+    ASSERT_EQ(Program->Statements.size(), 1);
 
     auto *E = dynamic_cast<ast::ExpressionStatement *>(
         Program->Statements.front().get());
-    EXPECT_THAT(E, testing::NotNull());
+    ASSERT_THAT(E, testing::NotNull());
 
     auto *PE = dynamic_cast<ast::PrefixExpression *>(E->Expr.get());
-    EXPECT_THAT(PE, testing::NotNull());
+    ASSERT_THAT(PE, testing::NotNull());
 
-    EXPECT_EQ(PE->Operator, std::get<1>(Test));
+    ASSERT_EQ(PE->Operator, std::get<1>(Test));
 
     testIntegerLiteral(PE->Right.get(), std::get<2>(Test));
   }
@@ -201,16 +201,16 @@ TEST(ParserTests, testParsingPrefixExpressions) {
     auto Program = P.parseProgram();
     checkParserErrors(P);
 
-    EXPECT_EQ(Program->Statements.size(), 1);
+    ASSERT_EQ(Program->Statements.size(), 1);
 
     auto *E = dynamic_cast<ast::ExpressionStatement *>(
         Program->Statements.front().get());
-    EXPECT_THAT(E, testing::NotNull());
+    ASSERT_THAT(E, testing::NotNull());
 
     auto *PE = dynamic_cast<ast::PrefixExpression *>(E->Expr.get());
-    EXPECT_THAT(PE, testing::NotNull());
+    ASSERT_THAT(PE, testing::NotNull());
 
-    EXPECT_EQ(PE->Operator, std::get<1>(Test));
+    ASSERT_EQ(PE->Operator, std::get<1>(Test));
 
     testBooleanLiteral(PE->Right.get(), std::get<2>(Test));
   }
@@ -230,11 +230,11 @@ TEST(ParserTests, testParsingInfixExpressions) {
     auto Program = P.parseProgram();
     checkParserErrors(P);
 
-    EXPECT_EQ(Program->Statements.size(), 1);
+    ASSERT_EQ(Program->Statements.size(), 1);
 
     auto *E = dynamic_cast<ast::ExpressionStatement *>(
         Program->Statements.front().get());
-    EXPECT_THAT(E, testing::NotNull());
+    ASSERT_THAT(E, testing::NotNull());
 
     testInfixExpression(E->Expr.get(), std::get<1>(Test), std::get<2>(Test),
                         std::get<3>(Test));
@@ -252,11 +252,11 @@ TEST(ParserTests, testParsingInfixExpressions) {
     auto Program = P.parseProgram();
     checkParserErrors(P);
 
-    EXPECT_EQ(Program->Statements.size(), 1);
+    ASSERT_EQ(Program->Statements.size(), 1);
 
     auto *E = dynamic_cast<ast::ExpressionStatement *>(
         Program->Statements.front().get());
-    EXPECT_THAT(E, testing::NotNull());
+    ASSERT_THAT(E, testing::NotNull());
 
     testInfixExpression(E->Expr.get(), std::get<1>(Test), std::get<2>(Test),
                         std::get<3>(Test));
@@ -302,7 +302,7 @@ TEST(ParserTests, testOperatorPrecedenceParsing) {
     checkParserErrors(P);
 
     auto Actual = Program->string();
-    EXPECT_EQ(Actual, std::get<1>(Test));
+    ASSERT_EQ(Actual, std::get<1>(Test));
   }
 }
 
@@ -315,25 +315,25 @@ TEST(ParserTests, testIfExpression) {
   auto Program = P.parseProgram();
   checkParserErrors(P);
 
-  EXPECT_EQ(Program->Statements.size(), 1);
+  ASSERT_EQ(Program->Statements.size(), 1);
 
   auto *ES = dynamic_cast<ast::ExpressionStatement *>(
       Program->Statements.front().get());
-  EXPECT_THAT(ES, testing::NotNull());
+  ASSERT_THAT(ES, testing::NotNull());
 
   auto *IfE = dynamic_cast<ast::IfExpression *>(ES->Expr.get());
-  EXPECT_THAT(IfE, testing::NotNull());
+  ASSERT_THAT(IfE, testing::NotNull());
 
   testInfixExpression(IfE->Condition.get(), "x", "<", "y");
 
-  EXPECT_EQ(IfE->Consequence->Statements.size(), 1);
+  ASSERT_EQ(IfE->Consequence->Statements.size(), 1);
 
   auto *Cons = dynamic_cast<ast::ExpressionStatement *>(
       IfE->Consequence->Statements.front().get());
-  EXPECT_THAT(Cons, testing::NotNull());
+  ASSERT_THAT(Cons, testing::NotNull());
 
   testIdentifier(Cons->Expr.get(), "x");
-  EXPECT_THAT(IfE->Alternative.get(), testing::IsNull());
+  ASSERT_THAT(IfE->Alternative.get(), testing::IsNull());
 }
 
 TEST(ParserTests, testIfElseExpression) {
@@ -345,29 +345,29 @@ TEST(ParserTests, testIfElseExpression) {
   auto Program = P.parseProgram();
   checkParserErrors(P);
 
-  EXPECT_EQ(Program->Statements.size(), 1);
+  ASSERT_EQ(Program->Statements.size(), 1);
 
   auto *ES = dynamic_cast<ast::ExpressionStatement *>(
       Program->Statements.front().get());
-  EXPECT_THAT(ES, testing::NotNull());
+  ASSERT_THAT(ES, testing::NotNull());
 
   auto *IfE = dynamic_cast<ast::IfExpression *>(ES->Expr.get());
-  EXPECT_THAT(IfE, testing::NotNull());
+  ASSERT_THAT(IfE, testing::NotNull());
 
   testInfixExpression(IfE->Condition.get(), "x", "<", "y");
 
-  EXPECT_EQ(IfE->Consequence->Statements.size(), 1);
+  ASSERT_EQ(IfE->Consequence->Statements.size(), 1);
 
   auto *Cons = dynamic_cast<ast::ExpressionStatement *>(
       IfE->Consequence->Statements.front().get());
-  EXPECT_THAT(Cons, testing::NotNull());
+  ASSERT_THAT(Cons, testing::NotNull());
 
   testIdentifier(Cons->Expr.get(), "x");
 
-  EXPECT_EQ(IfE->Alternative->Statements.size(), 1);
+  ASSERT_EQ(IfE->Alternative->Statements.size(), 1);
   auto *Alt = dynamic_cast<ast::ExpressionStatement *>(
       IfE->Alternative->Statements.front().get());
-  EXPECT_THAT(Alt, testing::NotNull());
+  ASSERT_THAT(Alt, testing::NotNull());
 
   testIdentifier(Alt->Expr.get(), "y");
 }
@@ -381,25 +381,25 @@ TEST(ParserTests, testFunctionLiteralParsing) {
   auto Program = P.parseProgram();
   checkParserErrors(P);
 
-  EXPECT_EQ(Program->Statements.size(), 1);
+  ASSERT_EQ(Program->Statements.size(), 1);
 
   auto *ES = dynamic_cast<ast::ExpressionStatement *>(
       Program->Statements.front().get());
-  EXPECT_THAT(ES, testing::NotNull());
+  ASSERT_THAT(ES, testing::NotNull());
 
   auto *Function = dynamic_cast<ast::FunctionLiteral *>(ES->Expr.get());
-  EXPECT_THAT(Function, testing::NotNull());
+  ASSERT_THAT(Function, testing::NotNull());
 
-  EXPECT_EQ(Function->Parameters.size(), 2);
+  ASSERT_EQ(Function->Parameters.size(), 2);
 
   testLiteralExpression(Function->Parameters[0].get(), "x");
   testLiteralExpression(Function->Parameters[1].get(), "y");
 
-  EXPECT_EQ(Function->Body->Statements.size(), 1);
+  ASSERT_EQ(Function->Body->Statements.size(), 1);
 
   auto *Body = dynamic_cast<ast::ExpressionStatement *>(
       Function->Body->Statements.front().get());
-  EXPECT_THAT(Body, testing::NotNull());
+  ASSERT_THAT(Body, testing::NotNull());
 
   testInfixExpression(Body->Expr.get(), "x", "+", "y");
 }
@@ -419,13 +419,13 @@ TEST(ParserTests, testFunctionParameterParsing) {
 
     auto *Statement = dynamic_cast<ast::ExpressionStatement *>(
         Program->Statements.front().get());
-    EXPECT_THAT(Statement, testing::NotNull());
+    ASSERT_THAT(Statement, testing::NotNull());
 
     auto *Function =
         dynamic_cast<ast::FunctionLiteral *>(Statement->Expr.get());
-    EXPECT_THAT(Function, testing::NotNull());
+    ASSERT_THAT(Function, testing::NotNull());
 
-    EXPECT_EQ(Function->Parameters.size(), std::get<1>(Test).size());
+    ASSERT_EQ(Function->Parameters.size(), std::get<1>(Test).size());
 
     for (unsigned int Index = 0; Index < Function->Parameters.size(); ++Index) {
       testLiteralExpression(Function->Parameters.at(Index).get(),
@@ -442,18 +442,18 @@ TEST(ParserTests, testCallExpressionParsing) {
   auto Program = P.parseProgram();
   checkParserErrors(P);
 
-  EXPECT_EQ(Program->Statements.size(), 1);
+  ASSERT_EQ(Program->Statements.size(), 1);
 
   auto *ES = dynamic_cast<ast::ExpressionStatement *>(
       Program->Statements.front().get());
-  EXPECT_THAT(ES, testing::NotNull());
+  ASSERT_THAT(ES, testing::NotNull());
 
   auto *Call = dynamic_cast<ast::CallExpression *>(ES->Expr.get());
-  EXPECT_THAT(Call, testing::NotNull());
+  ASSERT_THAT(Call, testing::NotNull());
 
   testIdentifier(Call->Function.get(), "add");
 
-  EXPECT_EQ(Call->Arguments.size(), 3);
+  ASSERT_EQ(Call->Arguments.size(), 3);
 
   testLiteralExpression(Call->Arguments[0].get(), (int64_t)1);
   testInfixExpression(Call->Arguments[1].get(), (int64_t)2, "*", (int64_t)3);
@@ -468,15 +468,15 @@ TEST(ParserTests, testStringLiteralExpression) {
   auto Program = P.parseProgram();
   checkParserErrors(P);
 
-  EXPECT_EQ(Program->Statements.size(), 1);
+  ASSERT_EQ(Program->Statements.size(), 1);
 
   const auto *ES = dynamic_cast<const ast::ExpressionStatement *>(
       Program->Statements.front().get());
-  EXPECT_THAT(ES, testing::NotNull());
+  ASSERT_THAT(ES, testing::NotNull());
 
   const auto *StringLiteral = dynamic_cast<const ast::String *>(ES->Expr.get());
-  EXPECT_THAT(StringLiteral, testing::NotNull());
-  EXPECT_EQ(StringLiteral->Value, "hello world");
+  ASSERT_THAT(StringLiteral, testing::NotNull());
+  ASSERT_EQ(StringLiteral->Value, "hello world");
 }
 
 TEST(ParserTests, testParsingArrayLiterals) {
@@ -487,15 +487,15 @@ TEST(ParserTests, testParsingArrayLiterals) {
   auto Program = P.parseProgram();
   checkParserErrors(P);
 
-  EXPECT_EQ(Program->Statements.size(), 1);
+  ASSERT_EQ(Program->Statements.size(), 1);
 
   const auto *ES = dynamic_cast<const ast::ExpressionStatement *>(
       Program->Statements.front().get());
-  EXPECT_THAT(ES, testing::NotNull());
+  ASSERT_THAT(ES, testing::NotNull());
 
   const auto *AL = dynamic_cast<const ast::ArrayLiteral *>(ES->Expr.get());
-  EXPECT_THAT(AL, testing::NotNull());
-  EXPECT_EQ(AL->Elements.size(), 3);
+  ASSERT_THAT(AL, testing::NotNull());
+  ASSERT_EQ(AL->Elements.size(), 3);
   testIntegerLiteral(AL->Elements.at(0).get(), 1);
   testInfixExpression(AL->Elements.at(1).get(), (int64_t)2, "*", (int64_t)2);
   testInfixExpression(AL->Elements.at(2).get(), (int64_t)3, "+", (int64_t)3);
@@ -509,14 +509,14 @@ TEST(ParserTests, testParsingIndexExpressions) {
   auto Program = P.parseProgram();
   checkParserErrors(P);
 
-  EXPECT_EQ(Program->Statements.size(), 1);
+  ASSERT_EQ(Program->Statements.size(), 1);
 
   const auto *ES = dynamic_cast<const ast::ExpressionStatement *>(
       Program->Statements.front().get());
-  EXPECT_THAT(ES, testing::NotNull());
+  ASSERT_THAT(ES, testing::NotNull());
 
   const auto *IE = dynamic_cast<const ast::IndexExpression *>(ES->Expr.get());
-  EXPECT_THAT(IE, testing::NotNull());
+  ASSERT_THAT(IE, testing::NotNull());
   testIdentifier(IE->Left.get(), "myArray");
   testInfixExpression(IE->Index.get(), (int64_t)1, "+", (int64_t)1);
 }
@@ -529,22 +529,22 @@ TEST(ParserTests, testParsingHashLiteralsStringKeys) {
   auto Program = P.parseProgram();
   checkParserErrors(P);
 
-  EXPECT_EQ(Program->Statements.size(), 1);
+  ASSERT_EQ(Program->Statements.size(), 1);
 
   const auto *ES = dynamic_cast<const ast::ExpressionStatement *>(
       Program->Statements.front().get());
-  EXPECT_THAT(ES, testing::NotNull());
+  ASSERT_THAT(ES, testing::NotNull());
 
   const auto *HL = dynamic_cast<const ast::HashLiteral *>(ES->Expr.get());
-  EXPECT_THAT(HL, testing::NotNull());
-  EXPECT_EQ(HL->Pairs.size(), 3);
+  ASSERT_THAT(HL, testing::NotNull());
+  ASSERT_EQ(HL->Pairs.size(), 3);
 
   const std::vector<std::pair<std::string, int64_t>> Expected = {
       {"one", 1}, {"two", 2}, {"three", 3}};
 
   for (const auto &P : HL->Pairs) {
     const auto *Key = dynamic_cast<const ast::String *>(P.first.get());
-    EXPECT_THAT(Key, testing::NotNull());
+    ASSERT_THAT(Key, testing::NotNull());
     const auto &KeyVal = Key->Value;
 
     const auto Iter =
@@ -553,8 +553,8 @@ TEST(ParserTests, testParsingHashLiteralsStringKeys) {
                        return E.first == KeyVal;
                      });
 
-    EXPECT_NE(Iter, Expected.end());
-    EXPECT_EQ(Iter->first, KeyVal);
+    ASSERT_NE(Iter, Expected.end());
+    ASSERT_EQ(Iter->first, KeyVal);
     testIntegerLiteral(P.second.get(), Iter->second);
   }
 }
@@ -569,11 +569,11 @@ TEST(ParserTests, testParsingEmptyHashLiteral) {
 
   const auto *ES = dynamic_cast<const ast::ExpressionStatement *>(
       Program->Statements.front().get());
-  EXPECT_THAT(ES, testing::NotNull());
+  ASSERT_THAT(ES, testing::NotNull());
 
   const auto *HL = dynamic_cast<const ast::HashLiteral *>(ES->Expr.get());
-  EXPECT_THAT(HL, testing::NotNull());
-  EXPECT_TRUE(HL->Pairs.empty());
+  ASSERT_THAT(HL, testing::NotNull());
+  ASSERT_TRUE(HL->Pairs.empty());
 }
 
 TEST(ParserTests, testParsingHashLiteralsWithExpressions) {
@@ -587,11 +587,11 @@ TEST(ParserTests, testParsingHashLiteralsWithExpressions) {
 
   const auto *ES = dynamic_cast<const ast::ExpressionStatement *>(
       Program->Statements.front().get());
-  EXPECT_THAT(ES, testing::NotNull());
+  ASSERT_THAT(ES, testing::NotNull());
 
   const auto *HL = dynamic_cast<const ast::HashLiteral *>(ES->Expr.get());
-  EXPECT_THAT(HL, testing::NotNull());
-  EXPECT_EQ(HL->Pairs.size(), 3);
+  ASSERT_THAT(HL, testing::NotNull());
+  ASSERT_EQ(HL->Pairs.size(), 3);
 
   std::vector<std::pair<std::string, std::function<void(ast::Expression *)>>>
       TestFuncs = {{"one",
@@ -608,7 +608,7 @@ TEST(ParserTests, testParsingHashLiteralsWithExpressions) {
 
   for (const auto &P : HL->Pairs) {
     const auto *Key = dynamic_cast<const ast::String *>(P.first.get());
-    EXPECT_THAT(Key, testing::NotNull());
+    ASSERT_THAT(Key, testing::NotNull());
     const auto &KeyVal = Key->Value;
 
     const auto Iter = std::find_if(
@@ -617,8 +617,8 @@ TEST(ParserTests, testParsingHashLiteralsWithExpressions) {
             const std::pair<std::string, std::function<void(ast::Expression *)>>
                 &F) { return F.first == KeyVal; });
 
-    EXPECT_NE(Iter, TestFuncs.end());
-    EXPECT_EQ(Iter->first, KeyVal);
+    ASSERT_NE(Iter, TestFuncs.end());
+    ASSERT_EQ(Iter->first, KeyVal);
     Iter->second(P.second.get());
   }
 }

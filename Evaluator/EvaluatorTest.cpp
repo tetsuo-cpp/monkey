@@ -16,19 +16,19 @@ std::shared_ptr<object::Object> testEval(const std::string &Input) {
 
 void testIntegerObject(const object::Object *Obj, int64_t Expected) {
   const auto *IntegerObj = dynamic_cast<const object::Integer *>(Obj);
-  EXPECT_THAT(IntegerObj, testing::NotNull());
-  EXPECT_EQ(IntegerObj->Value, Expected);
+  ASSERT_THAT(IntegerObj, testing::NotNull());
+  ASSERT_EQ(IntegerObj->Value, Expected);
 }
 
 void testBooleanObject(const object::Object *Obj, bool Expected) {
   const auto *BooleanObj = dynamic_cast<const object::Boolean *>(Obj);
-  EXPECT_THAT(BooleanObj, testing::NotNull());
-  EXPECT_EQ(BooleanObj->Value, Expected);
+  ASSERT_THAT(BooleanObj, testing::NotNull());
+  ASSERT_EQ(BooleanObj->Value, Expected);
 }
 
 void testNullObject(const object::Object *Obj) {
   const auto *NullObj = dynamic_cast<const object::Null *>(Obj);
-  EXPECT_THAT(NullObj, testing::NotNull());
+  ASSERT_THAT(NullObj, testing::NotNull());
 }
 
 TEST(EvaluatorTests, testEvalIntegerExpressions) {
@@ -152,8 +152,8 @@ TEST(EvaluatorTests, testErrorHandling) {
   for (const auto &Test : Tests) {
     auto Evaluated = testEval(std::get<0>(Test));
     const auto *Error = dynamic_cast<object::Error *>(Evaluated.get());
-    EXPECT_THAT(Error, testing::NotNull());
-    EXPECT_EQ(Error->Message, std::get<1>(Test));
+    ASSERT_THAT(Error, testing::NotNull());
+    ASSERT_EQ(Error->Message, std::get<1>(Test));
   }
 }
 
@@ -164,21 +164,20 @@ TEST(EvaluatorTests, testLetStatements) {
       {"let a = 5; let b = a; b;", 5},
       {"let a = 5; let b = a; let c = a + b + 5; c;", 15}};
 
-  for (const auto &Test : Tests) {
+  for (const auto &Test : Tests)
     testIntegerObject(testEval(std::get<0>(Test)).get(), std::get<1>(Test));
-  }
 }
 
 TEST(EvaluatorTests, testFunctionObject) {
   const std::string Input("fn(x) { x + 2; };");
   auto Evaluated = testEval(Input);
   const auto *Function = dynamic_cast<object::Function *>(Evaluated.get());
-  EXPECT_THAT(Function, testing::NotNull());
-  EXPECT_EQ(Function->Parameters.size(), 1);
-  EXPECT_EQ(Function->Parameters.front()->string(), "x");
+  ASSERT_THAT(Function, testing::NotNull());
+  ASSERT_EQ(Function->Parameters.size(), 1);
+  ASSERT_EQ(Function->Parameters.front()->string(), "x");
 
   const std::string ExpectedBody("(x + 2)");
-  EXPECT_EQ(Function->Body->string(), ExpectedBody);
+  ASSERT_EQ(Function->Body->string(), ExpectedBody);
 }
 
 TEST(EvaluatorTests, testFunctionApplication) {
@@ -190,9 +189,8 @@ TEST(EvaluatorTests, testFunctionApplication) {
       {"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
       {"fn(x) { x; }(5)", 5}};
 
-  for (const auto &Test : Tests) {
+  for (const auto &Test : Tests)
     testIntegerObject(testEval(std::get<0>(Test)).get(), std::get<1>(Test));
-  }
 }
 
 TEST(EvaluatorTests, testClosures) {
@@ -210,8 +208,8 @@ TEST(EvaluatorTests, testStringLiteral) {
 
   auto Evaluated = testEval(Input);
   const auto *S = dynamic_cast<const object::String *>(Evaluated.get());
-  EXPECT_THAT(S, testing::NotNull());
-  EXPECT_EQ(S->Value, "Hello World");
+  ASSERT_THAT(S, testing::NotNull());
+  ASSERT_EQ(S->Value, "Hello World");
 }
 
 TEST(EvaluatorTests, testStringConcatenation) {
@@ -219,8 +217,8 @@ TEST(EvaluatorTests, testStringConcatenation) {
 
   auto Evaluated = testEval(Input);
   const auto *S = dynamic_cast<const object::String *>(Evaluated.get());
-  EXPECT_THAT(S, testing::NotNull());
-  EXPECT_EQ(S->Value, "Hello World");
+  ASSERT_THAT(S, testing::NotNull());
+  ASSERT_EQ(S->Value, "Hello World");
 }
 
 TEST(EvaluatorTests, testBuiltinFunctions) {
@@ -230,8 +228,8 @@ TEST(EvaluatorTests, testBuiltinFunctions) {
   for (const auto &Test : Tests) {
     auto Evaluated = testEval(std::get<0>(Test));
     const auto *S = dynamic_cast<const object::Integer *>(Evaluated.get());
-    EXPECT_THAT(S, testing::NotNull());
-    EXPECT_EQ(S->Value, std::get<1>(Test));
+    ASSERT_THAT(S, testing::NotNull());
+    ASSERT_EQ(S->Value, std::get<1>(Test));
   }
 }
 
@@ -240,8 +238,8 @@ TEST(EvaluatorTests, testArrayLiterals) {
 
   auto Evaluated = testEval(Input);
   const auto *AL = dynamic_cast<const object::Array *>(Evaluated.get());
-  EXPECT_THAT(AL, testing::NotNull());
-  EXPECT_EQ(AL->Elements.size(), 3);
+  ASSERT_THAT(AL, testing::NotNull());
+  ASSERT_EQ(AL->Elements.size(), 3);
   testIntegerObject(AL->Elements.at(0).get(), 1);
   testIntegerObject(AL->Elements.at(1).get(), 4);
   testIntegerObject(AL->Elements.at(2).get(), 6);
@@ -284,7 +282,7 @@ TEST(EvaluatorTests, testHashLiterals) {
 
   auto Evaluated = testEval(Input);
   const auto *Hash = dynamic_cast<const object::Hash *>(Evaluated.get());
-  EXPECT_THAT(Hash, testing::NotNull());
+  ASSERT_THAT(Hash, testing::NotNull());
 
   const std::vector<std::pair<object::HashKey, int64_t>> Expected = {
       {object::HashKey(std::make_shared<object::String>("one")), 1},
@@ -294,11 +292,11 @@ TEST(EvaluatorTests, testHashLiterals) {
       {object::HashKey(std::make_shared<object::Boolean>(true)), 5},
       {object::HashKey(std::make_shared<object::Boolean>(false)), 6}};
 
-  EXPECT_EQ(Hash->Pairs.size(), Expected.size());
+  ASSERT_EQ(Hash->Pairs.size(), Expected.size());
 
   for (const auto &E : Expected) {
     const auto Iter = Hash->Pairs.find(E.first);
-    EXPECT_NE(Iter, Hash->Pairs.end());
+    ASSERT_NE(Iter, Hash->Pairs.end());
     testIntegerObject(Iter->second.get(), E.second);
   }
 }

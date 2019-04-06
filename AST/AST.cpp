@@ -14,18 +14,16 @@ Program::Program(std::vector<std::unique_ptr<Statement>> &&Statements)
     : Statements(std::move(Statements)) {}
 
 const std::string &Program::tokenLiteral() const {
-  if (!Statements.empty()) {
+  if (!Statements.empty())
     return Statements.front()->tokenLiteral();
-  } else {
+  else
     return Empty;
-  }
 }
 
 std::string Program::string() const {
   std::stringstream SS;
-  for (const auto &Statement : Statements) {
+  for (const auto &Statement : Statements)
     SS << Statement->string();
-  }
 
   return SS.str();
 }
@@ -46,9 +44,8 @@ const std::string &LetStatement::tokenLiteral() const { return Tok.Literal; }
 std::string LetStatement::string() const {
   std::stringstream SS;
   SS << tokenLiteral() << " " << Name->string() << " = ";
-  if (Value) {
+  if (Value)
     SS << Value->string();
-  }
 
   SS << ";";
   return SS.str();
@@ -63,9 +60,8 @@ const std::string &ReturnStatement::tokenLiteral() const { return Tok.Literal; }
 std::string ReturnStatement::string() const {
   std::stringstream SS;
   SS << tokenLiteral() << " ";
-  if (ReturnValue) {
+  if (ReturnValue)
     SS << ReturnValue->string();
-  }
 
   SS << ";";
   return SS.str();
@@ -80,9 +76,8 @@ const std::string &ExpressionStatement::tokenLiteral() const {
 }
 
 std::string ExpressionStatement::string() const {
-  if (Expr) {
+  if (Expr)
     return Expr->string();
-  }
 
   return std::string();
 }
@@ -117,9 +112,8 @@ std::string FunctionLiteral::string() const {
   SS << "(";
   for (const auto &Param : Parameters) {
     SS << Param->string();
-    if (Param.get() != Parameters.back().get()) {
+    if (Param.get() != Parameters.back().get())
       SS << ", ";
-    }
   }
 
   SS << ")";
@@ -170,9 +164,8 @@ const std::string &BlockStatement::tokenLiteral() const { return Tok.Literal; }
 
 std::string BlockStatement::string() const {
   std::stringstream SS;
-  for (const auto &S : Statements) {
+  for (const auto &S : Statements)
     SS << S->string();
-  }
 
   return SS.str();
 }
@@ -214,9 +207,8 @@ std::string CallExpression::string() const {
   SS << "(";
   for (const auto &Arg : Arguments) {
     SS << Arg->string();
-    if (Arg.get() != Arguments.back().get()) {
+    if (Arg.get() != Arguments.back().get())
       SS << ", ";
-    }
   }
 
   SS << ")";
@@ -234,9 +226,8 @@ std::string ArrayLiteral::string() const {
   SS << "[";
   for (const auto &E : Elements) {
     SS << E->string();
-    if (E.get() != Elements.back().get()) {
+    if (E.get() != Elements.back().get())
       SS << ", ";
-    }
   }
 
   SS << "]";
@@ -261,9 +252,8 @@ std::string HashLiteral::string() const {
   std::stringstream SS;
   SS << "{";
   for (const auto &P : Pairs) {
-    if (&P != &*Pairs.end()) {
+    if (&P != &*Pairs.end())
       SS << ", ";
-    }
 
     SS << P.first->string() << ":" << P.second->string();
   }

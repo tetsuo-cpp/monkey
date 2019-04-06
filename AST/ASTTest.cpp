@@ -17,7 +17,7 @@ TEST(ASTTests, testString) {
                                    "anotherVar")));
 
   auto P = std::make_unique<Program>(std::move(Statements));
-  EXPECT_EQ(P->string(), "let myVar = anotherVar;");
+  ASSERT_EQ(P->string(), "let myVar = anotherVar;");
 }
 
 } // namespace monkey::ast::test

@@ -8,13 +8,11 @@ Environment::Environment(Environment *Outer) : Outer(Outer) {}
 
 std::shared_ptr<object::Object> Environment::get(const std::string &Name) {
   auto Iter = Store.find(Name);
-  if (Iter != Store.end()) {
+  if (Iter != Store.end())
     return Iter->second;
-  }
 
-  if (Outer) {
+  if (Outer)
     return Outer->get(Name);
-  }
 
   return nullptr;
 }

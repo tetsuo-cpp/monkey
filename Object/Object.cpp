@@ -58,9 +58,8 @@ std::string Function::inspect() const {
   SS << "fn(";
   for (const auto &Param : Parameters) {
     SS << Param->string();
-    if (&Param != &Parameters.back()) {
+    if (&Param != &Parameters.back())
       SS << ", ";
-    }
   }
 
   SS << ") {\n";
@@ -91,9 +90,8 @@ std::string Array::inspect() const {
   SS << "[";
   for (const auto &E : Elements) {
     SS << E->inspect();
-    if (E.get() != Elements.back().get()) {
+    if (E.get() != Elements.back().get())
       SS << ", ";
-    }
   }
 
   SS << "]";
@@ -129,9 +127,8 @@ std::string Hash::inspect() const {
 
   bool First = true;
   for (const auto &P : Pairs) {
-    if (!First) {
+    if (!First)
       SS << ", ";
-    }
 
     First = false;
     SS << P.first.Key->inspect() << ": " << P.second->inspect();

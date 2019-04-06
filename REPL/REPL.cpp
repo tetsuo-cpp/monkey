@@ -30,9 +30,8 @@ void REPL::start() {
     }
 
     auto Evaluated = evaluator::eval(Program.get(), Env);
-    if (Evaluated) {
+    if (Evaluated)
       std::cout << Evaluated->inspect() << "\n";
-    }
   }
 }
 
@@ -40,9 +39,8 @@ void REPL::printParserErrors(const parser::Parser &P) const {
   std::cout << "Woops! We ran into some Monkey business here.\n";
   std::cout << " parser errors:\n";
 
-  for (const auto &Error : P.errors()) {
+  for (const auto &Error : P.errors())
     std::cout << "\t" << Error << "\n";
-  }
 }
 
 } // namespace monkey::repl

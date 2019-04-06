@@ -76,8 +76,8 @@ TEST(LexerTests, testNextToken) {
   for (const auto &Pair : Tests) {
     const auto Tok = L.nextToken();
 
-    EXPECT_EQ(Tok.Type, Pair.first);
-    EXPECT_EQ(Tok.Literal, Pair.second);
+    ASSERT_EQ(Tok.Type, Pair.first);
+    ASSERT_EQ(Tok.Literal, Pair.second);
   }
 }
 

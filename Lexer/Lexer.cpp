@@ -29,9 +29,8 @@ Token Lexer::nextToken() {
     if (peekChar() == '=') {
       readChar();
       Tok = Token(TokenType::EQ, "==");
-    } else {
+    } else
       Tok = Token(TokenType::ASSIGN, Current);
-    }
 
     break;
   case '+':
@@ -44,9 +43,8 @@ Token Lexer::nextToken() {
     if (peekChar() == '=') {
       readChar();
       Tok = Token(TokenType::NOT_EQ, "!=");
-    } else {
+    } else
       Tok = Token(TokenType::BANG, Current);
-    }
 
     break;
   case '/':
@@ -112,22 +110,20 @@ Token Lexer::nextToken() {
 }
 
 void Lexer::readChar() {
-  if (ReadPosition >= Input.size()) {
+  if (ReadPosition >= Input.size())
     Current = 0;
-  } else {
+  else
     Current = Input.at(ReadPosition);
-  }
 
   Position = ReadPosition;
   ++ReadPosition;
 }
 
 char Lexer::peekChar() const {
-  if (ReadPosition >= Input.size()) {
+  if (ReadPosition >= Input.size())
     return 0;
-  } else {
+  else
     return Input.at(ReadPosition);
-  }
 }
 
 std::string Lexer::readIdentifier() {
@@ -151,9 +147,8 @@ std::string Lexer::readNumber() {
 }
 
 void Lexer::skipWhitespace() {
-  while (std::isspace(Current)) {
+  while (std::isspace(Current))
     readChar();
-  }
 }
 
 std::string Lexer::readString() {
