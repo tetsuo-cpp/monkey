@@ -27,18 +27,18 @@ const std::vector<std::pair<std::string, std::shared_ptr<object::BuiltIn>>>
                                  Args.size());
 
                const auto *String =
-                   dynamic_cast<const object::String *>(Args.front().get());
+                   object::objCast<const object::String *>(Args.front().get());
                if (String)
                  return std::make_shared<object::Integer>(String->Value.size());
 
                const auto *Array =
-                   dynamic_cast<const object::Array *>(Args.front().get());
+                   object::objCast<const object::Array *>(Args.front().get());
                if (Array)
                  return std::make_shared<object::Integer>(
                      Array->Elements.size());
 
                return newError("argument to \"len\" not supported, got %s",
-                               Args.front()->type().c_str());
+                               object::objTypeToString(Args.front()->type()));
              })},
         {"first",
          std::make_shared<object::BuiltIn>(
@@ -48,12 +48,12 @@ const std::vector<std::pair<std::string, std::shared_ptr<object::BuiltIn>>>
                  return newError("wrong number of arguments. got=%d, want=1",
                                  Args.size());
 
-               if (Args.front()->type() != object::ARRAY_OBJ)
+               if (Args.front()->type() != object::ObjectType::ARRAY_OBJ)
                  return newError("argument to \"first\" must be ARRAY, got %s",
-                                 Args.front()->type().c_str());
+                                 object::objTypeToString(Args.front()->type()));
 
                const auto *Array =
-                   dynamic_cast<const object::Array *>(Args.front().get());
+                   object::objCast<const object::Array *>(Args.front().get());
                assert(Array);
                if (!Array->Elements.empty())
                  return Array->Elements.front();
@@ -68,12 +68,12 @@ const std::vector<std::pair<std::string, std::shared_ptr<object::BuiltIn>>>
                  return newError("wrong number of arguments. got=%d, want=1",
                                  Args.size());
 
-               if (Args.front()->type() != object::ARRAY_OBJ)
+               if (Args.front()->type() != object::ObjectType::ARRAY_OBJ)
                  return newError("argument to \"last\" must be ARRAY, got %s",
-                                 Args.front()->type().c_str());
+                                 object::objTypeToString(Args.front()->type()));
 
                const auto *Array =
-                   dynamic_cast<const object::Array *>(Args.front().get());
+                   object::objCast<const object::Array *>(Args.front().get());
                assert(Array);
                if (!Array->Elements.empty())
                  return Array->Elements.back();
@@ -88,12 +88,12 @@ const std::vector<std::pair<std::string, std::shared_ptr<object::BuiltIn>>>
                  return newError("wrong number of arguments. got=%d, want=1",
                                  Args.size());
 
-               if (Args.front()->type() != object::ARRAY_OBJ)
+               if (Args.front()->type() != object::ObjectType::ARRAY_OBJ)
                  return newError("argument to \"rest\" must be ARRAY, got %s",
-                                 Args.front()->type().c_str());
+                                 object::objTypeToString(Args.front()->type()));
 
                const auto *Array =
-                   dynamic_cast<const object::Array *>(Args.front().get());
+                   object::objCast<const object::Array *>(Args.front().get());
                assert(Array);
                if (!Array->Elements.empty()) {
                  std::vector<std::shared_ptr<object::Object>> Rest;
@@ -112,12 +112,12 @@ const std::vector<std::pair<std::string, std::shared_ptr<object::BuiltIn>>>
                  return newError("wrong number of arguments. got=%d, want=2",
                                  Args.size());
 
-               if (Args.front()->type() != object::ARRAY_OBJ)
+               if (Args.front()->type() != object::ObjectType::ARRAY_OBJ)
                  return newError("argument to \"push\" must be ARRAY, got %s",
-                                 Args.front()->type().c_str());
+                                 object::objTypeToString(Args.front()->type()));
 
                const auto *Array =
-                   dynamic_cast<const object::Array *>(Args.front().get());
+                   object::objCast<const object::Array *>(Args.front().get());
                assert(Array);
                if (!Array->Elements.empty()) {
                  auto Pushed = Array->Elements;
@@ -138,7 +138,7 @@ const std::vector<std::pair<std::string, std::shared_ptr<object::BuiltIn>>>
              })}};
 
 bool isError(const std::shared_ptr<object::Object> &Obj) {
-  return Obj && Obj->type() == object::ERROR_OBJ;
+  return Obj && Obj->type() == object::ObjectType::ERROR_OBJ;
 }
 
 std::shared_ptr<object::Object>
@@ -147,11 +147,11 @@ evalProgram(const std::vector<std::unique_ptr<ast::Statement>> &Statements,
   std::shared_ptr<object::Object> Result;
   for (const auto &Statement : Statements) {
     Result = eval(Statement.get(), Env);
-    auto *ReturnV = dynamic_cast<object::ReturnValue *>(Result.get());
+    auto *ReturnV = object::objCast<object::ReturnValue *>(Result.get());
     if (ReturnV)
       return std::move(ReturnV->Value);
 
-    auto *ErrorV = dynamic_cast<object::Error *>(Result.get());
+    const auto *ErrorV = object::objCast<const object::Error *>(Result.get());
     if (ErrorV)
       return Result;
   }
@@ -167,7 +167,8 @@ std::shared_ptr<object::Object> evalBlockStatement(
     Result = eval(Statement.get(), Env);
     if (Result) {
       const auto &Type = Result->type();
-      if (Type == object::RETURN_VALUE_OBJ || Type == object::ERROR_OBJ)
+      if (Type == object::ObjectType::RETURN_VALUE_OBJ ||
+          Type == object::ObjectType::ERROR_OBJ)
         return Result;
     }
   }
@@ -177,11 +178,11 @@ std::shared_ptr<object::Object> evalBlockStatement(
 
 std::shared_ptr<object::Object>
 evalBangOperatorExpression(const std::shared_ptr<object::Object> &Right) {
-  const auto *Boolean = dynamic_cast<object::Boolean *>(Right.get());
+  const auto *Boolean = object::objCast<const object::Boolean *>(Right.get());
   if (Boolean)
     return std::make_shared<object::Boolean>(!Boolean->Value);
 
-  const auto *Null = dynamic_cast<object::Null *>(Right.get());
+  const auto *Null = object::objCast<const object::Null *>(Right.get());
   if (Null)
     return std::make_shared<object::Boolean>(true);
 
@@ -190,10 +191,11 @@ evalBangOperatorExpression(const std::shared_ptr<object::Object> &Right) {
 
 std::shared_ptr<object::Object> evalMinusPrefixOperatorExpression(
     const std::shared_ptr<object::Object> &Right) {
-  if (Right->type() != object::INTEGER_OBJ)
-    return newError("unknown operator: -%s", Right->type().c_str());
+  if (Right->type() != object::ObjectType::INTEGER_OBJ)
+    return newError("unknown operator: -%s",
+                    object::objTypeToString(Right->type()));
 
-  const auto *Integer = dynamic_cast<object::Integer *>(Right.get());
+  const auto *Integer = object::objCast<const object::Integer *>(Right.get());
   if (!Integer)
     return std::make_shared<object::Null>();
 
@@ -209,16 +211,16 @@ evalPrefixExpression(const std::string &Operator,
     return evalMinusPrefixOperatorExpression(Right);
   else
     return newError("unknown operator: %s:%s", Operator.c_str(),
-                    Right->type().c_str());
+                    object::objTypeToString(Right->type()));
 }
 
 std::shared_ptr<object::Object>
 evalIntegerInfixExpression(const std::string &Operator,
                            const std::shared_ptr<object::Object> &Left,
                            const std::shared_ptr<object::Object> &Right) {
-  const auto *LeftInt = dynamic_cast<object::Integer *>(Left.get());
+  const auto *LeftInt = object::objCast<const object::Integer *>(Left.get());
   assert(LeftInt);
-  const auto *RightInt = dynamic_cast<object::Integer *>(Right.get());
+  const auto *RightInt = object::objCast<const object::Integer *>(Right.get());
   assert(RightInt);
 
   if (Operator == "+")
@@ -238,8 +240,9 @@ evalIntegerInfixExpression(const std::string &Operator,
   else if (Operator == "!=")
     return std::make_shared<object::Boolean>(LeftInt->Value != RightInt->Value);
   else
-    return newError("unknown operator: %s %s %s", Left->type().c_str(),
-                    Operator.c_str(), Right->type().c_str());
+    return newError("unknown operator: %s %s %s",
+                    object::objTypeToString(Left->type()), Operator.c_str(),
+                    object::objTypeToString(Right->type()));
 }
 
 std::shared_ptr<object::Object>
@@ -247,12 +250,12 @@ evalBooleanInfixExpression(const std::string &Operator,
                            const std::shared_ptr<object::Object> &Left,
                            const std::shared_ptr<object::Object> &Right) {
   const bool BothEqual = [&Left, &Right]() {
-    if (Left->type() == object::BOOLEAN_OBJ ^
-        Right->type() == object::BOOLEAN_OBJ)
+    if (Left->type() == object::ObjectType::BOOLEAN_OBJ ^
+        Right->type() == object::ObjectType::BOOLEAN_OBJ)
       return false;
 
-    const auto *L = dynamic_cast<object::Boolean *>(Left.get());
-    const auto *R = dynamic_cast<object::Boolean *>(Right.get());
+    const auto *L = object::objCast<const object::Boolean *>(Left.get());
+    const auto *R = object::objCast<const object::Boolean *>(Right.get());
     assert(L);
     assert(R);
 
@@ -264,13 +267,15 @@ evalBooleanInfixExpression(const std::string &Operator,
   else if (Operator == "!=")
     return std::make_shared<object::Boolean>(!BothEqual);
   else {
-    if (Left->type() == object::BOOLEAN_OBJ ^
-        Right->type() == object::BOOLEAN_OBJ)
-      return newError("type mismatch: %s %s %s", Left->type().c_str(),
-                      Operator.c_str(), Right->type().c_str());
+    if (Left->type() == object::ObjectType::BOOLEAN_OBJ ^
+        Right->type() == object::ObjectType::BOOLEAN_OBJ)
+      return newError("type mismatch: %s %s %s",
+                      object::objTypeToString(Left->type()), Operator.c_str(),
+                      object::objTypeToString(Right->type()));
     else
-      return newError("unknown operator: %s %s %s", Left->type().c_str(),
-                      Operator.c_str(), Right->type().c_str());
+      return newError("unknown operator: %s %s %s",
+                      object::objTypeToString(Left->type()), Operator.c_str(),
+                      object::objTypeToString(Right->type()));
   }
 }
 
@@ -278,8 +283,8 @@ std::shared_ptr<object::Object>
 evalNullInfixExpression(const std::string &Operator,
                         const std::shared_ptr<object::Object> &Left,
                         const std::shared_ptr<object::Object> &Right) {
-  const bool BothNull =
-      Left->type() == object::NULL_OBJ && Right->type() == object::NULL_OBJ;
+  const bool BothNull = Left->type() == object::ObjectType::NULL_OBJ &&
+                        Right->type() == object::ObjectType::NULL_OBJ;
 
   if (Operator == "==")
     return std::make_shared<object::Boolean>(BothNull);
@@ -294,11 +299,12 @@ evalStringInfixExpression(const std::string &Operator,
                           const std::shared_ptr<object::Object> &Left,
                           const std::shared_ptr<object::Object> &Right) {
   if (Operator != "+")
-    return newError("unknown operator: %s %s %s", Left->type().c_str(),
-                    Operator.c_str(), Right->type().c_str());
+    return newError("unknown operator: %s %s %s",
+                    object::objTypeToString(Left->type()), Operator.c_str(),
+                    object::objTypeToString(Right->type()));
 
-  const auto *LeftS = dynamic_cast<const object::String *>(Left.get());
-  const auto *RightS = dynamic_cast<const object::String *>(Right.get());
+  const auto *LeftS = object::objCast<const object::String *>(Left.get());
+  const auto *RightS = object::objCast<const object::String *>(Right.get());
   assert(LeftS);
   assert(RightS);
   return std::make_shared<object::String>(LeftS->Value + RightS->Value);
@@ -308,32 +314,34 @@ std::shared_ptr<object::Object>
 evalInfixExpression(const std::string &Operator,
                     const std::shared_ptr<object::Object> &Left,
                     const std::shared_ptr<object::Object> &Right) {
-  if (Left->type() == object::INTEGER_OBJ &&
-      Right->type() == object::INTEGER_OBJ)
+  if (Left->type() == object::ObjectType::INTEGER_OBJ &&
+      Right->type() == object::ObjectType::INTEGER_OBJ)
     return evalIntegerInfixExpression(Operator, Left, Right);
-  else if (Left->type() == object::NULL_OBJ ||
-           Right->type() == object::NULL_OBJ)
+  else if (Left->type() == object::ObjectType::NULL_OBJ ||
+           Right->type() == object::ObjectType::NULL_OBJ)
     return evalNullInfixExpression(Operator, Left, Right);
-  else if (Left->type() == object::BOOLEAN_OBJ ||
-           Right->type() == object::BOOLEAN_OBJ)
+  else if (Left->type() == object::ObjectType::BOOLEAN_OBJ ||
+           Right->type() == object::ObjectType::BOOLEAN_OBJ)
     return evalBooleanInfixExpression(Operator, Left, Right);
-  else if (Left->type() == object::STRING_OBJ ||
-           Right->type() == object::STRING_OBJ)
+  else if (Left->type() == object::ObjectType::STRING_OBJ ||
+           Right->type() == object::ObjectType::STRING_OBJ)
     return evalStringInfixExpression(Operator, Left, Right);
   else if (Left->type() != Right->type())
-    return newError("type mismatch: %s %s %s", Left->type().c_str(),
-                    Operator.c_str(), Right->type().c_str());
+    return newError("type mismatch: %s %s %s",
+                    object::objTypeToString(Left->type()), Operator.c_str(),
+                    object::objTypeToString(Right->type()));
   else
-    return newError("unknown operator: %s %s %s", Left->type().c_str(),
-                    Operator.c_str(), Right->type().c_str());
+    return newError("unknown operator: %s %s %s",
+                    object::objTypeToString(Left->type()), Operator.c_str(),
+                    object::objTypeToString(Right->type()));
 }
 
 bool isTruthy(const object::Object *Obj) {
-  const auto *NullObj = dynamic_cast<const object::Null *>(Obj);
+  const auto *NullObj = object::objCast<const object::Null *>(Obj);
   if (NullObj)
     return false;
 
-  const auto *BooleanObj = dynamic_cast<const object::Boolean *>(Obj);
+  const auto *BooleanObj = object::objCast<const object::Boolean *>(Obj);
   if (BooleanObj)
     return BooleanObj->Value;
 
@@ -393,9 +401,9 @@ evalExpressions(const std::vector<std::unique_ptr<ast::Expression>> &Arguments,
 std::shared_ptr<object::Object>
 evalArrayIndexExpression(const std::shared_ptr<object::Object> &Array,
                          const std::shared_ptr<object::Object> &Index) {
-  const auto *ArrayObj = dynamic_cast<const object::Array *>(Array.get());
+  const auto *ArrayObj = object::objCast<const object::Array *>(Array.get());
   assert(ArrayObj);
-  const auto *Idx = dynamic_cast<const object::Integer *>(Index.get());
+  const auto *Idx = object::objCast<const object::Integer *>(Index.get());
   assert(Idx);
 
   if (Idx->Value < 0 ||
@@ -408,12 +416,13 @@ evalArrayIndexExpression(const std::shared_ptr<object::Object> &Array,
 std::shared_ptr<object::Object>
 evalHashIndexExpression(const std::shared_ptr<object::Object> &Hash,
                         const std::shared_ptr<object::Object> &Index) {
-  const auto *HashObj = dynamic_cast<const object::Hash *>(Hash.get());
+  const auto *HashObj = object::objCast<const object::Hash *>(Hash.get());
   assert(HashObj);
 
   const object::HashKey HK(Index);
-  if (!hasHashKey(HK))
-    return newError("unusable as hash key: %s", Index->type().c_str());
+  if (!object::hasHashKey(HK))
+    return newError("unusable as hash key: %s",
+                    object::objTypeToString(Index->type()));
 
   const auto Iter = HashObj->Pairs.find(HK);
   if (Iter == HashObj->Pairs.end())
@@ -425,12 +434,14 @@ evalHashIndexExpression(const std::shared_ptr<object::Object> &Hash,
 std::shared_ptr<object::Object>
 evalIndexExpression(const std::shared_ptr<object::Object> &Left,
                     const std::shared_ptr<object::Object> &Index) {
-  if (Left->type() == object::ARRAY_OBJ && Index->type() == object::INTEGER_OBJ)
+  if (Left->type() == object::ObjectType::ARRAY_OBJ &&
+      Index->type() == object::ObjectType::INTEGER_OBJ)
     return evalArrayIndexExpression(Left, Index);
-  else if (Left->type() == object::HASH_OBJ)
+  else if (Left->type() == object::ObjectType::HASH_OBJ)
     return evalHashIndexExpression(Left, Index);
 
-  return newError("index operator not supported: %s", Left->type().c_str());
+  return newError("index operator not supported: %s",
+                  object::objTypeToString(Left->type()));
 }
 
 std::shared_ptr<object::Object> evalHashLiteral(const ast::HashLiteral *Hash,
@@ -446,7 +457,8 @@ std::shared_ptr<object::Object> evalHashLiteral(const ast::HashLiteral *Hash,
 
     object::HashKey HK(Key);
     if (!object::hasHashKey(HK))
-      return newError("unusable as hash key: %s", Key->type().c_str());
+      return newError("unusable as hash key: %s",
+                      object::objTypeToString(Key->type()));
 
     auto Value = eval(P.second.get(), Env);
     if (isError(Value))
@@ -474,8 +486,7 @@ extendFunctionEnv(const object::Function *Fn,
 
 std::shared_ptr<object::Object>
 unwrapReturnValue(const std::shared_ptr<object::Object> &Obj) {
-  const auto *ReturnValue =
-      dynamic_cast<const object::ReturnValue *>(Obj.get());
+  const auto *ReturnValue = object::objCast<object::ReturnValue *>(Obj.get());
   if (ReturnValue)
     return ReturnValue->Value;
 
@@ -485,18 +496,18 @@ unwrapReturnValue(const std::shared_ptr<object::Object> &Obj) {
 std::shared_ptr<object::Object>
 applyFunction(const std::shared_ptr<object::Object> &Fn,
               const std::vector<std::shared_ptr<object::Object>> &Args) {
-  const auto *Function = dynamic_cast<object::Function *>(Fn.get());
+  const auto *Function = object::objCast<const object::Function *>(Fn.get());
   if (Function) {
     auto ExtendedEnv = extendFunctionEnv(Function, Args);
     auto Evaluated = eval(Function->Body.get(), ExtendedEnv);
     return unwrapReturnValue(Evaluated);
   }
 
-  const auto *BuiltIn = dynamic_cast<object::BuiltIn *>(Fn.get());
+  const auto *BuiltIn = object::objCast<const object::BuiltIn *>(Fn.get());
   if (BuiltIn)
     return BuiltIn->Fn(Args);
 
-  return newError("not a function %s", Fn->type().c_str());
+  return newError("not a function %s", object::objTypeToString(Fn->type()));
 }
 
 } // namespace
