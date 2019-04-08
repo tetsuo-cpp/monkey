@@ -104,7 +104,7 @@ ObjectType String::type() const { return ObjectType::STRING_OBJ; }
 
 std::string String::inspect() const { return Value; }
 
-size_t String::hash() const { return std::hash<std::string>{}(Value); }
+size_t String::hash() const { return std::hash<std::string>()(Value); }
 
 bool String::equals(const Object &Obj) const {
   const auto *S = objCast<const String *>(&Obj);
