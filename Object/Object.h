@@ -5,6 +5,7 @@
 #include <AST/AST.h>
 #include <Environment/Environment.h>
 
+#include <functional>
 #include <memory>
 
 namespace monkey::object {

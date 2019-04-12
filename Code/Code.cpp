@@ -1,5 +1,9 @@
 #include "Code.h"
 
+#include <algorithm>
+#include <arpa/inet.h>
+#include <stdexcept>
+
 namespace monkey::code {
 
 std::vector<std::pair<OpCode, Definition>> Definitions = {

@@ -2,6 +2,8 @@
 
 #include <Token/Token.h>
 
+#include <cassert>
+
 namespace {
 
 bool isLetter(char C) { return std::isalpha(C) || C == '_'; }

@@ -2,6 +2,7 @@
 
 #include <Object/ObjectInterface.h>
 
+#include <memory>
 #include <unordered_map>
 
 namespace monkey::environment {
