@@ -41,4 +41,29 @@ TEST(CodeTests, testInstructionString) {
   EXPECT_EQ(Concatted.string(), Expected);
 }
 
+TEST(CodeTests, testReadOperands) {
+  const std::vector<std::tuple<OpCode, std::vector<int>, int>> Tests = {
+      {OpCode::OpConstant, {65535}, 2}};
+
+  for (const auto &Test : Tests) {
+    const auto Op = std::get<0>(Test);
+    const auto &Operands = std::get<1>(Test);
+    const auto BytesRead = std::get<2>(Test);
+
+    const auto Instruction = make(Op, Operands);
+    const auto &Def = lookup(static_cast<unsigned char>(Op));
+
+    // Get the non-opcode part.
+    Instructions OperandsPart;
+    std::copy(Instruction.begin() + 1, Instruction.end(),
+              std::back_inserter(OperandsPart.Value));
+
+    const auto Value = readOperands(Def, OperandsPart.Value);
+    EXPECT_EQ(Value.second, BytesRead);
+
+    for (unsigned int Index = 0; Index < Operands.size(); ++Index)
+      EXPECT_EQ(Operands.at(Index), Value.first.at(Index));
+  }
+}
+
 } // namespace monkey::code::test

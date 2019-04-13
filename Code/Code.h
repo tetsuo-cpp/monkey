@@ -26,4 +26,7 @@ const Definition &lookup(unsigned char);
 
 std::vector<unsigned char> make(OpCode, const std::vector<int> &);
 
+std::pair<std::vector<int>, int> readOperands(const Definition &,
+                                              const Instructions &);
+
 } // namespace monkey::code

@@ -61,4 +61,25 @@ std::vector<unsigned char> make(OpCode Op, const std::vector<int> &Operands) {
   return Instruction;
 }
 
+std::pair<std::vector<int>, int> readOperands(const Definition &Def,
+                                              const Instructions &Ins) {
+  std::vector<int> Operands(Def.OperandWidths.size(), 0);
+  unsigned int Offset = 0;
+
+  for (unsigned int Index = 0; Index < Operands.size(); ++Index) {
+    const auto Width = Def.OperandWidths.at(Index);
+    switch (Width) {
+    case 2:
+      uint16_t Val = reinterpret_cast<const uint16_t &>(Ins.Value.at(Offset));
+      Val = htons(Val);
+      Operands.at(Index) = Val;
+      break;
+    }
+
+    Offset += Width;
+  }
+
+  return {Operands, Offset};
+}
+
 } // namespace monkey::code
