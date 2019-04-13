@@ -23,6 +23,7 @@ set(
   MONKEY_SOURCE_FILES
   AST/AST.cpp
   Code/Code.cpp
+  Compiler/Compiler.cpp
   Environment/Environment.cpp
   Evaluator/Evaluator.cpp
   Lexer/Lexer.cpp
@@ -43,6 +44,8 @@ set(
   AST/ASTTest.cpp
   Code/Code.cpp
   Code/CodeTest.cpp
+  Compiler/Compiler.cpp
+  Compiler/CompilerTest.cpp
   Environment/Environment.cpp
   Evaluator/Evaluator.cpp
   Evaluator/EvaluatorTest.cpp

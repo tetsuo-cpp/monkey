@@ -6,8 +6,14 @@
 
 namespace monkey::code {
 
+namespace {
+
 std::vector<std::pair<OpCode, Definition>> Definitions = {
     {OpCode::OpConstant, {"OpConstant", {2}}}};
+
+} // namespace
+
+std::string Instructions::string() const { return std::string(); }
 
 const Definition &lookup(unsigned char Op) {
   const auto Iter =
@@ -38,14 +44,14 @@ std::vector<unsigned char> make(OpCode Op, const std::vector<int> &Operands) {
 
   std::vector<unsigned char> Instruction(InstructionLen, 0);
   Instruction.front() = static_cast<unsigned char>(Op);
+
   unsigned Offset = 1;
   for (unsigned int Index = 0; Index < Operands.size(); ++Index) {
-    auto Width = Iter->second.OperandWidths.at(Index);
+    const auto Width = Iter->second.OperandWidths.at(Index);
     switch (Width) {
     case 2:
-      const auto Value = htons(Operands.at(Index));
-      Instruction.at(Offset) = Value >> 8;
-      Instruction.at(Offset + 1) = Value & 0x0F;
+      int16_t &WritePos = reinterpret_cast<int16_t &>(Instruction.at(Offset));
+      WritePos = htons(Operands.at(Index));
       break;
     }
 

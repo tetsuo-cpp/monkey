@@ -5,7 +5,15 @@
 
 namespace monkey::code {
 
-using Instructions = std::vector<unsigned char>;
+struct Instructions {
+  Instructions() = default;
+  Instructions(const std::vector<unsigned char> &Value) : Value(Value) {}
+  Instructions(std::vector<unsigned char> &&Value) : Value(std::move(Value)) {}
+
+  std::string string() const;
+
+  std::vector<unsigned char> Value;
+};
 
 enum class OpCode : unsigned char { OpConstant };
 
