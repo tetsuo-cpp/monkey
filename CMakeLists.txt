@@ -31,6 +31,7 @@ set(
   Parser/Parser.cpp
   REPL/REPL.cpp
   Token/Token.cpp
+  VM/VM.cpp
   main.cpp
   )
 
@@ -55,6 +56,8 @@ set(
   Parser/Parser.cpp
   Parser/ParserTest.cpp
   Token/Token.cpp
+  VM/VM.cpp
+  VM/VMTest.cpp
   test_main.cpp
   )
 
