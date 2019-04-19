@@ -60,8 +60,7 @@ void runCompilerTests(const std::vector<CompilerTestCase<T>> &Tests) {
     const auto Program = parse(Test.Input);
 
     Compiler C;
-    const auto CompileError = C.compile(Program.get());
-    ASSERT_TRUE(CompileError.empty());
+    ASSERT_NO_THROW(C.compile(Program.get()));
 
     const auto ByteCode = C.byteCode();
     testInstructions(Test.ExpectedInstructions, ByteCode.Instructions);

@@ -29,9 +29,9 @@ TEST(CodeTests, testInstructionString) {
                                          make(OpCode::OpConstant, {2}),
                                          make(OpCode::OpConstant, {65535})};
 
-  const std::string Expected("0000 OpConstant 1"
-                             "0003 OpConstant 2"
-                             "0006 OpConstant 65535");
+  const std::string Expected("0000 OpConstant 1\n"
+                             "0003 OpConstant 2\n"
+                             "0006 OpConstant 65535\n");
 
   Instructions Concatted;
   for (const auto &I : Ins)

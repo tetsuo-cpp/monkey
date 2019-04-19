@@ -5,12 +5,16 @@
 
 namespace monkey::code {
 
+struct Definition;
+
 struct Instructions {
   Instructions() = default;
   Instructions(const std::vector<unsigned char> &Value) : Value(Value) {}
   Instructions(std::vector<unsigned char> &&Value) : Value(std::move(Value)) {}
 
   std::string string() const;
+  std::string fmtInstructions(const Definition &,
+                              const std::vector<int> &) const;
 
   std::vector<unsigned char> Value;
 };

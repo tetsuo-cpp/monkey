@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <arpa/inet.h>
+#include <iomanip>
+#include <sstream>
 #include <stdexcept>
 
 namespace monkey::code {
@@ -13,7 +15,48 @@ std::vector<std::pair<OpCode, Definition>> Definitions = {
 
 } // namespace
 
-std::string Instructions::string() const { return std::string(); }
+std::string Instructions::string() const {
+  std::stringstream SS;
+  unsigned int Index = 0;
+  while (Index < Value.size()) {
+    const Definition *Def;
+    try {
+      Def = &lookup(Value.at(Index));
+    } catch (const std::runtime_error &E) {
+      SS << "ERROR: " << E.what() << "\n";
+      continue; // TODO: Does this make sense?
+    }
+
+    code::Instructions RemainingOps(
+        std::vector<unsigned char>(Value.begin() + Index + 1, Value.end()));
+
+    const auto Result = readOperands(*Def, RemainingOps);
+    SS << std::setfill('0') << std::setw(4) << Index << " ";
+    SS << fmtInstructions(*Def, Result.first) << "\n";
+
+    Index += Result.second + 1;
+  }
+
+  return SS.str();
+}
+
+std::string
+Instructions::fmtInstructions(const Definition &Def,
+                              const std::vector<int> &Operands) const {
+  const auto OperandCount = Def.OperandWidths.size();
+
+  if (Operands.size() != OperandCount)
+    return std::string("ERROR: operand len ") +
+           std::to_string(Operands.size()) + " does not match defined " +
+           std::to_string(OperandCount) + "\n";
+
+  switch (OperandCount) {
+  case 1:
+    return Def.Name + " " + std::to_string(Operands.front());
+  }
+
+  return std::string("ERROR: unhandled operandCount for ") + Def.Name + "\n";
+}
 
 const Definition &lookup(unsigned char Op) {
   const auto Iter =
@@ -71,8 +114,7 @@ std::pair<std::vector<int>, int> readOperands(const Definition &Def,
     switch (Width) {
     case 2:
       uint16_t Val = reinterpret_cast<const uint16_t &>(Ins.Value.at(Offset));
-      Val = htons(Val);
-      Operands.at(Index) = Val;
+      Operands.at(Index) = ntohs(Val);
       break;
     }
 

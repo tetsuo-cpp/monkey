@@ -21,10 +21,18 @@ public:
   Compiler() = default;
   virtual ~Compiler() = default;
 
-  std::string compile(const ast::Node *);
+  void compile(const ast::Node *);
   ByteCode byteCode() const;
 
 private:
+  template <typename T> int addConstant(T &&Obj) {
+    Constants.push_back(std::forward<T>(Obj));
+    return Constants.size() - 1;
+  }
+
+  int emit(code::OpCode, const std::vector<int> &);
+  int addInstruction(const std::vector<unsigned char> &);
+
   code::Instructions Instructions;
   std::vector<std::shared_ptr<object::Object>> Constants;
 };
