@@ -11,6 +11,8 @@ public:
 
   const object::Object *stackTop() const;
   void run();
+  void push(const std::shared_ptr<object::Object> &);
+  const std::shared_ptr<object::Object> &pop();
 
 private:
   std::vector<std::shared_ptr<object::Object>> Constants;

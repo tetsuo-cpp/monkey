@@ -1,7 +1,8 @@
 #include "REPL.h"
 
-#include <Evaluator/Evaluator.h>
+#include <Compiler/Compiler.h>
 #include <Lexer/Lexer.h>
+#include <VM/VM.h>
 
 #include <iostream>
 
@@ -29,9 +30,23 @@ void REPL::start() {
       continue;
     }
 
-    auto Evaluated = evaluator::eval(Program.get(), Env);
-    if (Evaluated)
-      std::cout << Evaluated->inspect() << "\n";
+    compiler::Compiler C;
+    try {
+      C.compile(Program.get());
+    } catch (const std::runtime_error &E) {
+      std::cout << "Woops! Compilation failed:\n  " << E.what() << "\n";
+    }
+
+    vm::VM Machine(C.byteCode());
+    try {
+      Machine.run();
+    } catch (const std::runtime_error &E) {
+      std::cout << "Woops! Compilation failed:\n  " << E.what() << "\n";
+    }
+
+    const auto *StackTop = Machine.stackTop();
+    if (StackTop)
+      std::cout << StackTop->inspect() << "\n";
   }
 }
 

@@ -11,7 +11,7 @@ namespace monkey::code {
 namespace {
 
 std::vector<std::pair<OpCode, Definition>> Definitions = {
-    {OpCode::OpConstant, {"OpConstant", {2}}}};
+    {OpCode::OpConstant, {"OpConstant", {2}}}, {OpCode::OpAdd, {"OpAdd", {}}}};
 
 } // namespace
 
@@ -51,6 +51,8 @@ Instructions::fmtInstructions(const Definition &Def,
            std::to_string(OperandCount) + "\n";
 
   switch (OperandCount) {
+  case 0:
+    return Def.Name;
   case 1:
     return Def.Name + " " + std::to_string(Operands.front());
   }

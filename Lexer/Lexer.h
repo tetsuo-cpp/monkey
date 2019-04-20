@@ -6,7 +6,7 @@ namespace monkey::lexer {
 
 class Lexer {
 public:
-  Lexer(const std::string &Input);
+  explicit Lexer(const std::string &Input);
   virtual ~Lexer() = default;
 
   Token nextToken();

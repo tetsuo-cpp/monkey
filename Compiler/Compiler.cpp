@@ -20,6 +20,12 @@ void Compiler::compile(const ast::Node *Node) {
   if (InfixExpr) {
     compile(InfixExpr->Left.get());
     compile(InfixExpr->Right.get());
+
+    if (InfixExpr->Operator == "+")
+      emit(code::OpCode::OpAdd, {});
+    else
+      throw std::runtime_error(std::string("unknown operator " + InfixExpr->Operator));
+
     return;
   }
 

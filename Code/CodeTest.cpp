@@ -7,9 +7,11 @@ namespace monkey::code::test {
 TEST(CodeTests, testMake) {
   const std::vector<
       std::tuple<OpCode, std::vector<int>, std::vector<unsigned char>>>
-      Tests = {{OpCode::OpConstant,
-                {65534},
-                {static_cast<char>(OpCode::OpConstant), 255, 254}}};
+      Tests = {
+          {OpCode::OpConstant,
+           {65534},
+           {static_cast<unsigned char>(OpCode::OpConstant), 255, 254}},
+          {OpCode::OpAdd, {}, {static_cast<unsigned char>(OpCode::OpAdd)}}};
 
   for (const auto &Test : Tests) {
     const auto &Op = std::get<0>(Test);
@@ -25,13 +27,13 @@ TEST(CodeTests, testMake) {
 }
 
 TEST(CodeTests, testInstructionString) {
-  const std::vector<Instructions> Ins = {make(OpCode::OpConstant, {1}),
+  const std::vector<Instructions> Ins = {make(OpCode::OpAdd, {}),
                                          make(OpCode::OpConstant, {2}),
                                          make(OpCode::OpConstant, {65535})};
 
-  const std::string Expected("0000 OpConstant 1\n"
-                             "0003 OpConstant 2\n"
-                             "0006 OpConstant 65535\n");
+  const std::string Expected("0000 OpAdd\n"
+                             "0001 OpConstant 2\n"
+                             "0004 OpConstant 65535\n");
 
   Instructions Concatted;
   for (const auto &I : Ins)

@@ -73,7 +73,8 @@ TEST(CompilerTests, testIntegerArithmetic) {
       {"1 + 2",
        {1, 2},
        {code::make(code::OpCode::OpConstant, {0}),
-        code::make(code::OpCode::OpConstant, {1})}}};
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpAdd, {})}}};
 
   runCompilerTests(Tests);
 }

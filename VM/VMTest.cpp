@@ -49,7 +49,7 @@ template <typename T> void runVMTests(const std::vector<VMTestCase<T>> &Tests) {
 
 TEST(VMTests, testIntegerArithmetic) {
   const std::vector<VMTestCase<int64_t>> Tests = {
-      {"1", 1}, {"2", 2}, {"1 + 2", 2}};
+      {"1", 1}, {"2", 2}, {"1 + 2", 3}};
 
   runVMTests(Tests);
 }
