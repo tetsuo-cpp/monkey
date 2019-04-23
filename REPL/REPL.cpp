@@ -44,7 +44,7 @@ void REPL::start() {
       std::cout << "Woops! Compilation failed:\n  " << E.what() << "\n";
     }
 
-    const auto *StackTop = Machine.stackTop();
+    const auto *StackTop = Machine.lastPoppedStackElem();
     if (StackTop)
       std::cout << StackTop->inspect() << "\n";
   }

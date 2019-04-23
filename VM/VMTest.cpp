@@ -42,14 +42,25 @@ template <typename T> void runVMTests(const std::vector<VMTestCase<T>> &Tests) {
     VM VM(C.byteCode());
     ASSERT_NO_THROW(VM.run());
 
-    const auto *StackElem = VM.stackTop();
+    const auto *StackElem = VM.lastPoppedStackElem();
     testExpectedObject(Test.Expected, StackElem);
   }
 }
 
 TEST(VMTests, testIntegerArithmetic) {
-  const std::vector<VMTestCase<int64_t>> Tests = {
-      {"1", 1}, {"2", 2}, {"1 + 2", 3}};
+  const std::vector<VMTestCase<int64_t>> Tests = {{"1", 1},
+                                                  {"2", 2},
+                                                  {"1 + 2", 3},
+                                                  {"1 - 2", -1},
+                                                  {"1 * 2", 2},
+                                                  {"4 / 2", 2},
+                                                  {"50 / 2 * 2 + 10 - 5", 55},
+                                                  {"5 * (2 + 10)", 60},
+                                                  {"5 + 5 + 5 + 5 - 10", 10},
+                                                  {"2 * 2 * 2 * 2 * 2", 32},
+                                                  {"5 * 2 + 10", 20},
+                                                  {"5 + 2 * 10", 25},
+                                                  {"5 * (2 + 10)", 60}};
 
   runVMTests(Tests);
 }

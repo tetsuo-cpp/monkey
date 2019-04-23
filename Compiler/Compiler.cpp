@@ -13,6 +13,7 @@ void Compiler::compile(const ast::Node *Node) {
   const auto *ExprS = dynamic_cast<const ast::ExpressionStatement *>(Node);
   if (ExprS) {
     compile(ExprS->Expr.get());
+    emit(code::OpCode::OpPop, {});
     return;
   }
 
@@ -23,8 +24,15 @@ void Compiler::compile(const ast::Node *Node) {
 
     if (InfixExpr->Operator == "+")
       emit(code::OpCode::OpAdd, {});
+    else if (InfixExpr->Operator == "-")
+      emit(code::OpCode::OpSub, {});
+    else if (InfixExpr->Operator == "*")
+      emit(code::OpCode::OpMul, {});
+    else if (InfixExpr->Operator == "/")
+      emit(code::OpCode::OpDiv, {});
     else
-      throw std::runtime_error(std::string("unknown operator " + InfixExpr->Operator));
+      throw std::runtime_error(
+          std::string("unknown operator " + InfixExpr->Operator));
 
     return;
   }

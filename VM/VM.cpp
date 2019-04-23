@@ -2,22 +2,12 @@
 
 namespace monkey::vm {
 
-namespace {
-
-const size_t StackSize = 2048;
-
-} // namespace
-
 VM::VM(compiler::ByteCode &&BC)
     : Constants(std::move(BC.Constants)),
-      Instructions(std::move(BC.Instructions)), Stack(StackSize, nullptr),
-      SP(0) {}
+      Instructions(std::move(BC.Instructions)), Stack{nullptr}, SP(0) {}
 
-const object::Object *VM::stackTop() const {
-  if (SP == 0)
-    return nullptr;
-
-  return Stack.at(SP - 1).get();
+const object::Object *VM::lastPoppedStackElem() const {
+  return Stack.at(SP).get();
 }
 
 void VM::run() {
@@ -32,23 +22,21 @@ void VM::run() {
       push(Constants.at(ConstIndex));
       break;
     }
-    case code::OpCode::OpAdd: {
-      const auto &Right = pop();
-      const auto &Left = pop();
-      const auto LeftValue =
-          dynamic_cast<const object::Integer *>(Left.get())->Value;
-      const auto RightValue =
-          dynamic_cast<const object::Integer *>(Right.get())->Value;
-
-      const auto Result = LeftValue + RightValue;
-      push(std::make_shared<object::Integer>(Result));
+    case code::OpCode::OpAdd:
+    case code::OpCode::OpSub:
+    case code::OpCode::OpMul:
+    case code::OpCode::OpDiv:
+      executeBinaryOperation(Op);
       break;
-    }
+    case code::OpCode::OpPop:
+      pop();
+      break;
     default:
       break;
     }
   }
 }
+
 void VM::push(const std::shared_ptr<object::Object> &Obj) {
   if (SP >= StackSize)
     throw std::runtime_error("stack overflow");
@@ -60,6 +48,52 @@ const std::shared_ptr<object::Object> &VM::pop() {
   const auto &Obj = Stack.at(SP - 1);
   --SP;
   return Obj;
+}
+
+void VM::executeBinaryOperation(code::OpCode Op) {
+  const auto &Right = pop();
+  const auto &Left = pop();
+
+  const auto LeftType = Left->type();
+  const auto RightType = Right->type();
+
+  if (LeftType == object::ObjectType::INTEGER_OBJ &&
+      RightType == object::ObjectType::INTEGER_OBJ) {
+    executeBinaryIntegerOperation(Op, Left, Right);
+    return;
+  }
+
+  throw std::runtime_error(
+      std::string("unsupported types for binary operation ") +
+      object::objTypeToString(LeftType) + " " +
+      object::objTypeToString(RightType));
+}
+
+void VM::executeBinaryIntegerOperation(
+    code::OpCode Op, const std::shared_ptr<object::Object> &Left,
+    const std::shared_ptr<object::Object> &Right) {
+  const auto LeftVal =
+      object::objCast<const object::Integer *>(Left.get())->Value;
+  const auto RightVal =
+      object::objCast<const object::Integer *>(Right.get())->Value;
+
+  const int64_t Result = [Op, LeftVal, RightVal]() {
+    switch (Op) {
+    case code::OpCode::OpAdd:
+      return LeftVal + RightVal;
+    case code::OpCode::OpSub:
+      return LeftVal - RightVal;
+    case code::OpCode::OpMul:
+      return LeftVal * RightVal;
+    case code::OpCode::OpDiv:
+      return LeftVal / RightVal;
+    default:
+      throw std::runtime_error("unknown integer operator: " +
+                               std::to_string(static_cast<unsigned char>(Op)));
+    }
+  }();
+
+  push(std::make_shared<object::Integer>(Result));
 }
 
 } // namespace monkey::vm

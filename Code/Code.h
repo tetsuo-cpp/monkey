@@ -19,7 +19,14 @@ struct Instructions {
   std::vector<unsigned char> Value;
 };
 
-enum class OpCode : unsigned char { OpConstant, OpAdd };
+enum class OpCode : unsigned char {
+  OpConstant,
+  OpAdd,
+  OpPop,
+  OpSub,
+  OpMul,
+  OpDiv
+};
 
 struct Definition {
   std::string Name;

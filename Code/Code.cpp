@@ -11,7 +11,12 @@ namespace monkey::code {
 namespace {
 
 std::vector<std::pair<OpCode, Definition>> Definitions = {
-    {OpCode::OpConstant, {"OpConstant", {2}}}, {OpCode::OpAdd, {"OpAdd", {}}}};
+    {OpCode::OpConstant, {"OpConstant", {2}}},
+    {OpCode::OpAdd, {"OpAdd", {}}},
+    {OpCode::OpPop, {"OpPop", {}}},
+    {OpCode::OpSub, {"OpSub", {}}},
+    {OpCode::OpMul, {"OpMul", {}}},
+    {OpCode::OpDiv, {"OpDiv", {}}}};
 
 } // namespace
 

@@ -39,6 +39,8 @@ void testIntegerObject(int64_t Expected, const object::Object *Actual) {
 void testInstructions(const std::vector<code::Instructions> &Expected,
                       const code::Instructions &Actual) {
   auto Concatted = concatInstructions(Expected);
+  std::cout << Concatted.string() << std::endl;
+  std::cout << Actual.string() << std::endl;
   ASSERT_EQ(Actual.Value.size(), Concatted.Value.size());
   for (unsigned int Index = 0; Index < Actual.Value.size(); ++Index)
     ASSERT_EQ(Actual.Value.at(Index), Concatted.Value.at(Index));
@@ -74,7 +76,32 @@ TEST(CompilerTests, testIntegerArithmetic) {
        {1, 2},
        {code::make(code::OpCode::OpConstant, {0}),
         code::make(code::OpCode::OpConstant, {1}),
-        code::make(code::OpCode::OpAdd, {})}}};
+        code::make(code::OpCode::OpAdd, {}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"1; 2",
+       {1, 2},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpPop, {}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"1 - 2",
+       {1, 2},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpSub, {}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"1 * 2",
+       {1, 2},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpMul, {}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"2 / 1",
+       {2, 1},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpDiv, {}),
+        code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);
 }
