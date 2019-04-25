@@ -19,6 +19,13 @@ void Compiler::compile(const ast::Node *Node) {
 
   const auto *InfixExpr = dynamic_cast<const ast::InfixExpression *>(Node);
   if (InfixExpr) {
+    if (InfixExpr->Operator == "<") {
+      compile(InfixExpr->Right.get());
+      compile(InfixExpr->Left.get());
+      emit(code::OpCode::OpGreaterThan, {});
+      return;
+    }
+
     compile(InfixExpr->Left.get());
     compile(InfixExpr->Right.get());
 
@@ -30,11 +37,25 @@ void Compiler::compile(const ast::Node *Node) {
       emit(code::OpCode::OpMul, {});
     else if (InfixExpr->Operator == "/")
       emit(code::OpCode::OpDiv, {});
+    else if (InfixExpr->Operator == ">")
+      emit(code::OpCode::OpGreaterThan, {});
+    else if (InfixExpr->Operator == "==")
+      emit(code::OpCode::OpEqual, {});
+    else if (InfixExpr->Operator == "!=")
+      emit(code::OpCode::OpNotEqual, {});
     else
       throw std::runtime_error(
           std::string("unknown operator " + InfixExpr->Operator));
 
     return;
+  }
+
+  const auto *Bool = dynamic_cast<const ast::Boolean *>(Node);
+  if (Bool) {
+    if (Bool->Value)
+      emit(code::OpCode::OpTrue, {});
+    else
+      emit(code::OpCode::OpFalse, {});
   }
 
   const auto *IntegerL = dynamic_cast<const ast::IntegerLiteral *>(Node);

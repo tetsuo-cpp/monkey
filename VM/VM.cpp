@@ -2,6 +2,19 @@
 
 namespace monkey::vm {
 
+static const std::shared_ptr<object::Object> TrueGlobal =
+    std::make_shared<object::Boolean>(true);
+
+static const std::shared_ptr<object::Object> FalseGlobal =
+    std::make_shared<object::Boolean>(false);
+
+const std::shared_ptr<object::Object> nativeBooleanToBooleanObject(bool Val) {
+  if (Val)
+    return TrueGlobal;
+
+  return FalseGlobal;
+}
+
 VM::VM(compiler::ByteCode &&BC)
     : Constants(std::move(BC.Constants)),
       Instructions(std::move(BC.Instructions)), Stack{nullptr}, SP(0) {}
@@ -30,6 +43,17 @@ void VM::run() {
       break;
     case code::OpCode::OpPop:
       pop();
+      break;
+    case code::OpCode::OpTrue:
+      push(TrueGlobal);
+      break;
+    case code::OpCode::OpFalse:
+      push(FalseGlobal);
+      break;
+    case code::OpCode::OpEqual:
+    case code::OpCode::OpNotEqual:
+    case code::OpCode::OpGreaterThan:
+      executeComparison(Op);
       break;
     default:
       break;
@@ -94,6 +118,53 @@ void VM::executeBinaryIntegerOperation(
   }();
 
   push(std::make_shared<object::Integer>(Result));
+}
+
+void VM::executeComparison(code::OpCode Op) {
+  const auto &Right = pop();
+  const auto &Left = pop();
+
+  if (Left->type() == object::ObjectType::INTEGER_OBJ &&
+      Right->type() == object::ObjectType::INTEGER_OBJ) {
+    executeIntegerComparison(Op, Left, Right);
+    return;
+  }
+
+  switch (Op) {
+  case code::OpCode::OpEqual:
+    push(nativeBooleanToBooleanObject(Right.get() == Left.get()));
+    break;
+  case code::OpCode::OpNotEqual:
+    push(nativeBooleanToBooleanObject(Right.get() != Left.get()));
+    break;
+  default:
+    throw std::runtime_error("unknown operator " +
+                             std::to_string(static_cast<char>(Op)) + " (" +
+                             object::objTypeToString(Left->type()) + " " +
+                             object::objTypeToString(Right->type()) + ")");
+  }
+}
+
+void VM::executeIntegerComparison(
+    code::OpCode Op, const std::shared_ptr<object::Object> &Left,
+    const std::shared_ptr<object::Object> &Right) {
+  const auto LeftVal = static_cast<object::Integer *>(Left.get())->Value;
+  const auto RightVal = static_cast<object::Integer *>(Right.get())->Value;
+
+  switch (Op) {
+  case code::OpCode::OpEqual:
+    push(nativeBooleanToBooleanObject(LeftVal == RightVal));
+    break;
+  case code::OpCode::OpNotEqual:
+    push(nativeBooleanToBooleanObject(LeftVal != RightVal));
+    break;
+  case code::OpCode::OpGreaterThan:
+    push(nativeBooleanToBooleanObject(LeftVal > RightVal));
+    break;
+  default:
+    throw std::runtime_error("unknown operator: " +
+                             std::to_string(static_cast<char>(Op)));
+  }
 }
 
 } // namespace monkey::vm

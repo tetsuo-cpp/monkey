@@ -23,6 +23,12 @@ void testIntegerObject(int64_t Expected, const object::Object *Obj) {
   ASSERT_EQ(Integer->Value, Expected);
 }
 
+void testBooleanObject(bool Expected, const object::Object *Obj) {
+  const auto *Boolean = dynamic_cast<const object::Boolean *>(Obj);
+  ASSERT_THAT(Boolean, testing::NotNull());
+  ASSERT_EQ(Boolean->Value, Expected);
+}
+
 template <typename T> struct VMTestCase {
   const std::string Input;
   const T Expected;
@@ -30,6 +36,10 @@ template <typename T> struct VMTestCase {
 
 void testExpectedObject(int64_t Expected, const object::Object *Obj) {
   testIntegerObject(Expected, Obj);
+}
+
+void testExpectedObject(bool Expected, const object::Object *Obj) {
+  testBooleanObject(Expected, Obj);
 }
 
 template <typename T> void runVMTests(const std::vector<VMTestCase<T>> &Tests) {
@@ -61,6 +71,30 @@ TEST(VMTests, testIntegerArithmetic) {
                                                   {"5 * 2 + 10", 20},
                                                   {"5 + 2 * 10", 25},
                                                   {"5 * (2 + 10)", 60}};
+
+  runVMTests(Tests);
+}
+
+TEST(VMTests, testBooleanExpressions) {
+  const std::vector<VMTestCase<bool>> Tests = {{"true", true},
+                                               {"false", false},
+                                               {"1 < 2", true},
+                                               {"1 > 2", false},
+                                               {"1 < 1", false},
+                                               {"1 > 1", false},
+                                               {"1 == 1", true},
+                                               {"1 != 1", false},
+                                               {"1 == 2", false},
+                                               {"1 != 2", true},
+                                               {"true == true", true},
+                                               {"false == false", true},
+                                               {"true == false", false},
+                                               {"true != false", true},
+                                               {"false != true", true},
+                                               {"(1 < 2) == true", true},
+                                               {"(1 < 2) == false", false},
+                                               {"(1 > 2) == true", false},
+                                               {"(1 > 2) == false", true}};
 
   runVMTests(Tests);
 }

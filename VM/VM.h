@@ -27,6 +27,10 @@ private:
   void executeBinaryIntegerOperation(code::OpCode,
                                      const std::shared_ptr<object::Object> &,
                                      const std::shared_ptr<object::Object> &);
+  void executeComparison(code::OpCode);
+  void executeIntegerComparison(code::OpCode,
+                                const std::shared_ptr<object::Object> &,
+                                const std::shared_ptr<object::Object> &);
 
   std::vector<std::shared_ptr<object::Object>> Constants;
   code::Instructions Instructions;

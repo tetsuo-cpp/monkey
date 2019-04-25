@@ -25,7 +25,12 @@ enum class OpCode : unsigned char {
   OpPop,
   OpSub,
   OpMul,
-  OpDiv
+  OpDiv,
+  OpTrue,
+  OpFalse,
+  OpEqual,
+  OpNotEqual,
+  OpGreaterThan
 };
 
 struct Definition {
