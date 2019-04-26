@@ -30,7 +30,11 @@ enum class OpCode : unsigned char {
   OpFalse,
   OpEqual,
   OpNotEqual,
-  OpGreaterThan
+  OpGreaterThan,
+  OpMinus,
+  OpBang,
+  OpJumpNotTruthy,
+  OpJump
 };
 
 struct Definition {

@@ -55,6 +55,12 @@ void VM::run() {
     case code::OpCode::OpGreaterThan:
       executeComparison(Op);
       break;
+    case code::OpCode::OpBang:
+      executeBangOperator();
+      break;
+    case code::OpCode::OpMinus:
+      executeMinusOperator();
+      break;
     default:
       break;
     }
@@ -165,6 +171,30 @@ void VM::executeIntegerComparison(
     throw std::runtime_error("unknown operator: " +
                              std::to_string(static_cast<char>(Op)));
   }
+}
+
+void VM::executeBangOperator() {
+  const auto &Operand = pop();
+
+  const auto *Boolean = dynamic_cast<const object::Boolean *>(Operand.get());
+  if (Boolean)
+    if (Boolean->Value)
+      push(FalseGlobal);
+    else
+      push(TrueGlobal);
+  else
+    push(FalseGlobal);
+}
+
+void VM::executeMinusOperator() {
+  const auto &Operand = pop();
+
+  if (Operand->type() != object::ObjectType::INTEGER_OBJ)
+    throw std::runtime_error(std::string("unsupported type for negation: ") +
+                             object::objTypeToString(Operand->type()));
+
+  auto Value = static_cast<const object::Integer *>(Operand.get())->Value;
+  push(std::make_shared<object::Integer>(-Value));
 }
 
 } // namespace monkey::vm

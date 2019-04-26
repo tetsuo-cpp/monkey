@@ -21,7 +21,11 @@ std::vector<std::pair<OpCode, Definition>> Definitions = {
     {OpCode::OpFalse, {"OpFalse", {}}},
     {OpCode::OpEqual, {"OpEqual", {}}},
     {OpCode::OpNotEqual, {"OpNotEqual", {}}},
-    {OpCode::OpGreaterThan, {"OpGreaterThan", {}}}};
+    {OpCode::OpGreaterThan, {"OpGreaterThan", {}}},
+    {OpCode::OpMinus, {"OpMinus", {}}},
+    {OpCode::OpBang, {"OpBang", {}}},
+    {OpCode::OpJumpNotTruthy, {"OpJumpNotTruthy", {2}}},
+    {OpCode::OpJump, {"OpJump", {2}}}};
 
 } // namespace
 

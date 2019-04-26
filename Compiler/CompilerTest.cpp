@@ -99,6 +99,11 @@ TEST(CompilerTests, testIntegerArithmetic) {
        {code::make(code::OpCode::OpConstant, {0}),
         code::make(code::OpCode::OpConstant, {1}),
         code::make(code::OpCode::OpDiv, {}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"-1",
+       {1},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpMinus, {}),
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);
@@ -149,6 +154,31 @@ TEST(CompilerTests, testBooleanExpressions) {
        {code::make(code::OpCode::OpTrue, {}),
         code::make(code::OpCode::OpFalse, {}),
         code::make(code::OpCode::OpNotEqual, {}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"!true",
+       {},
+       {code::make(code::OpCode::OpTrue, {}),
+        code::make(code::OpCode::OpBang, {}),
+        code::make(code::OpCode::OpPop, {})}}};
+
+  runCompilerTests(Tests);
+}
+
+TEST(CompilerTests, testConditionals) {
+  const std::vector<CompilerTestCase<int64_t>> Tests = {
+      {"if (true) { 10 }; 3333;",
+       {10, 3333},
+       {// 0000
+        code::make(code::OpCode::OpTrue, {}),
+        // 0001
+        code::make(code::OpCode::OpJumpNotTruthy, {7}),
+        // 0004
+        code::make(code::OpCode::OpConstant, {0}),
+        // 0007
+        code::make(code::OpCode::OpPop, {}),
+        // 0008
+        code::make(code::OpCode::OpConstant, {1}),
+        // 0011
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);

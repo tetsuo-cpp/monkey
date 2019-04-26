@@ -50,6 +50,45 @@ void Compiler::compile(const ast::Node *Node) {
     return;
   }
 
+  const auto *PrefixE = dynamic_cast<const ast::PrefixExpression *>(Node);
+  if (PrefixE) {
+    compile(PrefixE->Right.get());
+
+    if (PrefixE->Operator == "!")
+      emit(code::OpCode::OpBang, {});
+    else if (PrefixE->Operator == "-")
+      emit(code::OpCode::OpMinus, {});
+    else
+      throw std::runtime_error("unknown operator " + PrefixE->Operator);
+    return;
+  }
+
+  const auto *IfE = dynamic_cast<const ast::IfExpression *>(Node);
+  if (IfE) {
+    compile(IfE->Condition.get());
+
+    // Emit an 'OpJumpNotTruthy' with a bogus value.
+    auto JumpNotTruthyPos = emit(code::OpCode::OpJumpNotTruthy, {9999});
+
+    compile(IfE->Consequence.get());
+
+    if (lastInstructionIsPop())
+      removeLastPop();
+
+    int AfterConsequencePos = Instructions.Value.size();
+    changeOperand(JumpNotTruthyPos, AfterConsequencePos);
+
+    return;
+  }
+
+  const auto *Block = dynamic_cast<const ast::BlockStatement *>(Node);
+  if (Block) {
+    for (const auto &Statement : Block->Statements)
+      compile(Statement.get());
+
+    return;
+  }
+
   const auto *Bool = dynamic_cast<const ast::Boolean *>(Node);
   if (Bool) {
     if (Bool->Value)
@@ -73,6 +112,8 @@ ByteCode Compiler::byteCode() const {
 int Compiler::emit(code::OpCode Op, const std::vector<int> &Operands) {
   const auto &Ins = code::make(Op, Operands);
   auto Pos = addInstruction(Ins);
+
+  setLastInstruction(Op, Pos);
   return Pos;
 }
 
@@ -80,6 +121,37 @@ int Compiler::addInstruction(const std::vector<unsigned char> &Ins) {
   const auto PosNewInstruction = Instructions.Value.size();
   std::copy(Ins.begin(), Ins.end(), std::back_inserter(Instructions.Value));
   return PosNewInstruction;
+}
+
+void Compiler::setLastInstruction(code::OpCode Op, unsigned int Pos) {
+  auto Previous = LastInstruction;
+  EmittedInstruction Last(Op, Pos);
+  PreviousInstruction = Previous;
+  LastInstruction = Last;
+}
+
+bool Compiler::lastInstructionIsPop() const {
+  return LastInstruction.Op == code::OpCode::OpPop;
+}
+
+void Compiler::removeLastPop() {
+  Instructions.Value.erase(Instructions.Value.begin() +
+                               LastInstruction.Position,
+                           Instructions.Value.end());
+  LastInstruction = PreviousInstruction;
+}
+
+void Compiler::replaceInstruction(unsigned int Pos,
+                                  std::vector<unsigned char> &NewInstruction) {
+  for (unsigned int Index = 0; Index < NewInstruction.size(); ++Index)
+    Instructions.Value.at(Pos + Index) = NewInstruction.at(Index);
+}
+
+void Compiler::changeOperand(unsigned int OpPos, int Operand) {
+  const auto Op = static_cast<code::OpCode>(Instructions.Value.at(OpPos));
+  auto NewInstruction = code::make(Op, {Operand});
+
+  replaceInstruction(OpPos, NewInstruction);
 }
 
 } // namespace monkey::compiler

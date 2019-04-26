@@ -31,6 +31,8 @@ private:
   void executeIntegerComparison(code::OpCode,
                                 const std::shared_ptr<object::Object> &,
                                 const std::shared_ptr<object::Object> &);
+  void executeBangOperator();
+  void executeMinusOperator();
 
   std::vector<std::shared_ptr<object::Object>> Constants;
   code::Instructions Instructions;
