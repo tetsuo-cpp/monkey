@@ -2,11 +2,16 @@
 
 namespace monkey::vm {
 
+namespace {
+
 static const std::shared_ptr<object::Object> TrueGlobal =
     std::make_shared<object::Boolean>(true);
 
 static const std::shared_ptr<object::Object> FalseGlobal =
     std::make_shared<object::Boolean>(false);
+
+static const std::shared_ptr<object::Object> NullGlobal =
+    std::make_shared<object::Null>();
 
 const std::shared_ptr<object::Object> nativeBooleanToBooleanObject(bool Val) {
   if (Val)
@@ -14,6 +19,20 @@ const std::shared_ptr<object::Object> nativeBooleanToBooleanObject(bool Val) {
 
   return FalseGlobal;
 }
+
+bool isTruthy(const object::Object *Obj) {
+  const auto *BooleanObj = object::objCast<const object::Boolean *>(Obj);
+  if (BooleanObj)
+    return BooleanObj->Value;
+
+  const auto *NullObj = object::objCast<const object::Null *>(Obj);
+  if (NullObj)
+    return false;
+
+  return true;
+}
+
+} // namespace
 
 VM::VM(compiler::ByteCode &&BC)
     : Constants(std::move(BC.Constants)),
@@ -60,6 +79,24 @@ void VM::run() {
       break;
     case code::OpCode::OpMinus:
       executeMinusOperator();
+      break;
+    case code::OpCode::OpJump: {
+      const int16_t JumpPos =
+          ntohs(reinterpret_cast<int16_t &>(Instructions.Value.at(IP + 1)));
+      IP = JumpPos - 1;
+      break;
+    }
+    case code::OpCode::OpJumpNotTruthy: {
+      const int16_t JumpPos =
+          ntohs(reinterpret_cast<int16_t &>(Instructions.Value.at(IP + 1)));
+      IP += 2;
+      const auto &Condition = pop();
+      if (!isTruthy(Condition.get()))
+        IP = JumpPos - 1;
+      break;
+    }
+    case code::OpCode::OpNull:
+      push(NullGlobal);
       break;
     default:
       break;
@@ -176,12 +213,12 @@ void VM::executeIntegerComparison(
 void VM::executeBangOperator() {
   const auto &Operand = pop();
 
-  const auto *Boolean = dynamic_cast<const object::Boolean *>(Operand.get());
-  if (Boolean)
-    if (Boolean->Value)
-      push(FalseGlobal);
-    else
-      push(TrueGlobal);
+  if (Operand.get() == TrueGlobal.get())
+    push(FalseGlobal);
+  else if (Operand.get() == FalseGlobal.get())
+    push(TrueGlobal);
+  else if (Operand.get() == NullGlobal.get())
+    push(TrueGlobal);
   else
     push(FalseGlobal);
 }

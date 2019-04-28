@@ -29,6 +29,11 @@ void testBooleanObject(bool Expected, const object::Object *Obj) {
   ASSERT_EQ(Boolean->Value, Expected);
 }
 
+void testVoidObject(const object::Object *Obj) {
+  const auto *Null = dynamic_cast<const object::Null *>(Obj);
+  ASSERT_THAT(Null, testing::NotNull());
+}
+
 template <typename T> struct VMTestCase {
   const std::string Input;
   const T Expected;
@@ -40,6 +45,11 @@ void testExpectedObject(int64_t Expected, const object::Object *Obj) {
 
 void testExpectedObject(bool Expected, const object::Object *Obj) {
   testBooleanObject(Expected, Obj);
+}
+
+void testExpectedObject(void *Expected, const object::Object *Obj) {
+  static_cast<void>(Expected);
+  testVoidObject(Obj);
 }
 
 template <typename T> void runVMTests(const std::vector<VMTestCase<T>> &Tests) {
@@ -105,9 +115,29 @@ TEST(VMTests, testBooleanExpressions) {
                                                {"!5", false},
                                                {"!!true", true},
                                                {"!!false", false},
-                                               {"!!5", true}};
+                                               {"!!5", true},
+                                               {"!(if (false) { 5; })", true}};
 
   runVMTests(Tests);
+}
+
+TEST(VMTests, testConditionals) {
+  const std::vector<VMTestCase<int64_t>> Tests = {
+      {"if (true) { 10 }", 10},
+      {"if (true) { 10 } else { 20 }", 10},
+      {"if (false) { 10 } else { 20 }", 20},
+      {"if (1) { 10 }", 10},
+      {"if (1 < 2) { 10 }", 10},
+      {"if (1 < 2) { 10 } else { 20 }", 10},
+      {"if (1 > 2) { 10 } else { 20 }", 20},
+      {"if ((if (false) { 10 })) { 10 } else { 20 }", 20}};
+
+  runVMTests(Tests);
+
+  const std::vector<VMTestCase<void *>> NullTests = {
+      {"if (1 > 2) { 10 }", nullptr}, {"if (false) { 10 }", nullptr}};
+
+  runVMTests(NullTests);
 }
 
 } // namespace monkey::vm::test

@@ -12,8 +12,8 @@ struct ByteCode {
       : Instructions(std::forward<T0>(Instructions)),
         Constants(std::forward<T1>(Constants)) {}
 
-  code::Instructions Instructions;
-  std::vector<std::shared_ptr<object::Object>> Constants;
+  const code::Instructions Instructions;
+  const std::vector<std::shared_ptr<object::Object>> Constants;
 };
 
 struct EmittedInstruction {

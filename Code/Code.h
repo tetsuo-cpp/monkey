@@ -34,7 +34,8 @@ enum class OpCode : unsigned char {
   OpMinus,
   OpBang,
   OpJumpNotTruthy,
-  OpJump
+  OpJump,
+  OpNull
 };
 
 struct Definition {

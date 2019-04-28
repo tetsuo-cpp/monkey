@@ -75,9 +75,23 @@ void Compiler::compile(const ast::Node *Node) {
     if (lastInstructionIsPop())
       removeLastPop();
 
+    // Emit an 'OpJump' with a bogus value.
+    auto JumpPos = emit(code::OpCode::OpJump, {9999});
+
     int AfterConsequencePos = Instructions.Value.size();
     changeOperand(JumpNotTruthyPos, AfterConsequencePos);
 
+    if (!IfE->Alternative) {
+      emit(code::OpCode::OpNull, {});
+    } else {
+      compile(IfE->Alternative.get());
+
+      if (lastInstructionIsPop())
+        removeLastPop();
+    }
+
+    int AfterAlternativePos = Instructions.Value.size();
+    changeOperand(JumpPos, AfterAlternativePos);
     return;
   }
 

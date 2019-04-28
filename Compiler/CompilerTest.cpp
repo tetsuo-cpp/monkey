@@ -171,14 +171,36 @@ TEST(CompilerTests, testConditionals) {
        {// 0000
         code::make(code::OpCode::OpTrue, {}),
         // 0001
-        code::make(code::OpCode::OpJumpNotTruthy, {7}),
+        code::make(code::OpCode::OpJumpNotTruthy, {10}),
         // 0004
         code::make(code::OpCode::OpConstant, {0}),
         // 0007
-        code::make(code::OpCode::OpPop, {}),
-        // 0008
-        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpJump, {11}),
+        // 0010
+        code::make(code::OpCode::OpNull, {}),
         // 0011
+        code::make(code::OpCode::OpPop, {}),
+        // 0012
+        code::make(code::OpCode::OpConstant, {1}),
+        // 0015
+        code::make(code::OpCode::OpPop, {})}},
+      {"if (true) { 10 } else { 20 }; 3333;",
+       {10, 20, 3333},
+       {// 0000
+        code::make(code::OpCode::OpTrue, {}),
+        // 0001
+        code::make(code::OpCode::OpJumpNotTruthy, {10}),
+        // 0004
+        code::make(code::OpCode::OpConstant, {0}),
+        // 0007
+        code::make(code::OpCode::OpJump, {13}),
+        // 0010
+        code::make(code::OpCode::OpConstant, {1}),
+        // 0013
+        code::make(code::OpCode::OpPop, {}),
+        // 0014
+        code::make(code::OpCode::OpConstant, {2}),
+        // 0017
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);
