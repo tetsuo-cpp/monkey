@@ -3,7 +3,7 @@ This project includes C++ implementations of an interpreter, bytecode compiler a
 ## Progress
 * Interpreter (Finished).
 * Compiler (In Progress).
-* Virtual Machine.
+* Virtual Machine (In Progress).
 ## Dependencies
 * CMake.
 * Google Test.
