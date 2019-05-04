@@ -7,6 +7,7 @@
 namespace {
 
 const size_t StackSize = 2048;
+const size_t GlobalsSize = 65536;
 
 } // namespace
 
@@ -14,7 +15,8 @@ namespace monkey::vm {
 
 class VM {
 public:
-  explicit VM(compiler::ByteCode &&);
+  VM(compiler::ByteCode &&,
+     std::array<std::shared_ptr<object::Object>, GlobalsSize> &);
   virtual ~VM() = default;
 
   const object::Object *lastPoppedStackElem() const;
@@ -34,10 +36,11 @@ private:
   void executeBangOperator();
   void executeMinusOperator();
 
-  std::vector<std::shared_ptr<object::Object>> Constants;
+  std::vector<std::shared_ptr<object::Object>> &Constants;
   code::Instructions Instructions;
   std::array<std::shared_ptr<object::Object>, StackSize> Stack;
   unsigned int SP;
+  std::array<std::shared_ptr<object::Object>, GlobalsSize> &Globals;
 };
 
 } // namespace monkey::vm

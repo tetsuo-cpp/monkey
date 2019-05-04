@@ -2,6 +2,10 @@
 
 namespace monkey::compiler {
 
+Compiler::Compiler(SymbolTable &SymTable,
+                   std::vector<std::shared_ptr<object::Object>> &Constants)
+    : Constants(Constants), SymTable(SymTable) {}
+
 void Compiler::compile(const ast::Node *Node) {
   const auto *Program = dynamic_cast<const ast::Program *>(Node);
   if (Program) {
@@ -103,6 +107,24 @@ void Compiler::compile(const ast::Node *Node) {
     return;
   }
 
+  const auto *Let = dynamic_cast<const ast::LetStatement *>(Node);
+  if (Let) {
+    compile(Let->Value.get());
+    const auto &Symbol = SymTable.define(Let->Name->Value);
+    emit(code::OpCode::OpSetGlobal, {Symbol.Index});
+    return;
+  }
+
+  const auto *Identifier = dynamic_cast<const ast::Identifier *>(Node);
+  if (Identifier) {
+    const auto *Symbol = SymTable.resolve(Identifier->Value);
+    if (!Symbol)
+      throw std::runtime_error("undefined variable " + Identifier->Value);
+
+    emit(code::OpCode::OpGetGlobal, {Symbol->Index});
+    return;
+  }
+
   const auto *Bool = dynamic_cast<const ast::Boolean *>(Node);
   if (Bool) {
     if (Bool->Value)
@@ -119,8 +141,8 @@ void Compiler::compile(const ast::Node *Node) {
   }
 }
 
-ByteCode Compiler::byteCode() const {
-  return ByteCode(std::move(Instructions), std::move(Constants));
+ByteCode Compiler::byteCode() {
+  return ByteCode(std::move(Instructions), Constants);
 }
 
 int Compiler::emit(code::OpCode Op, const std::vector<int> &Operands) {

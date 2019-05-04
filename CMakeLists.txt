@@ -24,6 +24,7 @@ set(
   AST/AST.cpp
   Code/Code.cpp
   Compiler/Compiler.cpp
+  Compiler/SymbolTable.cpp
   Environment/Environment.cpp
   Evaluator/Evaluator.cpp
   Lexer/Lexer.cpp
@@ -47,6 +48,8 @@ set(
   Code/CodeTest.cpp
   Compiler/Compiler.cpp
   Compiler/CompilerTest.cpp
+  Compiler/SymbolTable.cpp
+  Compiler/SymbolTableTest.cpp
   Environment/Environment.cpp
   Evaluator/Evaluator.cpp
   Evaluator/EvaluatorTest.cpp

@@ -59,7 +59,9 @@ void runCompilerTests(const std::vector<CompilerTestCase<T>> &Tests) {
   for (const auto &Test : Tests) {
     const auto Program = parse(Test.Input);
 
-    Compiler C;
+    SymbolTable ST;
+    std::vector<std::shared_ptr<object::Object>> Constants;
+    Compiler C(ST, Constants);
     ASSERT_NO_THROW(C.compile(Program.get()));
 
     const auto ByteCode = C.byteCode();
@@ -201,6 +203,36 @@ TEST(CompilerTests, testConditionals) {
         // 0014
         code::make(code::OpCode::OpConstant, {2}),
         // 0017
+        code::make(code::OpCode::OpPop, {})}}};
+
+  runCompilerTests(Tests);
+}
+
+TEST(CompilerTests, testLetStatements) {
+  const std::vector<CompilerTestCase<int64_t>> Tests = {
+      {"let one = 1;"
+       "let two = 2;",
+       {1, 2},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpSetGlobal, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpSetGlobal, {1})}},
+      {"let one = 1;"
+       "one;",
+       {1},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpSetGlobal, {0}),
+        code::make(code::OpCode::OpGetGlobal, {0}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"let one = 1;"
+       "let two = one;"
+       "two;",
+       {1},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpSetGlobal, {0}),
+        code::make(code::OpCode::OpGetGlobal, {0}),
+        code::make(code::OpCode::OpSetGlobal, {1}),
+        code::make(code::OpCode::OpGetGlobal, {1}),
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);

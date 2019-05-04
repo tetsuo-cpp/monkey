@@ -2,18 +2,19 @@
 
 #include <AST/AST.h>
 #include <Code/Code.h>
+#include <Compiler/SymbolTable.h>
 #include <Object/Object.h>
 
 namespace monkey::compiler {
 
 struct ByteCode {
-  template <typename T0, typename T1>
-  ByteCode(T0 &&Instructions, T1 &&Constants)
-      : Instructions(std::forward<T0>(Instructions)),
-        Constants(std::forward<T1>(Constants)) {}
+  template <typename T>
+  ByteCode(T &&Instructions,
+           std::vector<std::shared_ptr<object::Object>> &Constants)
+      : Instructions(std::forward<T>(Instructions)), Constants(Constants) {}
 
-  const code::Instructions Instructions;
-  const std::vector<std::shared_ptr<object::Object>> Constants;
+  code::Instructions Instructions;
+  std::vector<std::shared_ptr<object::Object>> &Constants;
 };
 
 struct EmittedInstruction {
@@ -27,11 +28,11 @@ struct EmittedInstruction {
 
 class Compiler {
 public:
-  Compiler() = default;
+  Compiler(SymbolTable &, std::vector<std::shared_ptr<object::Object>> &);
   virtual ~Compiler() = default;
 
   void compile(const ast::Node *);
-  ByteCode byteCode() const;
+  ByteCode byteCode();
 
 private:
   template <typename T> int addConstant(T &&Obj) {
@@ -48,9 +49,10 @@ private:
   void changeOperand(unsigned int, int);
 
   code::Instructions Instructions;
-  std::vector<std::shared_ptr<object::Object>> Constants;
+  std::vector<std::shared_ptr<object::Object>> &Constants;
   EmittedInstruction LastInstruction;
   EmittedInstruction PreviousInstruction;
+  SymbolTable &SymTable;
 };
 
 } // namespace monkey::compiler

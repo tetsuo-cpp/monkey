@@ -56,10 +56,13 @@ template <typename T> void runVMTests(const std::vector<VMTestCase<T>> &Tests) {
   for (const auto &Test : Tests) {
     auto Program = parse(Test.Input);
 
-    compiler::Compiler C;
+    compiler::SymbolTable ST;
+    std::vector<std::shared_ptr<object::Object>> Constants;
+    compiler::Compiler C(ST, Constants);
     ASSERT_NO_THROW(C.compile(Program.get()));
 
-    VM VM(C.byteCode());
+    std::array<std::shared_ptr<object::Object>, GlobalsSize> Globals;
+    VM VM(C.byteCode(), Globals);
     ASSERT_NO_THROW(VM.run());
 
     const auto *StackElem = VM.lastPoppedStackElem();
@@ -138,6 +141,15 @@ TEST(VMTests, testConditionals) {
       {"if (1 > 2) { 10 }", nullptr}, {"if (false) { 10 }", nullptr}};
 
   runVMTests(NullTests);
+}
+
+TEST(VMTests, testGlobalLetStatements) {
+  const std::vector<VMTestCase<int64_t>> Tests = {
+      {"let one = 1; one", 1},
+      {"let one = 1; let two = 2; one + two", 3},
+      {"let one = 1; let two = one + one; one + two", 3}};
+
+  runVMTests(Tests);
 }
 
 } // namespace monkey::vm::test

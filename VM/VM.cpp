@@ -1,5 +1,7 @@
 #include "VM.h"
 
+#include <arpa/inet.h>
+
 namespace monkey::vm {
 
 namespace {
@@ -34,9 +36,11 @@ bool isTruthy(const object::Object *Obj) {
 
 } // namespace
 
-VM::VM(compiler::ByteCode &&BC)
-    : Constants(std::move(BC.Constants)),
-      Instructions(std::move(BC.Instructions)), Stack{nullptr}, SP(0) {}
+VM::VM(compiler::ByteCode &&BC,
+       std::array<std::shared_ptr<object::Object>, GlobalsSize> &Globals)
+    : Constants(BC.Constants),
+      Instructions(std::move(BC.Instructions)), Stack{nullptr}, SP(0),
+      Globals(Globals) {}
 
 const object::Object *VM::lastPoppedStackElem() const {
   return Stack.at(SP).get();
@@ -98,6 +102,20 @@ void VM::run() {
     case code::OpCode::OpNull:
       push(NullGlobal);
       break;
+    case code::OpCode::OpSetGlobal: {
+      const int16_t GlobalIndex =
+          ntohs(reinterpret_cast<int16_t &>(Instructions.Value.at(IP + 1)));
+      IP += 2;
+      Globals.at(GlobalIndex) = pop();
+      break;
+    }
+    case code::OpCode::OpGetGlobal: {
+      const int16_t GlobalIndex =
+          ntohs(reinterpret_cast<int16_t &>(Instructions.Value.at(IP + 1)));
+      IP += 2;
+      push(Globals.at(GlobalIndex));
+      break;
+    }
     default:
       break;
     }
