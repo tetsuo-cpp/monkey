@@ -29,12 +29,16 @@ private:
   void executeBinaryIntegerOperation(code::OpCode,
                                      const std::shared_ptr<object::Object> &,
                                      const std::shared_ptr<object::Object> &);
+  void executeBinaryStringOperation(code::OpCode,
+                                    const std::shared_ptr<object::Object> &,
+                                    const std::shared_ptr<object::Object> &);
   void executeComparison(code::OpCode);
   void executeIntegerComparison(code::OpCode,
                                 const std::shared_ptr<object::Object> &,
                                 const std::shared_ptr<object::Object> &);
   void executeBangOperator();
   void executeMinusOperator();
+  std::shared_ptr<object::Object> buildArray(int, int) const;
 
   std::vector<std::shared_ptr<object::Object>> &Constants;
   code::Instructions Instructions;

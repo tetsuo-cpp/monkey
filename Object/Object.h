@@ -171,8 +171,7 @@ inline T objCastImpl(const Object *Obj) {
     return nullptr;
 }
 
-template <typename T> inline T objCast(const Object *Obj) {
-  static_cast<void>(Obj);
+template <typename T> inline T objCast(const Object *) {
   static_assert(sizeof(T) != sizeof(T),
                 "objCast must be specialised for this type");
 }

@@ -28,7 +28,8 @@ std::vector<std::pair<OpCode, Definition>> Definitions = {
     {OpCode::OpJump, {"OpJump", {2}}},
     {OpCode::OpNull, {"OpNull", {}}},
     {OpCode::OpGetGlobal, {"OpGetGlobal", {2}}},
-    {OpCode::OpSetGlobal, {"OpSetGlobal", {2}}}};
+    {OpCode::OpSetGlobal, {"OpSetGlobal", {2}}},
+    {OpCode::OpArray, {"OpArray", {2}}}};
 
 } // namespace
 

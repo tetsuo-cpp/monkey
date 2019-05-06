@@ -131,12 +131,29 @@ void Compiler::compile(const ast::Node *Node) {
       emit(code::OpCode::OpTrue, {});
     else
       emit(code::OpCode::OpFalse, {});
+    return;
   }
 
   const auto *IntegerL = dynamic_cast<const ast::IntegerLiteral *>(Node);
   if (IntegerL) {
     auto Integer = std::make_shared<object::Integer>(IntegerL->Value);
     emit(code::OpCode::OpConstant, {addConstant(std::move(Integer))});
+    return;
+  }
+
+  const auto *StringL = dynamic_cast<const ast::String *>(Node);
+  if (StringL) {
+    auto String = std::make_shared<object::String>(StringL->Value);
+    emit(code::OpCode::OpConstant, {addConstant(std::move(String))});
+    return;
+  }
+
+  const auto *ArrayL = dynamic_cast<const ast::ArrayLiteral *>(Node);
+  if (ArrayL) {
+    for (const auto &Elem : ArrayL->Elements)
+      compile(Elem.get());
+
+    emit(code::OpCode::OpArray, {static_cast<int>(ArrayL->Elements.size())});
     return;
   }
 }

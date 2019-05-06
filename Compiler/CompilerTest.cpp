@@ -36,6 +36,13 @@ void testIntegerObject(int64_t Expected, const object::Object *Actual) {
   ASSERT_EQ(Integer->Value, Expected);
 }
 
+void testStringObject(const std::string &Expected,
+                      const object::Object *Actual) {
+  const auto *String = dynamic_cast<const object::String *>(Actual);
+  ASSERT_THAT(String, testing::NotNull());
+  ASSERT_EQ(String->Value, Expected);
+}
+
 void testInstructions(const std::vector<code::Instructions> &Expected,
                       const code::Instructions &Actual) {
   auto Concatted = concatInstructions(Expected);
@@ -45,12 +52,29 @@ void testInstructions(const std::vector<code::Instructions> &Expected,
 }
 
 template <typename T>
-void testConstants(const std::vector<T> &Expected,
-                   const std::vector<std::shared_ptr<object::Object>> &Actual) {
+void testConstants(const std::vector<T> &,
+                   const std::vector<std::shared_ptr<object::Object>> &) {
+  static_assert(sizeof(T) != sizeof(T),
+                "testConstants must be specialised for this type");
+}
+
+template <>
+void testConstants<int>(
+    const std::vector<int> &Expected,
+    const std::vector<std::shared_ptr<object::Object>> &Actual) {
   ASSERT_EQ(Expected.size(), Actual.size());
   for (unsigned int Index = 0; Index < Expected.size(); ++Index) {
-    if (std::is_same<int, T>())
-      testIntegerObject(Expected.at(Index), Actual.at(Index).get());
+    testIntegerObject(Expected.at(Index), Actual.at(Index).get());
+  }
+}
+
+template <>
+void testConstants<std::string>(
+    const std::vector<std::string> &Expected,
+    const std::vector<std::shared_ptr<object::Object>> &Actual) {
+  ASSERT_EQ(Expected.size(), Actual.size());
+  for (unsigned int Index = 0; Index < Expected.size(); ++Index) {
+    testStringObject(Expected.at(Index), Actual.at(Index).get());
   }
 }
 
@@ -66,7 +90,7 @@ void runCompilerTests(const std::vector<CompilerTestCase<T>> &Tests) {
 
     const auto ByteCode = C.byteCode();
     testInstructions(Test.ExpectedInstructions, ByteCode.Instructions);
-    testConstants(Test.ExpectedConstants, ByteCode.Constants);
+    testConstants<T>(Test.ExpectedConstants, ByteCode.Constants);
   }
 }
 
@@ -112,7 +136,7 @@ TEST(CompilerTests, testIntegerArithmetic) {
 }
 
 TEST(CompilerTests, testBooleanExpressions) {
-  const std::vector<CompilerTestCase<int64_t>> Tests = {
+  const std::vector<CompilerTestCase<int>> Tests = {
       {"true",
        {},
        {code::make(code::OpCode::OpTrue, {}),
@@ -167,7 +191,7 @@ TEST(CompilerTests, testBooleanExpressions) {
 }
 
 TEST(CompilerTests, testConditionals) {
-  const std::vector<CompilerTestCase<int64_t>> Tests = {
+  const std::vector<CompilerTestCase<int>> Tests = {
       {"if (true) { 10 }; 3333;",
        {10, 3333},
        {// 0000
@@ -209,7 +233,7 @@ TEST(CompilerTests, testConditionals) {
 }
 
 TEST(CompilerTests, testLetStatements) {
-  const std::vector<CompilerTestCase<int64_t>> Tests = {
+  const std::vector<CompilerTestCase<int>> Tests = {
       {"let one = 1;"
        "let two = 2;",
        {1, 2},
@@ -233,6 +257,52 @@ TEST(CompilerTests, testLetStatements) {
         code::make(code::OpCode::OpGetGlobal, {0}),
         code::make(code::OpCode::OpSetGlobal, {1}),
         code::make(code::OpCode::OpGetGlobal, {1}),
+        code::make(code::OpCode::OpPop, {})}}};
+
+  runCompilerTests(Tests);
+}
+
+TEST(CompilerTests, testStringExpressions) {
+  const std::vector<CompilerTestCase<std::string>> Tests = {
+      {"\"monkey\"",
+       {"monkey"},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"\"mon\" + \"key\"",
+       {"mon", "key"},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpAdd, {}),
+        code::make(code::OpCode::OpPop, {})}}};
+
+  runCompilerTests(Tests);
+}
+
+TEST(CompilerTests, testArrayLiterals) {
+  const std::vector<CompilerTestCase<int>> Tests = {
+      {"[]",
+       {},
+       {code::make(code::OpCode::OpArray, {0}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"[1, 2, 3]",
+       {1, 2, 3},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpConstant, {2}),
+        code::make(code::OpCode::OpArray, {3}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"[1 + 2, 3 - 4, 5 * 6]",
+       {1, 2, 3, 4, 5, 6},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpAdd, {}),
+        code::make(code::OpCode::OpConstant, {2}),
+        code::make(code::OpCode::OpConstant, {3}),
+        code::make(code::OpCode::OpSub, {}),
+        code::make(code::OpCode::OpConstant, {4}),
+        code::make(code::OpCode::OpConstant, {5}),
+        code::make(code::OpCode::OpMul, {}),
+        code::make(code::OpCode::OpArray, {3}),
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);

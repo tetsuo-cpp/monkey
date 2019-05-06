@@ -116,6 +116,16 @@ void VM::run() {
       push(Globals.at(GlobalIndex));
       break;
     }
+    case code::OpCode::OpArray: {
+      const int16_t NumElem =
+          ntohs(reinterpret_cast<int16_t &>(Instructions.Value.at(IP + 1)));
+      IP += 2;
+
+      auto Array = buildArray(SP - NumElem, SP);
+      SP = SP - NumElem;
+      push(std::move(Array));
+      break;
+    }
     default:
       break;
     }
@@ -145,13 +155,15 @@ void VM::executeBinaryOperation(code::OpCode Op) {
   if (LeftType == object::ObjectType::INTEGER_OBJ &&
       RightType == object::ObjectType::INTEGER_OBJ) {
     executeBinaryIntegerOperation(Op, Left, Right);
-    return;
+  } else if (LeftType == object::ObjectType::STRING_OBJ &&
+             RightType == object::ObjectType::STRING_OBJ) {
+    executeBinaryStringOperation(Op, Left, Right);
+  } else {
+    throw std::runtime_error(
+        std::string("unsupported types for binary operation ") +
+        object::objTypeToString(LeftType) + " " +
+        object::objTypeToString(RightType));
   }
-
-  throw std::runtime_error(
-      std::string("unsupported types for binary operation ") +
-      object::objTypeToString(LeftType) + " " +
-      object::objTypeToString(RightType));
 }
 
 void VM::executeBinaryIntegerOperation(
@@ -179,6 +191,21 @@ void VM::executeBinaryIntegerOperation(
   }();
 
   push(std::make_shared<object::Integer>(Result));
+}
+
+void VM::executeBinaryStringOperation(
+    code::OpCode Op, const std::shared_ptr<object::Object> &Left,
+    const std::shared_ptr<object::Object> &Right) {
+  if (Op != code::OpCode::OpAdd)
+    throw std::runtime_error("unknown string operator: " +
+                             std::to_string(static_cast<unsigned char>(Op)));
+
+  const auto &LeftVal =
+      object::objCast<const object::String *>(Left.get())->Value;
+  const auto &RightVal =
+      object::objCast<const object::String *>(Right.get())->Value;
+
+  push(std::make_shared<object::String>(LeftVal + RightVal));
 }
 
 void VM::executeComparison(code::OpCode Op) {
@@ -250,6 +277,17 @@ void VM::executeMinusOperator() {
 
   auto Value = static_cast<const object::Integer *>(Operand.get())->Value;
   push(std::make_shared<object::Integer>(-Value));
+}
+
+std::shared_ptr<object::Object> VM::buildArray(int StartIndex,
+                                               int EndIndex) const {
+  std::vector<std::shared_ptr<object::Object>> Elements(EndIndex - StartIndex,
+                                                        nullptr);
+
+  for (int I = StartIndex; I < EndIndex; ++I)
+    Elements.at(I - StartIndex) = Stack.at(I);
+
+  return std::make_shared<object::Array>(std::move(Elements));
 }
 
 } // namespace monkey::vm

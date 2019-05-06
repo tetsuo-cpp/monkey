@@ -34,6 +34,12 @@ void testVoidObject(const object::Object *Obj) {
   ASSERT_THAT(Null, testing::NotNull());
 }
 
+void testStringObject(const std::string &Expected, const object::Object *Obj) {
+  const auto *String = dynamic_cast<const object::String *>(Obj);
+  ASSERT_THAT(String, testing::NotNull());
+  ASSERT_EQ(String->Value, Expected);
+}
+
 template <typename T> struct VMTestCase {
   const std::string Input;
   const T Expected;
@@ -47,9 +53,23 @@ void testExpectedObject(bool Expected, const object::Object *Obj) {
   testBooleanObject(Expected, Obj);
 }
 
-void testExpectedObject(void *Expected, const object::Object *Obj) {
-  static_cast<void>(Expected);
+void testExpectedObject(void *, const object::Object *Obj) {
   testVoidObject(Obj);
+}
+
+void testExpectedObject(const std::string &Expected,
+                        const object::Object *Obj) {
+  testStringObject(Expected, Obj);
+}
+
+template <typename T>
+void testExpectedObject(const std::vector<T> &Expected,
+                        const object::Object *Obj) {
+  const auto *ArrayL = dynamic_cast<const object::Array *>(Obj);
+  ASSERT_THAT(ArrayL, testing::NotNull());
+  ASSERT_EQ(ArrayL->Elements.size(), Expected.size());
+  for (size_t I = 0; I < Expected.size(); ++I)
+    testExpectedObject(Expected.at(I), ArrayL->Elements.at(I).get());
 }
 
 template <typename T> void runVMTests(const std::vector<VMTestCase<T>> &Tests) {
@@ -148,6 +168,24 @@ TEST(VMTests, testGlobalLetStatements) {
       {"let one = 1; one", 1},
       {"let one = 1; let two = 2; one + two", 3},
       {"let one = 1; let two = one + one; one + two", 3}};
+
+  runVMTests(Tests);
+}
+
+TEST(VMTests, testStringExpressions) {
+  const std::vector<VMTestCase<std::string>> Tests = {
+      {"\"monkey\"", "monkey"},
+      {"\"mon\" + \"key\"", "monkey"},
+      {"\"mon\" + \"key\" + \"banana\"", "monkeybanana"}};
+
+  runVMTests(Tests);
+}
+
+TEST(VMTests, testArrayLiterals) {
+  const std::vector<VMTestCase<std::vector<int64_t>>> Tests = {
+      {"[]", {}},
+      {"[1, 2, 3]", {1, 2, 3}},
+      {"[1 + 2, 3 * 4, 5 + 6]", {3, 12, 11}}};
 
   runVMTests(Tests);
 }
