@@ -251,8 +251,8 @@ evalBooleanInfixExpression(const std::string &Operator,
                            const std::shared_ptr<object::Object> &Left,
                            const std::shared_ptr<object::Object> &Right) {
   const bool BothEqual = [&Left, &Right]() {
-    if (Left->type() == object::ObjectType::BOOLEAN_OBJ ^
-        Right->type() == object::ObjectType::BOOLEAN_OBJ)
+    if ((Left->type() == object::ObjectType::BOOLEAN_OBJ) ^
+        (Right->type() == object::ObjectType::BOOLEAN_OBJ))
       return false;
 
     const auto *L = object::objCast<const object::Boolean *>(Left.get());
@@ -268,8 +268,8 @@ evalBooleanInfixExpression(const std::string &Operator,
   else if (Operator == "!=")
     return std::make_shared<object::Boolean>(!BothEqual);
   else {
-    if (Left->type() == object::ObjectType::BOOLEAN_OBJ ^
-        Right->type() == object::ObjectType::BOOLEAN_OBJ)
+    if ((Left->type() == object::ObjectType::BOOLEAN_OBJ) ^
+        (Right->type() == object::ObjectType::BOOLEAN_OBJ))
       return newError("type mismatch: %s %s %s",
                       object::objTypeToString(Left->type()), Operator.c_str(),
                       object::objTypeToString(Right->type()));
