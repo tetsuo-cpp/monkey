@@ -126,6 +126,22 @@ void VM::run() {
       push(std::move(Array));
       break;
     }
+    case code::OpCode::OpHash: {
+      const int16_t NumElem =
+          ntohs(reinterpret_cast<int16_t &>(Instructions.Value.at(IP + 1)));
+      IP += 2;
+      const auto Hash = buildHash(SP - NumElem, SP);
+      SP -= NumElem;
+      push(Hash);
+      break;
+    }
+    case code::OpCode::OpIndex: {
+      const auto &Index = pop();
+      const auto &Left = pop();
+
+      executeIndexExpression(Left, Index);
+      break;
+    }
     default:
       break;
     }
@@ -288,6 +304,68 @@ std::shared_ptr<object::Object> VM::buildArray(int StartIndex,
     Elements.at(I - StartIndex) = Stack.at(I);
 
   return std::make_shared<object::Array>(std::move(Elements));
+}
+
+std::shared_ptr<object::Object> VM::buildHash(int StartIndex,
+                                              int EndIndex) const {
+  std::unordered_map<object::HashKey, std::shared_ptr<object::Object>,
+                     object::HashKeyHasher>
+      HashedPairs;
+
+  for (int I = StartIndex; I < EndIndex; I += 2) {
+    const auto &Key = Stack.at(I);
+    const auto &Value = Stack.at(I + 1);
+
+    if (!object::hasHashKey(object::HashKey(Key)))
+      throw std::runtime_error(std::string("unusable as hash key: ") +
+                               object::objTypeToString(Key->type()));
+
+    HashedPairs[object::HashKey(Key)] = Value;
+  }
+
+  return std::make_shared<object::Hash>(std::move(HashedPairs));
+}
+
+void VM::executeIndexExpression(const std::shared_ptr<object::Object> &Left,
+                                const std::shared_ptr<object::Object> &Index) {
+  if (Left->type() == object::ObjectType::ARRAY_OBJ &&
+      Index->type() == object::ObjectType::INTEGER_OBJ)
+    executeArrayIndex(Left, Index);
+  else if (Left->type() == object::ObjectType::HASH_OBJ)
+    executeHashIndex(Left, Index);
+  else
+    throw std::runtime_error(std::string("index operator not supported: ") +
+                             object::objTypeToString(Left->type()));
+}
+
+void VM::executeArrayIndex(const std::shared_ptr<object::Object> &Array,
+                           const std::shared_ptr<object::Object> &Index) {
+  const auto *ArrayObj = object::objCast<const object::Array *>(Array.get());
+  const auto I = object::objCast<const object::Integer *>(Index.get())->Value;
+  const int Max = ArrayObj->Elements.size() - 1;
+
+  if (I < 0 || I > Max) {
+    push(NullGlobal);
+    return;
+  }
+
+  push(ArrayObj->Elements.at(I));
+}
+
+void VM::executeHashIndex(const std::shared_ptr<object::Object> &Hash,
+                          const std::shared_ptr<object::Object> &Index) {
+  const auto *HashObj = object::objCast<const object::Hash *>(Hash.get());
+  const object::HashKey Key(Index);
+
+  if (!object::hasHashKey(Key))
+    throw std::runtime_error(std::string("unusable as hash key: ") +
+                             object::objTypeToString(Index->type()));
+
+  const auto HashIter = HashObj->Pairs.find(Key);
+  if (HashIter == HashObj->Pairs.end())
+    push(NullGlobal);
+  else
+    push(HashIter->second);
 }
 
 } // namespace monkey::vm

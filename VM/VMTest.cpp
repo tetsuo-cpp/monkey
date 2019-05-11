@@ -68,8 +68,22 @@ void testExpectedObject(const std::vector<T> &Expected,
   const auto *ArrayL = dynamic_cast<const object::Array *>(Obj);
   ASSERT_THAT(ArrayL, testing::NotNull());
   ASSERT_EQ(ArrayL->Elements.size(), Expected.size());
-  for (size_t I = 0; I < Expected.size(); ++I)
+  for (unsigned int I = 0; I < Expected.size(); ++I)
     testExpectedObject(Expected.at(I), ArrayL->Elements.at(I).get());
+}
+
+template <typename T>
+void testExpectedObject(
+    const std::vector<std::pair<object::HashKey, T>> &Expected,
+    const object::Object *Obj) {
+  const auto *HashL = dynamic_cast<const object::Hash *>(Obj);
+  ASSERT_THAT(HashL, testing::NotNull());
+  ASSERT_EQ(HashL->Pairs.size(), Expected.size());
+  for (const auto &Exp : Expected) {
+    const auto HashIter = HashL->Pairs.find(Exp.first);
+    ASSERT_NE(HashIter, HashL->Pairs.end());
+    testExpectedObject(Exp.second, HashIter->second.get());
+  }
 }
 
 template <typename T> void runVMTests(const std::vector<VMTestCase<T>> &Tests) {
@@ -188,6 +202,38 @@ TEST(VMTests, testArrayLiterals) {
       {"[1 + 2, 3 * 4, 5 + 6]", {3, 12, 11}}};
 
   runVMTests(Tests);
+}
+
+TEST(VMTests, testHashLiterals) {
+  const std::vector<
+      VMTestCase<std::vector<std::pair<object::HashKey, int64_t>>>>
+      Tests = {{"{}", {}},
+               {"{1: 2, 2: 3}",
+                {{object::HashKey(std::make_shared<object::Integer>(1)), 2},
+                 {object::HashKey(std::make_shared<object::Integer>(2)), 3}}},
+               {"{1 + 1: 2 * 2, 3 + 3: 4 * 4}",
+                {{object::HashKey(std::make_shared<object::Integer>(2)), 4},
+                 {object::HashKey(std::make_shared<object::Integer>(6)), 16}}}};
+
+  runVMTests(Tests);
+}
+
+TEST(VMTests, testIndexExpressions) {
+  const std::vector<VMTestCase<int64_t>> Tests = {{"[1, 2, 3][1]", 2},
+                                                  {"[1, 2, 3][0 + 2]", 3},
+                                                  {"[[1, 1, 1]][0][0]", 1},
+                                                  {"{1: 1, 2: 2}[1]", 1},
+                                                  {"{1: 1, 2: 2}[2]", 2}};
+
+  runVMTests(Tests);
+
+  const std::vector<VMTestCase<void *>> NullTests = {{"[][0]", nullptr},
+                                                     {"[1, 2, 3][99]", nullptr},
+                                                     {"[1][-1]", nullptr},
+                                                     {"{1: 1}[0]", nullptr},
+                                                     {"{}[0]", nullptr}};
+
+  runVMTests(NullTests);
 }
 
 } // namespace monkey::vm::test

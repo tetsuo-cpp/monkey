@@ -39,6 +39,13 @@ private:
   void executeBangOperator();
   void executeMinusOperator();
   std::shared_ptr<object::Object> buildArray(int, int) const;
+  std::shared_ptr<object::Object> buildHash(int, int) const;
+  void executeIndexExpression(const std::shared_ptr<object::Object> &,
+                              const std::shared_ptr<object::Object> &);
+  void executeArrayIndex(const std::shared_ptr<object::Object> &,
+                         const std::shared_ptr<object::Object> &);
+  void executeHashIndex(const std::shared_ptr<object::Object> &,
+                        const std::shared_ptr<object::Object> &);
 
   std::vector<std::shared_ptr<object::Object>> &Constants;
   code::Instructions Instructions;

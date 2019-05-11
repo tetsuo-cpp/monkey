@@ -38,7 +38,9 @@ enum class OpCode : unsigned char {
   OpNull,
   OpGetGlobal,
   OpSetGlobal,
-  OpArray
+  OpArray,
+  OpHash,
+  OpIndex
 };
 
 struct Definition {

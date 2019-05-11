@@ -156,6 +156,35 @@ void Compiler::compile(const ast::Node *Node) {
     emit(code::OpCode::OpArray, {static_cast<int>(ArrayL->Elements.size())});
     return;
   }
+
+  const auto *HashL = dynamic_cast<const ast::HashLiteral *>(Node);
+  if (HashL) {
+    std::vector<std::pair<ast::Expression *, ast::Expression *>> Keys;
+    for (const auto &K : HashL->Pairs)
+      Keys.emplace_back(K.first.get(), K.second.get());
+
+    std::sort(Keys.begin(), Keys.end(),
+              [](const std::pair<ast::Expression *, ast::Expression *> &L,
+                 const std::pair<ast::Expression *, ast::Expression *> &R) {
+                return L.first->string() < R.first->string();
+              });
+
+    for (const auto &K : Keys) {
+      compile(K.first);
+      compile(K.second);
+    }
+
+    emit(code::OpCode::OpHash, {static_cast<int>(HashL->Pairs.size() * 2)});
+    return;
+  }
+
+  const auto *Index = dynamic_cast<const ast::IndexExpression *>(Node);
+  if (Index) {
+    compile(Index->Left.get());
+    compile(Index->Index.get());
+    emit(code::OpCode::OpIndex, {});
+    return;
+  }
 }
 
 ByteCode Compiler::byteCode() {

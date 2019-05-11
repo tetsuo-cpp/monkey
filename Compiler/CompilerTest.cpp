@@ -308,4 +308,63 @@ TEST(CompilerTests, testArrayLiterals) {
   runCompilerTests(Tests);
 }
 
+TEST(CompilerTests, testHashLiterals) {
+  const std::vector<CompilerTestCase<int>> Tests = {
+      {"{}",
+       {},
+       {code::make(code::OpCode::OpHash, {0}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"{1: 2, 3: 4, 5: 6}",
+       {1, 2, 3, 4, 5, 6},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpConstant, {2}),
+        code::make(code::OpCode::OpConstant, {3}),
+        code::make(code::OpCode::OpConstant, {4}),
+        code::make(code::OpCode::OpConstant, {5}),
+        code::make(code::OpCode::OpHash, {6}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"{1: 2 + 3, 4: 5 * 6}",
+       {1, 2, 3, 4, 5, 6},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpConstant, {2}),
+        code::make(code::OpCode::OpAdd, {}),
+        code::make(code::OpCode::OpConstant, {3}),
+        code::make(code::OpCode::OpConstant, {4}),
+        code::make(code::OpCode::OpConstant, {5}),
+        code::make(code::OpCode::OpMul, {}),
+        code::make(code::OpCode::OpHash, {4}),
+        code::make(code::OpCode::OpPop, {})}}};
+
+  runCompilerTests(Tests);
+}
+
+TEST(CompilerTests, testIndexExpressions) {
+  const std::vector<CompilerTestCase<int>> Tests = {
+      {"[1, 2, 3][1 + 1]",
+       {1, 2, 3, 1, 1},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpConstant, {2}),
+        code::make(code::OpCode::OpArray, {3}),
+        code::make(code::OpCode::OpConstant, {3}),
+        code::make(code::OpCode::OpConstant, {4}),
+        code::make(code::OpCode::OpAdd, {}),
+        code::make(code::OpCode::OpIndex, {}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"{1: 2}[2 - 1]",
+       {1, 2, 2, 1},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpHash, {2}),
+        code::make(code::OpCode::OpConstant, {2}),
+        code::make(code::OpCode::OpConstant, {3}),
+        code::make(code::OpCode::OpSub, {}),
+        code::make(code::OpCode::OpIndex, {}),
+        code::make(code::OpCode::OpPop, {})}}};
+
+  runCompilerTests(Tests);
+}
+
 } // namespace monkey::compiler::test

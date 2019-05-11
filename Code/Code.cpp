@@ -29,7 +29,9 @@ std::vector<std::pair<OpCode, Definition>> Definitions = {
     {OpCode::OpNull, {"OpNull", {}}},
     {OpCode::OpGetGlobal, {"OpGetGlobal", {2}}},
     {OpCode::OpSetGlobal, {"OpSetGlobal", {2}}},
-    {OpCode::OpArray, {"OpArray", {2}}}};
+    {OpCode::OpArray, {"OpArray", {2}}},
+    {OpCode::OpHash, {"OpHash", {2}}},
+    {OpCode::OpIndex, {"OpIndex", {}}}};
 
 } // namespace
 
