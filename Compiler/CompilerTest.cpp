@@ -379,6 +379,24 @@ TEST(CompilerTests, testFunctions) {
             code::make(code::OpCode::OpAdd, {}),
             code::make(code::OpCode::OpReturnValue, {})})},
        {code::make(code::OpCode::OpConstant, {2}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"fn() { 5 + 10 }",
+       {ConstantType(5), ConstantType(10),
+        ConstantType(std::vector<code::Instructions>{
+            code::make(code::OpCode::OpConstant, {0}),
+            code::make(code::OpCode::OpConstant, {1}),
+            code::make(code::OpCode::OpAdd, {}),
+            code::make(code::OpCode::OpReturnValue, {})})},
+       {code::make(code::OpCode::OpConstant, {2}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"fn() { 1; 2 }",
+       {ConstantType(1), ConstantType(2),
+        ConstantType(std::vector<code::Instructions>{
+            code::make(code::OpCode::OpConstant, {0}),
+            code::make(code::OpCode::OpPop, {}),
+            code::make(code::OpCode::OpConstant, {1}),
+            code::make(code::OpCode::OpReturnValue, {})})},
+       {code::make(code::OpCode::OpConstant, {2}),
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);
@@ -413,6 +431,17 @@ TEST(CompilerTests, testCompilerScopes) {
 
   auto Prev = C.Scopes.at(C.ScopeIndex).PreviousInstruction;
   ASSERT_EQ(Prev.Op, code::OpCode::OpMul);
+}
+
+TEST(CompilerTests, testFunctionsWithoutReturnValue) {
+  const std::vector<CompilerTestCase> Tests = {
+      {"fn() {}",
+       {ConstantType(std::vector<code::Instructions>{
+           code::make(code::OpCode::OpReturn, {})})},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpPop, {})}}};
+
+  runCompilerTests(Tests);
 }
 
 } // namespace monkey::compiler::test

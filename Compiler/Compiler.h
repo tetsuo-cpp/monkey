@@ -57,11 +57,13 @@ private:
 
   int addInstruction(const std::vector<unsigned char> &);
   void setLastInstruction(code::OpCode, unsigned int);
-  bool lastInstructionIsPop() const;
+  bool lastInstructionIs(code::OpCode) const;
   void removeLastPop();
   void replaceInstruction(unsigned int, std::vector<unsigned char> &);
   void changeOperand(unsigned int, int);
   code::Instructions &currentInstructions();
+  const code::Instructions &currentInstructions() const;
+  void replaceLastPopWithReturn();
 
   std::vector<std::shared_ptr<object::Object>> &Constants;
   SymbolTable &SymTable;

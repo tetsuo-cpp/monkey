@@ -79,7 +79,7 @@ void Compiler::compile(const ast::Node *Node) {
 
     compile(IfE->Consequence.get());
 
-    if (lastInstructionIsPop())
+    if (lastInstructionIs(code::OpCode::OpPop))
       removeLastPop();
 
     // Emit an 'OpJump' with a bogus value.
@@ -93,7 +93,7 @@ void Compiler::compile(const ast::Node *Node) {
     } else {
       compile(IfE->Alternative.get());
 
-      if (lastInstructionIsPop())
+      if (lastInstructionIs(code::OpCode::OpPop))
         removeLastPop();
     }
 
@@ -193,6 +193,12 @@ void Compiler::compile(const ast::Node *Node) {
   if (FunctionL) {
     enterScope();
     compile(FunctionL->Body.get());
+
+    if (lastInstructionIs(code::OpCode::OpPop))
+      replaceLastPopWithReturn();
+    if (!lastInstructionIs(code::OpCode::OpReturnValue))
+      emit(code::OpCode::OpReturn, {});
+
     auto Ins = leaveScope();
     auto CompiledFn =
         std::make_unique<object::CompiledFunction>(std::move(Ins));
@@ -235,8 +241,11 @@ void Compiler::setLastInstruction(code::OpCode Op, unsigned int Pos) {
   CurrentScope.LastInstruction = Last;
 }
 
-bool Compiler::lastInstructionIsPop() const {
-  return Scopes.at(ScopeIndex).LastInstruction.Op == code::OpCode::OpPop;
+bool Compiler::lastInstructionIs(code::OpCode Op) const {
+  if (currentInstructions().Value.empty())
+    return false;
+
+  return Scopes.at(ScopeIndex).LastInstruction.Op == Op;
 }
 
 void Compiler::removeLastPop() {
@@ -264,6 +273,11 @@ void Compiler::changeOperand(unsigned int OpPos, int Operand) {
 }
 
 code::Instructions &Compiler::currentInstructions() {
+  return const_cast<code::Instructions &>(
+      const_cast<const Compiler *>(this)->currentInstructions());
+}
+
+const code::Instructions &Compiler::currentInstructions() const {
   return Scopes.at(ScopeIndex).Instructions;
 }
 
@@ -277,6 +291,16 @@ code::Instructions Compiler::leaveScope() {
   Scopes.pop_back();
   --ScopeIndex;
   return Ins;
+}
+
+void Compiler::replaceLastPopWithReturn() {
+  auto &CurrentScope = Scopes.at(ScopeIndex);
+  const auto LastPos = CurrentScope.LastInstruction.Position;
+
+  auto ReturnIns = code::make(code::OpCode::OpReturnValue, {});
+  replaceInstruction(LastPos, ReturnIns);
+
+  CurrentScope.LastInstruction.Op = code::OpCode::OpReturnValue;
 }
 
 } // namespace monkey::compiler
