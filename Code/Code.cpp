@@ -31,7 +31,10 @@ std::vector<std::pair<OpCode, Definition>> Definitions = {
     {OpCode::OpSetGlobal, {"OpSetGlobal", {2}}},
     {OpCode::OpArray, {"OpArray", {2}}},
     {OpCode::OpHash, {"OpHash", {2}}},
-    {OpCode::OpIndex, {"OpIndex", {}}}};
+    {OpCode::OpIndex, {"OpIndex", {}}},
+    {OpCode::OpCall, {"OpCall", {}}},
+    {OpCode::OpReturnValue, {"OpReturnValue", {}}},
+    {OpCode::OpReturn, {"OpReturn", {}}}};
 
 } // namespace
 

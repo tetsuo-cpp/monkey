@@ -3,6 +3,7 @@
 #include "ObjectInterface.h"
 
 #include <AST/AST.h>
+#include <Code/Code.h>
 #include <Environment/Environment.h>
 
 #include <functional>
@@ -20,7 +21,8 @@ enum class ObjectType : uint64_t {
   STRING_OBJ,
   BUILTIN_OBJ,
   ARRAY_OBJ,
-  HASH_OBJ
+  HASH_OBJ,
+  COMPILED_FUNCTION_OBJ
 };
 
 const char *objTypeToString(ObjectType);
@@ -161,6 +163,17 @@ struct Hash : public Object {
   const std::unordered_map<HashKey, std::shared_ptr<object::Object>,
                            HashKeyHasher>
       Pairs;
+};
+
+struct CompiledFunction : public Object {
+  template <typename T>
+  explicit CompiledFunction(T &&Ins) : Ins(std::forward<T>(Ins)) {}
+
+  // Object impl.
+  ObjectType type() const override;
+  std::string inspect() const override;
+
+  code::Instructions Ins;
 };
 
 template <typename T, ObjectType ObjType>

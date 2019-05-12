@@ -26,6 +26,12 @@ struct EmittedInstruction {
   unsigned int Position;
 };
 
+struct CompilationScope {
+  code::Instructions Instructions;
+  EmittedInstruction LastInstruction;
+  EmittedInstruction PreviousInstruction;
+};
+
 class Compiler {
 public:
   Compiler(SymbolTable &, std::vector<std::shared_ptr<object::Object>> &);
@@ -34,24 +40,30 @@ public:
   void compile(const ast::Node *);
   ByteCode byteCode();
 
+  // TODO: Don't mark this stuff as public.
+  // Should probably subclass a TestCompiler that exposes this.
+  int emit(code::OpCode, const std::vector<int> &);
+  void enterScope();
+  code::Instructions leaveScope();
+
+  std::vector<CompilationScope> Scopes;
+  int ScopeIndex;
+
 private:
   template <typename T> int addConstant(T &&Obj) {
     Constants.push_back(std::forward<T>(Obj));
     return Constants.size() - 1;
   }
 
-  int emit(code::OpCode, const std::vector<int> &);
   int addInstruction(const std::vector<unsigned char> &);
   void setLastInstruction(code::OpCode, unsigned int);
   bool lastInstructionIsPop() const;
   void removeLastPop();
   void replaceInstruction(unsigned int, std::vector<unsigned char> &);
   void changeOperand(unsigned int, int);
+  code::Instructions &currentInstructions();
 
-  code::Instructions Instructions;
   std::vector<std::shared_ptr<object::Object>> &Constants;
-  EmittedInstruction LastInstruction;
-  EmittedInstruction PreviousInstruction;
   SymbolTable &SymTable;
 };
 

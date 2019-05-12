@@ -26,6 +26,8 @@ const char *objTypeToString(ObjectType Type) {
     return "ARRAY";
   case ObjectType::HASH_OBJ:
     return "HASH";
+  case ObjectType::COMPILED_FUNCTION_OBJ:
+    return "COMPILED_FUNCTION";
   }
 
   return "UNKNOWN";
@@ -177,6 +179,16 @@ std::string Hash::inspect() const {
   }
 
   SS << "}";
+  return SS.str();
+}
+
+ObjectType CompiledFunction::type() const {
+  return ObjectType::COMPILED_FUNCTION_OBJ;
+}
+
+std::string CompiledFunction::inspect() const {
+  std::stringstream SS;
+  SS << "CompiledFunction[" << this << "]";
   return SS.str();
 }
 

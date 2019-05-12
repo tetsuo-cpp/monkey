@@ -40,7 +40,10 @@ enum class OpCode : unsigned char {
   OpSetGlobal,
   OpArray,
   OpHash,
-  OpIndex
+  OpIndex,
+  OpCall,
+  OpReturnValue,
+  OpReturn
 };
 
 struct Definition {

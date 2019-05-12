@@ -15,8 +15,24 @@ std::unique_ptr<ast::Program> parse(const std::string &Input) {
 }
 
 template <typename T> struct CompilerTestCase {
+  CompilerTestCase(const std::string &Input,
+                   const std::vector<T> &ExpectedConstants,
+                   const std::vector<code::Instructions> &ExpectedInstructions)
+      : Input(Input), ExpectedConstants(ExpectedConstants),
+        ExpectedInstructions(ExpectedInstructions) {}
+
+  CompilerTestCase(const std::string &Input,
+                   const std::vector<T> &ExpectedConstants,
+                   const std::vector<std::vector<code::Instructions>>
+                       &ExpectedFunctionConstants,
+                   const std::vector<code::Instructions> &ExpectedInstructions)
+      : Input(Input), ExpectedConstants(ExpectedConstants),
+        ExpectedFunctionConstants(ExpectedFunctionConstants),
+        ExpectedInstructions(ExpectedInstructions) {}
+
   const std::string Input;
   const std::vector<T> ExpectedConstants;
+  const std::vector<std::vector<code::Instructions>> ExpectedFunctionConstants;
   const std::vector<code::Instructions> ExpectedInstructions;
 };
 
@@ -63,9 +79,8 @@ void testConstants<int>(
     const std::vector<int> &Expected,
     const std::vector<std::shared_ptr<object::Object>> &Actual) {
   ASSERT_EQ(Expected.size(), Actual.size());
-  for (unsigned int Index = 0; Index < Expected.size(); ++Index) {
+  for (unsigned int Index = 0; Index < Expected.size(); ++Index)
     testIntegerObject(Expected.at(Index), Actual.at(Index).get());
-  }
 }
 
 template <>
@@ -73,8 +88,20 @@ void testConstants<std::string>(
     const std::vector<std::string> &Expected,
     const std::vector<std::shared_ptr<object::Object>> &Actual) {
   ASSERT_EQ(Expected.size(), Actual.size());
-  for (unsigned int Index = 0; Index < Expected.size(); ++Index) {
+  for (unsigned int Index = 0; Index < Expected.size(); ++Index)
     testStringObject(Expected.at(Index), Actual.at(Index).get());
+}
+
+template <>
+void testConstants<std::vector<code::Instructions>>(
+    const std::vector<std::vector<code::Instructions>> &Expected,
+    const std::vector<std::shared_ptr<object::Object>> &Actual) {
+  ASSERT_EQ(Expected.size(), Actual.size());
+  for (unsigned int Index = 0; Index < Expected.size(); ++Index) {
+    const auto *Fn =
+        dynamic_cast<const object::CompiledFunction *>(Actual.at(Index).get());
+    ASSERT_THAT(Fn, testing::NotNull());
+    testInstructions(Expected.at(Index), Fn->Ins);
   }
 }
 
@@ -365,6 +392,49 @@ TEST(CompilerTests, testIndexExpressions) {
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);
+}
+
+TEST(CompilerTests, testFunctions) {
+  const std::vector<CompilerTestCase<int>> Tests = {
+      {{"fn() { return 5 + 10; }",
+        {5, 10},
+        {{code::make(code::OpCode::OpConstant, {0}),
+          code::make(code::OpCode::OpConstant, {1}),
+          code::make(code::OpCode::OpAdd, {}),
+          code::make(code::OpCode::OpReturnValue, {})}},
+        {code::make(code::OpCode::OpConstant, {2}),
+         code::make(code::OpCode::OpPop, {})}}}};
+
+  runCompilerTests(Tests);
+}
+
+TEST(CompilerTests, testCompilerScopes) {
+  SymbolTable ST;
+  std::vector<std::shared_ptr<object::Object>> Constants;
+  Compiler C(ST, Constants);
+  ASSERT_EQ(C.ScopeIndex, 0);
+
+  C.enterScope();
+  ASSERT_EQ(C.ScopeIndex, 1);
+
+  C.emit(code::OpCode::OpSub, {});
+
+  ASSERT_EQ(C.Scopes.at(C.ScopeIndex).Instructions.Value.size(), 1);
+
+  auto Last = C.Scopes.at(C.ScopeIndex).LastInstruction;
+  ASSERT_EQ(Last.Op, code::OpCode::OpSub);
+
+  C.leaveScope();
+  ASSERT_EQ(C.ScopeIndex, 0);
+
+  C.emit(code::OpCode::OpAdd, {});
+  ASSERT_EQ(C.Scopes.at(C.ScopeIndex).Instructions.Value.size(), 2);
+
+  Last = C.Scopes.at(C.ScopeIndex).LastInstruction;
+  ASSERT_EQ(Last.Op, code::OpCode::OpAdd);
+
+  auto Prev = C.Scopes.at(C.ScopeIndex).PreviousInstruction;
+  ASSERT_EQ(Prev.Op, code::OpCode::OpMul);
 }
 
 } // namespace monkey::compiler::test

@@ -4,7 +4,10 @@ namespace monkey::compiler {
 
 Compiler::Compiler(SymbolTable &SymTable,
                    std::vector<std::shared_ptr<object::Object>> &Constants)
-    : Constants(Constants), SymTable(SymTable) {}
+    : ScopeIndex(0), Constants(Constants), SymTable(SymTable) {
+  // Main scope.
+  Scopes.emplace_back();
+}
 
 void Compiler::compile(const ast::Node *Node) {
   const auto *Program = dynamic_cast<const ast::Program *>(Node);
@@ -82,7 +85,7 @@ void Compiler::compile(const ast::Node *Node) {
     // Emit an 'OpJump' with a bogus value.
     auto JumpPos = emit(code::OpCode::OpJump, {9999});
 
-    int AfterConsequencePos = Instructions.Value.size();
+    int AfterConsequencePos = currentInstructions().Value.size();
     changeOperand(JumpNotTruthyPos, AfterConsequencePos);
 
     if (!IfE->Alternative) {
@@ -94,7 +97,7 @@ void Compiler::compile(const ast::Node *Node) {
         removeLastPop();
     }
 
-    int AfterAlternativePos = Instructions.Value.size();
+    int AfterAlternativePos = currentInstructions().Value.size();
     changeOperand(JumpPos, AfterAlternativePos);
     return;
   }
@@ -188,7 +191,7 @@ void Compiler::compile(const ast::Node *Node) {
 }
 
 ByteCode Compiler::byteCode() {
-  return ByteCode(std::move(Instructions), Constants);
+  return ByteCode(std::move(currentInstructions()), Constants);
 }
 
 int Compiler::emit(code::OpCode Op, const std::vector<int> &Operands) {
@@ -200,40 +203,62 @@ int Compiler::emit(code::OpCode Op, const std::vector<int> &Operands) {
 }
 
 int Compiler::addInstruction(const std::vector<unsigned char> &Ins) {
-  const auto PosNewInstruction = Instructions.Value.size();
-  std::copy(Ins.begin(), Ins.end(), std::back_inserter(Instructions.Value));
+  auto &CurrentIns = currentInstructions();
+  const auto PosNewInstruction = CurrentIns.Value.size();
+  std::copy(Ins.begin(), Ins.end(), std::back_inserter(CurrentIns.Value));
   return PosNewInstruction;
 }
 
 void Compiler::setLastInstruction(code::OpCode Op, unsigned int Pos) {
-  auto Previous = LastInstruction;
+  auto &CurrentScope = Scopes.at(ScopeIndex);
+  auto Previous = CurrentScope.LastInstruction;
   EmittedInstruction Last(Op, Pos);
-  PreviousInstruction = Previous;
-  LastInstruction = Last;
+  CurrentScope.PreviousInstruction = Previous;
+  CurrentScope.LastInstruction = Last;
 }
 
 bool Compiler::lastInstructionIsPop() const {
-  return LastInstruction.Op == code::OpCode::OpPop;
+  return Scopes.at(ScopeIndex).LastInstruction.Op == code::OpCode::OpPop;
 }
 
 void Compiler::removeLastPop() {
-  Instructions.Value.erase(Instructions.Value.begin() +
-                               LastInstruction.Position,
-                           Instructions.Value.end());
-  LastInstruction = PreviousInstruction;
+  auto &CurrentScope = Scopes.at(ScopeIndex);
+  CurrentScope.Instructions.Value.erase(
+      CurrentScope.Instructions.Value.begin() +
+          CurrentScope.LastInstruction.Position,
+      CurrentScope.Instructions.Value.end());
+  CurrentScope.LastInstruction = CurrentScope.PreviousInstruction;
 }
 
 void Compiler::replaceInstruction(unsigned int Pos,
                                   std::vector<unsigned char> &NewInstruction) {
+  auto &CurrentIns = currentInstructions();
   for (unsigned int Index = 0; Index < NewInstruction.size(); ++Index)
-    Instructions.Value.at(Pos + Index) = NewInstruction.at(Index);
+    CurrentIns.Value.at(Pos + Index) = NewInstruction.at(Index);
 }
 
 void Compiler::changeOperand(unsigned int OpPos, int Operand) {
-  const auto Op = static_cast<code::OpCode>(Instructions.Value.at(OpPos));
+  const auto Op =
+      static_cast<code::OpCode>(currentInstructions().Value.at(OpPos));
   auto NewInstruction = code::make(Op, {Operand});
 
   replaceInstruction(OpPos, NewInstruction);
+}
+
+code::Instructions &Compiler::currentInstructions() {
+  return Scopes.at(ScopeIndex).Instructions;
+}
+
+void Compiler::enterScope() {
+  Scopes.emplace_back();
+  ++ScopeIndex;
+}
+
+code::Instructions Compiler::leaveScope() {
+  auto Ins = currentInstructions();
+  Scopes.pop_back();
+  --ScopeIndex;
+  return Ins;
 }
 
 } // namespace monkey::compiler
