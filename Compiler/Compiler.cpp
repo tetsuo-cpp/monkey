@@ -188,6 +188,24 @@ void Compiler::compile(const ast::Node *Node) {
     emit(code::OpCode::OpIndex, {});
     return;
   }
+
+  const auto *FunctionL = dynamic_cast<const ast::FunctionLiteral *>(Node);
+  if (FunctionL) {
+    enterScope();
+    compile(FunctionL->Body.get());
+    auto Ins = leaveScope();
+    auto CompiledFn =
+        std::make_unique<object::CompiledFunction>(std::move(Ins));
+    emit(code::OpCode::OpConstant, {addConstant(std::move(CompiledFn))});
+    return;
+  }
+
+  const auto *Return = dynamic_cast<const ast::ReturnStatement *>(Node);
+  if (Return) {
+    compile(Return->ReturnValue.get());
+    emit(code::OpCode::OpReturnValue, {});
+    return;
+  }
 }
 
 ByteCode Compiler::byteCode() {

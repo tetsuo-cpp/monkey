@@ -6,6 +6,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <variant>
+
 namespace monkey::compiler::test {
 
 std::unique_ptr<ast::Program> parse(const std::string &Input) {
@@ -14,25 +16,12 @@ std::unique_ptr<ast::Program> parse(const std::string &Input) {
   return P.parseProgram();
 }
 
-template <typename T> struct CompilerTestCase {
-  CompilerTestCase(const std::string &Input,
-                   const std::vector<T> &ExpectedConstants,
-                   const std::vector<code::Instructions> &ExpectedInstructions)
-      : Input(Input), ExpectedConstants(ExpectedConstants),
-        ExpectedInstructions(ExpectedInstructions) {}
+using ConstantType =
+    std::variant<int, std::string, std::vector<code::Instructions>>;
 
-  CompilerTestCase(const std::string &Input,
-                   const std::vector<T> &ExpectedConstants,
-                   const std::vector<std::vector<code::Instructions>>
-                       &ExpectedFunctionConstants,
-                   const std::vector<code::Instructions> &ExpectedInstructions)
-      : Input(Input), ExpectedConstants(ExpectedConstants),
-        ExpectedFunctionConstants(ExpectedFunctionConstants),
-        ExpectedInstructions(ExpectedInstructions) {}
-
+struct CompilerTestCase {
   const std::string Input;
-  const std::vector<T> ExpectedConstants;
-  const std::vector<std::vector<code::Instructions>> ExpectedFunctionConstants;
+  const std::vector<ConstantType> ExpectedConstants;
   const std::vector<code::Instructions> ExpectedInstructions;
 };
 
@@ -67,46 +56,32 @@ void testInstructions(const std::vector<code::Instructions> &Expected,
     ASSERT_EQ(Actual.Value.at(Index), Concatted.Value.at(Index));
 }
 
-template <typename T>
-void testConstants(const std::vector<T> &,
-                   const std::vector<std::shared_ptr<object::Object>> &) {
-  static_assert(sizeof(T) != sizeof(T),
-                "testConstants must be specialised for this type");
-}
+template <class... Ts> struct Overloaded : Ts... { using Ts::operator()...; };
+template <class... Ts> Overloaded(Ts...)->Overloaded<Ts...>;
 
-template <>
-void testConstants<int>(
-    const std::vector<int> &Expected,
-    const std::vector<std::shared_ptr<object::Object>> &Actual) {
-  ASSERT_EQ(Expected.size(), Actual.size());
-  for (unsigned int Index = 0; Index < Expected.size(); ++Index)
-    testIntegerObject(Expected.at(Index), Actual.at(Index).get());
-}
-
-template <>
-void testConstants<std::string>(
-    const std::vector<std::string> &Expected,
-    const std::vector<std::shared_ptr<object::Object>> &Actual) {
-  ASSERT_EQ(Expected.size(), Actual.size());
-  for (unsigned int Index = 0; Index < Expected.size(); ++Index)
-    testStringObject(Expected.at(Index), Actual.at(Index).get());
-}
-
-template <>
-void testConstants<std::vector<code::Instructions>>(
-    const std::vector<std::vector<code::Instructions>> &Expected,
-    const std::vector<std::shared_ptr<object::Object>> &Actual) {
+void testConstants(const std::vector<ConstantType> &Expected,
+                   const std::vector<std::shared_ptr<object::Object>> &Actual) {
   ASSERT_EQ(Expected.size(), Actual.size());
   for (unsigned int Index = 0; Index < Expected.size(); ++Index) {
-    const auto *Fn =
-        dynamic_cast<const object::CompiledFunction *>(Actual.at(Index).get());
-    ASSERT_THAT(Fn, testing::NotNull());
-    testInstructions(Expected.at(Index), Fn->Ins);
+    std::visit(Overloaded{[&Actual, Index](const int Arg) {
+                            testIntegerObject(Arg, Actual.at(Index).get());
+                          },
+                          [&Actual, Index](const std::string &Arg) {
+                            testStringObject(Arg, Actual.at(Index).get());
+                          },
+                          [&Actual,
+                           Index](const std::vector<code::Instructions> &Arg) {
+                            const auto *Fn =
+                                dynamic_cast<const object::CompiledFunction *>(
+                                    Actual.at(Index).get());
+                            ASSERT_THAT(Fn, testing::NotNull());
+                            testInstructions(Arg, Fn->Ins);
+                          }},
+               Expected.at(Index));
   }
 }
 
-template <typename T>
-void runCompilerTests(const std::vector<CompilerTestCase<T>> &Tests) {
+void runCompilerTests(const std::vector<CompilerTestCase> &Tests) {
   for (const auto &Test : Tests) {
     const auto Program = parse(Test.Input);
 
@@ -117,12 +92,12 @@ void runCompilerTests(const std::vector<CompilerTestCase<T>> &Tests) {
 
     const auto ByteCode = C.byteCode();
     testInstructions(Test.ExpectedInstructions, ByteCode.Instructions);
-    testConstants<T>(Test.ExpectedConstants, ByteCode.Constants);
+    testConstants(Test.ExpectedConstants, ByteCode.Constants);
   }
 }
 
 TEST(CompilerTests, testIntegerArithmetic) {
-  const std::vector<CompilerTestCase<int>> Tests = {
+  const std::vector<CompilerTestCase> Tests = {
       {"1 + 2",
        {1, 2},
        {code::make(code::OpCode::OpConstant, {0}),
@@ -163,7 +138,7 @@ TEST(CompilerTests, testIntegerArithmetic) {
 }
 
 TEST(CompilerTests, testBooleanExpressions) {
-  const std::vector<CompilerTestCase<int>> Tests = {
+  const std::vector<CompilerTestCase> Tests = {
       {"true",
        {},
        {code::make(code::OpCode::OpTrue, {}),
@@ -218,7 +193,7 @@ TEST(CompilerTests, testBooleanExpressions) {
 }
 
 TEST(CompilerTests, testConditionals) {
-  const std::vector<CompilerTestCase<int>> Tests = {
+  const std::vector<CompilerTestCase> Tests = {
       {"if (true) { 10 }; 3333;",
        {10, 3333},
        {// 0000
@@ -260,7 +235,7 @@ TEST(CompilerTests, testConditionals) {
 }
 
 TEST(CompilerTests, testLetStatements) {
-  const std::vector<CompilerTestCase<int>> Tests = {
+  const std::vector<CompilerTestCase> Tests = {
       {"let one = 1;"
        "let two = 2;",
        {1, 2},
@@ -290,7 +265,7 @@ TEST(CompilerTests, testLetStatements) {
 }
 
 TEST(CompilerTests, testStringExpressions) {
-  const std::vector<CompilerTestCase<std::string>> Tests = {
+  const std::vector<CompilerTestCase> Tests = {
       {"\"monkey\"",
        {"monkey"},
        {code::make(code::OpCode::OpConstant, {0}),
@@ -306,7 +281,7 @@ TEST(CompilerTests, testStringExpressions) {
 }
 
 TEST(CompilerTests, testArrayLiterals) {
-  const std::vector<CompilerTestCase<int>> Tests = {
+  const std::vector<CompilerTestCase> Tests = {
       {"[]",
        {},
        {code::make(code::OpCode::OpArray, {0}),
@@ -336,7 +311,7 @@ TEST(CompilerTests, testArrayLiterals) {
 }
 
 TEST(CompilerTests, testHashLiterals) {
-  const std::vector<CompilerTestCase<int>> Tests = {
+  const std::vector<CompilerTestCase> Tests = {
       {"{}",
        {},
        {code::make(code::OpCode::OpHash, {0}),
@@ -368,7 +343,7 @@ TEST(CompilerTests, testHashLiterals) {
 }
 
 TEST(CompilerTests, testIndexExpressions) {
-  const std::vector<CompilerTestCase<int>> Tests = {
+  const std::vector<CompilerTestCase> Tests = {
       {"[1, 2, 3][1 + 1]",
        {1, 2, 3, 1, 1},
        {code::make(code::OpCode::OpConstant, {0}),
@@ -395,15 +370,16 @@ TEST(CompilerTests, testIndexExpressions) {
 }
 
 TEST(CompilerTests, testFunctions) {
-  const std::vector<CompilerTestCase<int>> Tests = {
-      {{"fn() { return 5 + 10; }",
-        {5, 10},
-        {{code::make(code::OpCode::OpConstant, {0}),
-          code::make(code::OpCode::OpConstant, {1}),
-          code::make(code::OpCode::OpAdd, {}),
-          code::make(code::OpCode::OpReturnValue, {})}},
-        {code::make(code::OpCode::OpConstant, {2}),
-         code::make(code::OpCode::OpPop, {})}}}};
+  const std::vector<CompilerTestCase> Tests = {
+      {"fn() { return 5 + 10; }",
+       {ConstantType(5), ConstantType(10),
+        ConstantType(std::vector<code::Instructions>{
+            code::make(code::OpCode::OpConstant, {0}),
+            code::make(code::OpCode::OpConstant, {1}),
+            code::make(code::OpCode::OpAdd, {}),
+            code::make(code::OpCode::OpReturnValue, {})})},
+       {code::make(code::OpCode::OpConstant, {2}),
+        code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);
 }
@@ -413,6 +389,8 @@ TEST(CompilerTests, testCompilerScopes) {
   std::vector<std::shared_ptr<object::Object>> Constants;
   Compiler C(ST, Constants);
   ASSERT_EQ(C.ScopeIndex, 0);
+
+  C.emit(code::OpCode::OpMul, {});
 
   C.enterScope();
   ASSERT_EQ(C.ScopeIndex, 1);
