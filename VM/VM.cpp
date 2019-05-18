@@ -38,17 +38,27 @@ bool isTruthy(const object::Object *Obj) {
 
 VM::VM(compiler::ByteCode &&BC,
        std::array<std::shared_ptr<object::Object>, GlobalsSize> &Globals)
-    : Constants(BC.Constants),
-      Instructions(std::move(BC.Instructions)), Stack{nullptr}, SP(0),
-      Globals(Globals) {}
+    : Constants(BC.Constants), Stack{nullptr}, SP(0), Globals(Globals),
+      FrameIndex(1) {
+  auto MainFn =
+      std::make_shared<object::CompiledFunction>(std::move(BC.Instructions));
+  Frame MainFrame(std::move(MainFn));
+  Frames.front() = std::move(MainFrame);
+}
 
 const object::Object *VM::lastPoppedStackElem() const {
   return Stack.at(SP).get();
 }
 
 void VM::run() {
-  for (unsigned int IP = 0; IP < Instructions.Value.size(); ++IP) {
+  while (currentFrame().IP <
+         (int)currentFrame().instructions().Value.size() - 1) {
+    ++currentFrame().IP;
+
+    auto &IP = currentFrame().IP;
+    auto &Instructions = currentFrame().instructions();
     const auto Op(static_cast<code::OpCode>(Instructions.Value.at(IP)));
+
     switch (Op) {
     case code::OpCode::OpConstant: {
       const int16_t ConstIndex =
@@ -140,6 +150,22 @@ void VM::run() {
       const auto &Left = pop();
 
       executeIndexExpression(Left, Index);
+      break;
+    }
+    case code::OpCode::OpCall: {
+      const auto &Fn = Stack.at(SP - 1);
+      const auto *FnObj =
+          object::objCast<const object::CompiledFunction *>(Fn.get());
+      if (!FnObj)
+        throw std::runtime_error("calling non-function");
+      pushFrame(Frame(Fn));
+      break;
+    }
+    case code::OpCode::OpReturnValue: {
+      auto Return = pop();
+      popFrame();
+      pop();
+      push(std::move(Return));
       break;
     }
     default:
@@ -366,6 +392,13 @@ void VM::executeHashIndex(const std::shared_ptr<object::Object> &Hash,
     push(NullGlobal);
   else
     push(HashIter->second);
+}
+
+Frame &VM::currentFrame() { return Frames.at(FrameIndex - 1); }
+
+Frame &VM::popFrame() {
+  auto &F = Frames.at(FrameIndex--);
+  return F;
 }
 
 } // namespace monkey::vm

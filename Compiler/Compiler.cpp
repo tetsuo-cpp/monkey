@@ -212,6 +212,13 @@ void Compiler::compile(const ast::Node *Node) {
     emit(code::OpCode::OpReturnValue, {});
     return;
   }
+
+  const auto *Call = dynamic_cast<const ast::CallExpression *>(Node);
+  if (Call) {
+    compile(Call->Function.get());
+    emit(code::OpCode::OpCall, {});
+    return;
+  }
 }
 
 ByteCode Compiler::byteCode() {

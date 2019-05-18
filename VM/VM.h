@@ -1,15 +1,14 @@
 #pragma once
 
+#include "Frame.h"
+
 #include <Compiler/Compiler.h>
 
 #include <array>
 
-namespace {
-
-const size_t StackSize = 2048;
-const size_t GlobalsSize = 65536;
-
-} // namespace
+static const size_t StackSize = 2048;
+static const size_t GlobalsSize = 65536;
+static const size_t MaxFrames = 1024;
 
 namespace monkey::vm {
 
@@ -46,12 +45,18 @@ private:
                          const std::shared_ptr<object::Object> &);
   void executeHashIndex(const std::shared_ptr<object::Object> &,
                         const std::shared_ptr<object::Object> &);
+  Frame &currentFrame();
+  template <typename T> void pushFrame(T &&Frame) {
+    Frames.at(FrameIndex++) = std::forward<T>(Frame);
+  }
+  Frame &popFrame();
 
   std::vector<std::shared_ptr<object::Object>> &Constants;
-  code::Instructions Instructions;
   std::array<std::shared_ptr<object::Object>, StackSize> Stack;
   unsigned int SP;
   std::array<std::shared_ptr<object::Object>, GlobalsSize> &Globals;
+  std::array<Frame, MaxFrames> Frames;
+  int FrameIndex;
 };
 
 } // namespace monkey::vm

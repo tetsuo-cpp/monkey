@@ -56,8 +56,11 @@ void testInstructions(const std::vector<code::Instructions> &Expected,
     ASSERT_EQ(Actual.Value.at(Index), Concatted.Value.at(Index));
 }
 
-template <class... Ts> struct Overloaded : Ts... { using Ts::operator()...; };
-template <class... Ts> Overloaded(Ts...)->Overloaded<Ts...>;
+template <typename... Ts> struct Overloaded : Ts... {
+  using Ts::operator()...;
+};
+
+template <typename... Ts> Overloaded(Ts...)->Overloaded<Ts...>;
 
 void testConstants(const std::vector<ConstantType> &Expected,
                    const std::vector<std::shared_ptr<object::Object>> &Actual) {
@@ -439,6 +442,29 @@ TEST(CompilerTests, testFunctionsWithoutReturnValue) {
        {ConstantType(std::vector<code::Instructions>{
            code::make(code::OpCode::OpReturn, {})})},
        {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpPop, {})}}};
+
+  runCompilerTests(Tests);
+}
+
+TEST(CompilerTests, testFunctionCalls) {
+  const std::vector<CompilerTestCase> Tests = {
+      {"fn() { 24 }()",
+       {ConstantType(24), ConstantType(std::vector<code::Instructions>{
+                              code::make(code::OpCode::OpConstant, {0}),
+                              code::make(code::OpCode::OpReturnValue, {})})},
+       {code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpCall, {}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"let noArg = fn() { 24 };"
+       "noArg();",
+       {ConstantType(24), ConstantType(std::vector<code::Instructions>{
+                              code::make(code::OpCode::OpConstant, {0}),
+                              code::make(code::OpCode::OpReturnValue, {})})},
+       {code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpSetGlobal, {0}),
+        code::make(code::OpCode::OpGetGlobal, {0}),
+        code::make(code::OpCode::OpCall, {}),
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);

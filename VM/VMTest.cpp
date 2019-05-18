@@ -236,4 +236,34 @@ TEST(VMTests, testIndexExpressions) {
   runVMTests(NullTests);
 }
 
+TEST(VMTests, testCallingFunctionsWithoutArguments) {
+  const std::vector<VMTestCase<int64_t>> Tests = {
+      {"let fivePlusTen = fn() { 5 + 10; };"
+       "fivePlusTen();",
+       15},
+      {"let one = fn() { 1; };"
+       "let two = fn() { 2; };"
+       "one() + two()",
+       3},
+      {"let a = fn() { 1 };"
+       "let b = fn() { a() + 1 };"
+       "let c = fn() { b() + 1 };"
+       "c();",
+       3}};
+
+  runVMTests(Tests);
+}
+
+TEST(VMTests, testFunctionsWithReturnStatement) {
+  const std::vector<VMTestCase<int64_t>> Tests = {
+      {"let earlyExit = fn() { return 99; 100; };"
+       "earlyExit();",
+       99},
+      {"let earlyExit = fn() { return 99; return 100; };"
+       "earlyExit();",
+       99}};
+
+  runVMTests(Tests);
+}
+
 } // namespace monkey::vm::test

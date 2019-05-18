@@ -231,4 +231,11 @@ template <> inline const Hash *objCast<const Hash *>(const Object *Obj) {
   return objCastImpl<const Hash *, ObjectType::HASH_OBJ>(Obj);
 }
 
+template <>
+inline const CompiledFunction *
+objCast<const CompiledFunction *>(const Object *Obj) {
+  return objCastImpl<const CompiledFunction *,
+                     ObjectType::COMPILED_FUNCTION_OBJ>(Obj);
+}
+
 } // namespace monkey::object
