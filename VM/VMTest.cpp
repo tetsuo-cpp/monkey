@@ -266,4 +266,28 @@ TEST(VMTests, testFunctionsWithReturnStatement) {
   runVMTests(Tests);
 }
 
+TEST(VMTests, testFunctionsWithoutReturnValue) {
+  const std::vector<VMTestCase<void *>> Tests = {
+      {"let noReturn = fn() { };"
+       "noReturn();",
+       nullptr},
+      {"let noReturn = fn() { };"
+       "let noReturnTwo = fn() { noReturn(); };"
+       "noReturn();"
+       "noReturnTwo();",
+       nullptr}};
+
+  runVMTests(Tests);
+}
+
+TEST(VMTests, testFirstClassFunctions) {
+  const std::vector<VMTestCase<int64_t>> Tests = {
+      {"let returnsOne = fn() { 1; };"
+       "let returnsOneReturner = fn() { returnsOne; };"
+       "returnsOneReturner()();",
+       1}};
+
+  runVMTests(Tests);
+}
+
 } // namespace monkey::vm::test

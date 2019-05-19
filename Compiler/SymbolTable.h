@@ -8,6 +8,7 @@ namespace monkey::compiler {
 using SymbolScope = std::string;
 
 static SymbolScope GlobalScope("GLOBAL");
+static SymbolScope LocalScope("LOCAL");
 
 struct Symbol {
   bool operator==(const Symbol &) const;
@@ -20,12 +21,14 @@ struct Symbol {
 class SymbolTable {
 public:
   SymbolTable();
+  explicit SymbolTable(const SymbolTable *);
   virtual ~SymbolTable() = default;
 
   const Symbol &define(const std::string &);
   const Symbol *resolve(const std::string &) const;
 
 private:
+  const SymbolTable *Outer;
   std::unordered_map<std::string, Symbol> Store;
   int NumDefinitions;
 };

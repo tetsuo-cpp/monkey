@@ -34,7 +34,9 @@ std::vector<std::pair<OpCode, Definition>> Definitions = {
     {OpCode::OpIndex, {"OpIndex", {}}},
     {OpCode::OpCall, {"OpCall", {}}},
     {OpCode::OpReturnValue, {"OpReturnValue", {}}},
-    {OpCode::OpReturn, {"OpReturn", {}}}};
+    {OpCode::OpReturn, {"OpReturn", {}}},
+    {OpCode::OpGetLocal, {"OpGetLocal", {1}}},
+    {OpCode::OpSetLocal, {"OpSetLocal", {1}}}};
 
 } // namespace
 
@@ -117,6 +119,9 @@ std::vector<unsigned char> make(OpCode Op, const std::vector<int> &Operands) {
   for (unsigned int Index = 0; Index < Operands.size(); ++Index) {
     const auto Width = Iter->second.OperandWidths.at(Index);
     switch (Width) {
+    case 1:
+      Instruction.at(Offset) = Operands.at(Index);
+      break;
     case 2:
       int16_t &WritePos = reinterpret_cast<int16_t &>(Instruction.at(Offset));
       WritePos = htons(Operands.at(Index));
@@ -137,9 +142,13 @@ std::pair<std::vector<int>, int> readOperands(const Definition &Def,
   for (unsigned int Index = 0; Index < Operands.size(); ++Index) {
     const auto Width = Def.OperandWidths.at(Index);
     switch (Width) {
-    case 2:
+    case 2: {
       uint16_t Val = reinterpret_cast<const uint16_t &>(Ins.Value.at(Offset));
       Operands.at(Index) = ntohs(Val);
+      break;
+    }
+    case 1:
+      Operands.at(Index) = Ins.Value.at(Offset);
       break;
     }
 

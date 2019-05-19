@@ -470,4 +470,45 @@ TEST(CompilerTests, testFunctionCalls) {
   runCompilerTests(Tests);
 }
 
+TEST(CompilerTests, testLetStatementScopes) {
+  const std::vector<CompilerTestCase> Tests = {
+      {"let num = 55;"
+       "fn() { num }",
+       {ConstantType(55), ConstantType(std::vector<code::Instructions>{
+                              code::make(code::OpCode::OpGetGlobal, {0}),
+                              code::make(code::OpCode::OpReturnValue, {})})},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpSetGlobal, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"let num = 55;"
+       "num",
+       {ConstantType(55), ConstantType(std::vector<code::Instructions>{
+                              code::make(code::OpCode::OpConstant, {0}),
+                              code::make(code::OpCode::OpSetLocal, {0}),
+                              code::make(code::OpCode::OpGetLocal, {0}),
+                              code::make(code::OpCode::OpReturnValue, {})})},
+       {code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"let a = 55;"
+       "let b = 77;"
+       "a + b",
+       {ConstantType(55), ConstantType(77),
+        ConstantType(std::vector<code::Instructions>{
+            code::make(code::OpCode::OpConstant, {0}),
+            code::make(code::OpCode::OpSetLocal, {0}),
+            code::make(code::OpCode::OpConstant, {1}),
+            code::make(code::OpCode::OpSetLocal, {1}),
+            code::make(code::OpCode::OpGetLocal, {0}),
+            code::make(code::OpCode::OpGetLocal, {1}),
+            code::make(code::OpCode::OpAdd, {}),
+            code::make(code::OpCode::OpReturnValue, {})})},
+       {code::make(code::OpCode::OpConstant, {2}),
+        code::make(code::OpCode::OpPop, {})}}
+
+  };
+
+  runCompilerTests(Tests);
+}
+
 } // namespace monkey::compiler::test

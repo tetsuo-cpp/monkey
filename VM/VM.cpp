@@ -168,6 +168,12 @@ void VM::run() {
       push(std::move(Return));
       break;
     }
+    case code::OpCode::OpReturn: {
+      popFrame();
+      pop();
+      push(NullGlobal);
+      break;
+    }
     default:
       break;
     }
