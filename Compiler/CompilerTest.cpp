@@ -411,6 +411,8 @@ TEST(CompilerTests, testCompilerScopes) {
   Compiler C(ST, Constants);
   ASSERT_EQ(C.ScopeIndex, 0);
 
+  const auto *GlobalSymbolTable = C.SymTable;
+
   C.emit(code::OpCode::OpMul, {});
 
   C.enterScope();
@@ -423,8 +425,13 @@ TEST(CompilerTests, testCompilerScopes) {
   auto Last = C.Scopes.at(C.ScopeIndex).LastInstruction;
   ASSERT_EQ(Last.Op, code::OpCode::OpSub);
 
+  EXPECT_EQ(C.SymTable->Outer, GlobalSymbolTable);
+
   C.leaveScope();
   ASSERT_EQ(C.ScopeIndex, 0);
+
+  EXPECT_EQ(C.SymTable, GlobalSymbolTable);
+  EXPECT_THAT(C.SymTable->Outer, testing::IsNull());
 
   C.emit(code::OpCode::OpAdd, {});
   ASSERT_EQ(C.Scopes.at(C.ScopeIndex).Instructions.Value.size(), 2);
@@ -481,8 +488,10 @@ TEST(CompilerTests, testLetStatementScopes) {
         code::make(code::OpCode::OpSetGlobal, {0}),
         code::make(code::OpCode::OpConstant, {1}),
         code::make(code::OpCode::OpPop, {})}},
-      {"let num = 55;"
-       "num",
+      {"fn() {"
+       "let num = 55;"
+       "num"
+       "}",
        {ConstantType(55), ConstantType(std::vector<code::Instructions>{
                               code::make(code::OpCode::OpConstant, {0}),
                               code::make(code::OpCode::OpSetLocal, {0}),
@@ -490,9 +499,11 @@ TEST(CompilerTests, testLetStatementScopes) {
                               code::make(code::OpCode::OpReturnValue, {})})},
        {code::make(code::OpCode::OpConstant, {1}),
         code::make(code::OpCode::OpPop, {})}},
-      {"let a = 55;"
+      {"fn() {"
+       "let a = 55;"
        "let b = 77;"
-       "a + b",
+       "a + b"
+       "}",
        {ConstantType(55), ConstantType(77),
         ConstantType(std::vector<code::Instructions>{
             code::make(code::OpCode::OpConstant, {0}),
@@ -504,9 +515,7 @@ TEST(CompilerTests, testLetStatementScopes) {
             code::make(code::OpCode::OpAdd, {}),
             code::make(code::OpCode::OpReturnValue, {})})},
        {code::make(code::OpCode::OpConstant, {2}),
-        code::make(code::OpCode::OpPop, {})}}
-
-  };
+        code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);
 }

@@ -48,6 +48,9 @@ public:
 
   std::vector<CompilationScope> Scopes;
   int ScopeIndex;
+  SymbolTable &GlobalSymTable;
+  SymbolTable *SymTable;
+  std::vector<std::unique_ptr<SymbolTable>> SymTables;
 
 private:
   template <typename T> int addConstant(T &&Obj) {
@@ -66,7 +69,6 @@ private:
   void replaceLastPopWithReturn();
 
   std::vector<std::shared_ptr<object::Object>> &Constants;
-  SymbolTable &SymTable;
 };
 
 } // namespace monkey::compiler

@@ -4,7 +4,8 @@ namespace monkey::compiler {
 
 Compiler::Compiler(SymbolTable &SymTable,
                    std::vector<std::shared_ptr<object::Object>> &Constants)
-    : ScopeIndex(0), Constants(Constants), SymTable(SymTable) {
+    : ScopeIndex(0), GlobalSymTable(SymTable), SymTable(&GlobalSymTable),
+      Constants(Constants) {
   // Main scope.
   Scopes.emplace_back();
 }
@@ -113,18 +114,24 @@ void Compiler::compile(const ast::Node *Node) {
   const auto *Let = dynamic_cast<const ast::LetStatement *>(Node);
   if (Let) {
     compile(Let->Value.get());
-    const auto &Symbol = SymTable.define(Let->Name->Value);
-    emit(code::OpCode::OpSetGlobal, {Symbol.Index});
+    const auto &Symbol = SymTable->define(Let->Name->Value);
+    if (Symbol.Scope == GlobalScope)
+      emit(code::OpCode::OpSetGlobal, {Symbol.Index});
+    else
+      emit(code::OpCode::OpSetLocal, {Symbol.Index});
     return;
   }
 
   const auto *Identifier = dynamic_cast<const ast::Identifier *>(Node);
   if (Identifier) {
-    const auto *Symbol = SymTable.resolve(Identifier->Value);
+    const auto *Symbol = SymTable->resolve(Identifier->Value);
     if (!Symbol)
       throw std::runtime_error("undefined variable " + Identifier->Value);
 
-    emit(code::OpCode::OpGetGlobal, {Symbol->Index});
+    if (Symbol->Scope == GlobalScope)
+      emit(code::OpCode::OpGetGlobal, {Symbol->Index});
+    else
+      emit(code::OpCode::OpGetLocal, {Symbol->Index});
     return;
   }
 
@@ -199,9 +206,10 @@ void Compiler::compile(const ast::Node *Node) {
     if (!lastInstructionIs(code::OpCode::OpReturnValue))
       emit(code::OpCode::OpReturn, {});
 
+    const auto NumLocals = SymTable->NumDefinitions;
     auto Ins = leaveScope();
     auto CompiledFn =
-        std::make_unique<object::CompiledFunction>(std::move(Ins));
+        std::make_unique<object::CompiledFunction>(std::move(Ins), NumLocals);
     emit(code::OpCode::OpConstant, {addConstant(std::move(CompiledFn))});
     return;
   }
@@ -291,9 +299,17 @@ const code::Instructions &Compiler::currentInstructions() const {
 void Compiler::enterScope() {
   Scopes.emplace_back();
   ++ScopeIndex;
+  SymTables.push_back(std::make_unique<SymbolTable>(SymTable));
+  SymTable = SymTables.back().get();
 }
 
 code::Instructions Compiler::leaveScope() {
+  SymTables.pop_back();
+  if (SymTables.empty())
+    SymTable = &GlobalSymTable;
+  else
+    SymTable = SymTables.back().get();
+
   auto Ins = currentInstructions();
   Scopes.pop_back();
   --ScopeIndex;

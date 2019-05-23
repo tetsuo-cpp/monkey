@@ -167,13 +167,15 @@ struct Hash : public Object {
 
 struct CompiledFunction : public Object {
   template <typename T>
-  explicit CompiledFunction(T &&Ins) : Ins(std::forward<T>(Ins)) {}
+  explicit CompiledFunction(T &&Ins, int NumLocals)
+      : Ins(std::forward<T>(Ins)), NumLocals(NumLocals) {}
 
   // Object impl.
   ObjectType type() const override;
   std::string inspect() const override;
 
   code::Instructions Ins;
+  const int NumLocals;
 };
 
 template <typename T, ObjectType ObjType>

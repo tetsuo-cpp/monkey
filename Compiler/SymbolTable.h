@@ -27,10 +27,11 @@ public:
   const Symbol &define(const std::string &);
   const Symbol *resolve(const std::string &) const;
 
-private:
   const SymbolTable *Outer;
-  std::unordered_map<std::string, Symbol> Store;
   int NumDefinitions;
+
+private:
+  std::unordered_map<std::string, Symbol> Store;
 };
 
 } // namespace monkey::compiler

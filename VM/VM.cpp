@@ -41,8 +41,8 @@ VM::VM(compiler::ByteCode &&BC,
     : Constants(BC.Constants), Stack{nullptr}, SP(0), Globals(Globals),
       FrameIndex(1) {
   auto MainFn =
-      std::make_shared<object::CompiledFunction>(std::move(BC.Instructions));
-  Frame MainFrame(std::move(MainFn));
+      std::make_shared<object::CompiledFunction>(std::move(BC.Instructions), 0);
+  Frame MainFrame(std::move(MainFn), 0);
   Frames.front() = std::move(MainFrame);
 }
 
@@ -126,6 +126,20 @@ void VM::run() {
       push(Globals.at(GlobalIndex));
       break;
     }
+    case code::OpCode::OpSetLocal: {
+      const int8_t LocalIndex = Instructions.Value.at(IP + 1);
+      auto &Frame = currentFrame();
+      ++Frame.IP;
+      Stack.at(Frame.BasePointer + LocalIndex) = pop();
+      break;
+    }
+    case code::OpCode::OpGetLocal: {
+      const int8_t LocalIndex = Instructions.Value.at(IP + 1);
+      auto &Frame = currentFrame();
+      ++Frame.IP;
+      push(Stack.at(Frame.BasePointer + LocalIndex));
+      break;
+    }
     case code::OpCode::OpArray: {
       const int16_t NumElem =
           ntohs(reinterpret_cast<int16_t &>(Instructions.Value.at(IP + 1)));
@@ -158,19 +172,20 @@ void VM::run() {
           object::objCast<const object::CompiledFunction *>(Fn.get());
       if (!FnObj)
         throw std::runtime_error("calling non-function");
-      pushFrame(Frame(Fn));
+      pushFrame(Frame(Fn, SP));
+      SP += FnObj->NumLocals;
       break;
     }
     case code::OpCode::OpReturnValue: {
       auto Return = pop();
-      popFrame();
-      pop();
+      const auto &Frame = popFrame();
+      SP = Frame.BasePointer - 1;
       push(std::move(Return));
       break;
     }
     case code::OpCode::OpReturn: {
-      popFrame();
-      pop();
+      const auto &Frame = popFrame();
+      SP = Frame.BasePointer - 1;
       push(NullGlobal);
       break;
     }
