@@ -3,7 +3,7 @@ project(monkey)
 
 # Compiler flags.
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 
 # Setup GTest/GMock.
 add_subdirectory(
@@ -28,6 +28,7 @@ set(
   Environment/Environment.cpp
   Evaluator/Evaluator.cpp
   Lexer/Lexer.cpp
+  Object/BuiltIns.cpp
   Object/Object.cpp
   Parser/Parser.cpp
   REPL/REPL.cpp
@@ -56,6 +57,7 @@ set(
   Evaluator/EvaluatorTest.cpp
   Lexer/Lexer.cpp
   Lexer/LexerTest.cpp
+  Object/BuiltIns.cpp
   Object/Object.cpp
   Parser/Parser.cpp
   Parser/ParserTest.cpp

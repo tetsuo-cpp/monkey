@@ -1,142 +1,13 @@
 #include "Evaluator.h"
 
+#include <Object/BuiltIns.h>
+
 #include <cassert>
 #include <stdarg.h>
 
 namespace monkey::evaluator {
 
 namespace {
-
-std::shared_ptr<object::Error> newError(const char *Format, ...) {
-#define ERROR_SIZE 1024
-  char Error[ERROR_SIZE];
-  va_list ArgList;
-  va_start(ArgList, Format);
-  vsnprintf(Error, ERROR_SIZE, Format, ArgList);
-  va_end(ArgList);
-  return std::make_shared<object::Error>(Error);
-}
-
-const std::vector<std::pair<std::string, std::shared_ptr<object::BuiltIn>>>
-    BuiltIns = {
-        {"len",
-         std::make_shared<object::BuiltIn>(
-             [](const std::vector<std::shared_ptr<object::Object>> &Args)
-                 -> std::shared_ptr<object::Object> {
-               if (Args.size() != 1)
-                 return newError("wrong number of arguments. got=%d, want=1",
-                                 Args.size());
-
-               const auto *String =
-                   object::objCast<const object::String *>(Args.front().get());
-               if (String)
-                 return std::make_shared<object::Integer>(String->Value.size());
-
-               const auto *Array =
-                   object::objCast<const object::Array *>(Args.front().get());
-               if (Array)
-                 return std::make_shared<object::Integer>(
-                     Array->Elements.size());
-
-               return newError("argument to \"len\" not supported, got %s",
-                               object::objTypeToString(Args.front()->type()));
-             })},
-        {"first",
-         std::make_shared<object::BuiltIn>(
-             [](const std::vector<std::shared_ptr<object::Object>> &Args)
-                 -> std::shared_ptr<object::Object> {
-               if (Args.size() != 1)
-                 return newError("wrong number of arguments. got=%d, want=1",
-                                 Args.size());
-
-               if (Args.front()->type() != object::ObjectType::ARRAY_OBJ)
-                 return newError("argument to \"first\" must be ARRAY, got %s",
-                                 object::objTypeToString(Args.front()->type()));
-
-               const auto *Array =
-                   object::objCast<const object::Array *>(Args.front().get());
-               assert(Array);
-               if (!Array->Elements.empty())
-                 return Array->Elements.front();
-
-               return std::make_shared<object::Null>();
-             })},
-        {"last",
-         std::make_shared<object::BuiltIn>(
-             [](const std::vector<std::shared_ptr<object::Object>> &Args)
-                 -> std::shared_ptr<object::Object> {
-               if (Args.size() != 1)
-                 return newError("wrong number of arguments. got=%d, want=1",
-                                 Args.size());
-
-               if (Args.front()->type() != object::ObjectType::ARRAY_OBJ)
-                 return newError("argument to \"last\" must be ARRAY, got %s",
-                                 object::objTypeToString(Args.front()->type()));
-
-               const auto *Array =
-                   object::objCast<const object::Array *>(Args.front().get());
-               assert(Array);
-               if (!Array->Elements.empty())
-                 return Array->Elements.back();
-
-               return std::make_shared<object::Null>();
-             })},
-        {"rest",
-         std::make_shared<object::BuiltIn>(
-             [](const std::vector<std::shared_ptr<object::Object>> &Args)
-                 -> std::shared_ptr<object::Object> {
-               if (Args.size() != 1)
-                 return newError("wrong number of arguments. got=%d, want=1",
-                                 Args.size());
-
-               if (Args.front()->type() != object::ObjectType::ARRAY_OBJ)
-                 return newError("argument to \"rest\" must be ARRAY, got %s",
-                                 object::objTypeToString(Args.front()->type()));
-
-               const auto *Array =
-                   object::objCast<const object::Array *>(Args.front().get());
-               assert(Array);
-               if (!Array->Elements.empty()) {
-                 std::vector<std::shared_ptr<object::Object>> Rest;
-                 std::copy(Array->Elements.begin() + 1, Array->Elements.end(),
-                           std::back_inserter(Rest));
-                 return std::make_shared<object::Array>(std::move(Rest));
-               }
-
-               return std::make_shared<object::Null>();
-             })},
-        {"push",
-         std::make_shared<object::BuiltIn>(
-             [](const std::vector<std::shared_ptr<object::Object>> &Args)
-                 -> std::shared_ptr<object::Object> {
-               if (Args.size() != 2)
-                 return newError("wrong number of arguments. got=%d, want=2",
-                                 Args.size());
-
-               if (Args.front()->type() != object::ObjectType::ARRAY_OBJ)
-                 return newError("argument to \"push\" must be ARRAY, got %s",
-                                 object::objTypeToString(Args.front()->type()));
-
-               const auto *Array =
-                   object::objCast<const object::Array *>(Args.front().get());
-               assert(Array);
-               if (!Array->Elements.empty()) {
-                 auto Pushed = Array->Elements;
-                 Pushed.push_back(Args.at(1));
-                 return std::make_shared<object::Array>(std::move(Pushed));
-               }
-
-               return std::make_shared<object::Null>();
-             })},
-        {"puts",
-         std::make_shared<object::BuiltIn>(
-             [](const std::vector<std::shared_ptr<object::Object>> &Args)
-                 -> std::shared_ptr<object::Object> {
-               for (const auto &Arg : Args)
-                 printf("%s\n", Arg->inspect().c_str());
-
-               return std::make_shared<object::Null>();
-             })}};
 
 bool isError(const std::shared_ptr<object::Object> &Obj) {
   return Obj && Obj->type() == object::ObjectType::ERROR_OBJ;
@@ -193,8 +64,8 @@ evalBangOperatorExpression(const std::shared_ptr<object::Object> &Right) {
 std::shared_ptr<object::Object> evalMinusPrefixOperatorExpression(
     const std::shared_ptr<object::Object> &Right) {
   if (Right->type() != object::ObjectType::INTEGER_OBJ)
-    return newError("unknown operator: -%s",
-                    object::objTypeToString(Right->type()));
+    return object::newError("unknown operator: -%s",
+                            object::objTypeToString(Right->type()));
 
   const auto *Integer = object::objCast<const object::Integer *>(Right.get());
   if (!Integer)
@@ -211,8 +82,8 @@ evalPrefixExpression(const std::string &Operator,
   else if (Operator == "-")
     return evalMinusPrefixOperatorExpression(Right);
   else
-    return newError("unknown operator: %s:%s", Operator.c_str(),
-                    object::objTypeToString(Right->type()));
+    return object::newError("unknown operator: %s:%s", Operator.c_str(),
+                            object::objTypeToString(Right->type()));
 }
 
 std::shared_ptr<object::Object>
@@ -241,9 +112,9 @@ evalIntegerInfixExpression(const std::string &Operator,
   else if (Operator == "!=")
     return std::make_shared<object::Boolean>(LeftInt->Value != RightInt->Value);
   else
-    return newError("unknown operator: %s %s %s",
-                    object::objTypeToString(Left->type()), Operator.c_str(),
-                    object::objTypeToString(Right->type()));
+    return object::newError(
+        "unknown operator: %s %s %s", object::objTypeToString(Left->type()),
+        Operator.c_str(), object::objTypeToString(Right->type()));
 }
 
 std::shared_ptr<object::Object>
@@ -270,13 +141,13 @@ evalBooleanInfixExpression(const std::string &Operator,
   else {
     if ((Left->type() == object::ObjectType::BOOLEAN_OBJ) ^
         (Right->type() == object::ObjectType::BOOLEAN_OBJ))
-      return newError("type mismatch: %s %s %s",
-                      object::objTypeToString(Left->type()), Operator.c_str(),
-                      object::objTypeToString(Right->type()));
+      return object::newError(
+          "type mismatch: %s %s %s", object::objTypeToString(Left->type()),
+          Operator.c_str(), object::objTypeToString(Right->type()));
     else
-      return newError("unknown operator: %s %s %s",
-                      object::objTypeToString(Left->type()), Operator.c_str(),
-                      object::objTypeToString(Right->type()));
+      return object::newError(
+          "unknown operator: %s %s %s", object::objTypeToString(Left->type()),
+          Operator.c_str(), object::objTypeToString(Right->type()));
   }
 }
 
@@ -300,9 +171,9 @@ evalStringInfixExpression(const std::string &Operator,
                           const std::shared_ptr<object::Object> &Left,
                           const std::shared_ptr<object::Object> &Right) {
   if (Operator != "+")
-    return newError("unknown operator: %s %s %s",
-                    object::objTypeToString(Left->type()), Operator.c_str(),
-                    object::objTypeToString(Right->type()));
+    return object::newError(
+        "unknown operator: %s %s %s", object::objTypeToString(Left->type()),
+        Operator.c_str(), object::objTypeToString(Right->type()));
 
   const auto *LeftS = object::objCast<const object::String *>(Left.get());
   const auto *RightS = object::objCast<const object::String *>(Right.get());
@@ -328,13 +199,13 @@ evalInfixExpression(const std::string &Operator,
            Right->type() == object::ObjectType::STRING_OBJ)
     return evalStringInfixExpression(Operator, Left, Right);
   else if (Left->type() != Right->type())
-    return newError("type mismatch: %s %s %s",
-                    object::objTypeToString(Left->type()), Operator.c_str(),
-                    object::objTypeToString(Right->type()));
+    return object::newError(
+        "type mismatch: %s %s %s", object::objTypeToString(Left->type()),
+        Operator.c_str(), object::objTypeToString(Right->type()));
   else
-    return newError("unknown operator: %s %s %s",
-                    object::objTypeToString(Left->type()), Operator.c_str(),
-                    object::objTypeToString(Right->type()));
+    return object::newError(
+        "unknown operator: %s %s %s", object::objTypeToString(Left->type()),
+        Operator.c_str(), object::objTypeToString(Right->type()));
 }
 
 bool isTruthy(const object::Object *Obj) {
@@ -371,16 +242,17 @@ evalIdentifier(const ast::Identifier *Identifier,
     return Value;
 
   const auto BIter = std::find_if(
-      BuiltIns.begin(), BuiltIns.end(),
+      object::BuiltIns.begin(), object::BuiltIns.end(),
       [Identifier](
           const std::pair<std::string, std::shared_ptr<object::BuiltIn>> &Fn) {
         return Fn.first == Identifier->Value;
       });
 
-  if (BIter != BuiltIns.end())
+  if (BIter != object::BuiltIns.end())
     return BIter->second;
 
-  return newError("identifier not found: %s", Identifier->Value.c_str());
+  return object::newError("identifier not found: %s",
+                          Identifier->Value.c_str());
 }
 
 std::vector<std::shared_ptr<object::Object>>
@@ -422,8 +294,8 @@ evalHashIndexExpression(const std::shared_ptr<object::Object> &Hash,
 
   const object::HashKey HK(Index);
   if (!object::hasHashKey(HK))
-    return newError("unusable as hash key: %s",
-                    object::objTypeToString(Index->type()));
+    return object::newError("unusable as hash key: %s",
+                            object::objTypeToString(Index->type()));
 
   const auto Iter = HashObj->Pairs.find(HK);
   if (Iter == HashObj->Pairs.end())
@@ -441,8 +313,8 @@ evalIndexExpression(const std::shared_ptr<object::Object> &Left,
   else if (Left->type() == object::ObjectType::HASH_OBJ)
     return evalHashIndexExpression(Left, Index);
 
-  return newError("index operator not supported: %s",
-                  object::objTypeToString(Left->type()));
+  return object::newError("index operator not supported: %s",
+                          object::objTypeToString(Left->type()));
 }
 
 std::shared_ptr<object::Object> evalHashLiteral(const ast::HashLiteral *Hash,
@@ -458,8 +330,8 @@ std::shared_ptr<object::Object> evalHashLiteral(const ast::HashLiteral *Hash,
 
     object::HashKey HK(Key);
     if (!object::hasHashKey(HK))
-      return newError("unusable as hash key: %s",
-                      object::objTypeToString(Key->type()));
+      return object::newError("unusable as hash key: %s",
+                              object::objTypeToString(Key->type()));
 
     auto Value = eval(P.second.get(), Env);
     if (isError(Value))
@@ -505,10 +377,16 @@ applyFunction(const std::shared_ptr<object::Object> &Fn,
   }
 
   const auto *BuiltIn = object::objCast<const object::BuiltIn *>(Fn.get());
-  if (BuiltIn)
-    return BuiltIn->Fn(Args);
+  if (BuiltIn) {
+    auto Result = BuiltIn->Fn(Args);
+    if (Result)
+      return Result;
+    else
+      return std::make_shared<object::Null>();
+  }
 
-  return newError("not a function %s", object::objTypeToString(Fn->type()));
+  return object::newError("not a function %s",
+                          object::objTypeToString(Fn->type()));
 }
 
 } // namespace

@@ -461,7 +461,7 @@ TEST(CompilerTests, testFunctionCalls) {
                               code::make(code::OpCode::OpConstant, {0}),
                               code::make(code::OpCode::OpReturnValue, {})})},
        {code::make(code::OpCode::OpConstant, {1}),
-        code::make(code::OpCode::OpCall, {}),
+        code::make(code::OpCode::OpCall, {0}),
         code::make(code::OpCode::OpPop, {})}},
       {"let noArg = fn() { 24 };"
        "noArg();",
@@ -471,7 +471,37 @@ TEST(CompilerTests, testFunctionCalls) {
        {code::make(code::OpCode::OpConstant, {1}),
         code::make(code::OpCode::OpSetGlobal, {0}),
         code::make(code::OpCode::OpGetGlobal, {0}),
-        code::make(code::OpCode::OpCall, {}),
+        code::make(code::OpCode::OpCall, {0}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"let oneArg = fn(a) { a };"
+       "oneArg(24);",
+       {ConstantType(std::vector<code::Instructions>{
+            code::make(code::OpCode::OpGetLocal, {0}),
+            code::make(code::OpCode::OpReturnValue, {})}),
+        ConstantType(24)},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpSetGlobal, {0}),
+        code::make(code::OpCode::OpGetGlobal, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpCall, {1}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"let manyArg = fn(a, b, c) { a; b; c };"
+       "manyArg(24, 25, 26);",
+       {ConstantType(std::vector<code::Instructions>{
+            code::make(code::OpCode::OpGetLocal, {0}),
+            code::make(code::OpCode::OpPop, {}),
+            code::make(code::OpCode::OpGetLocal, {1}),
+            code::make(code::OpCode::OpPop, {}),
+            code::make(code::OpCode::OpGetLocal, {2}),
+            code::make(code::OpCode::OpReturnValue, {})}),
+        ConstantType(24), ConstantType(25), ConstantType(26)},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpSetGlobal, {0}),
+        code::make(code::OpCode::OpGetGlobal, {0}),
+        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpConstant, {2}),
+        code::make(code::OpCode::OpConstant, {3}),
+        code::make(code::OpCode::OpCall, {3}),
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);
@@ -515,6 +545,32 @@ TEST(CompilerTests, testLetStatementScopes) {
             code::make(code::OpCode::OpAdd, {}),
             code::make(code::OpCode::OpReturnValue, {})})},
        {code::make(code::OpCode::OpConstant, {2}),
+        code::make(code::OpCode::OpPop, {})}}};
+
+  runCompilerTests(Tests);
+}
+
+TEST(CompilerTests, testBuiltIns) {
+  const std::vector<CompilerTestCase> Tests = {
+      {"len([]);"
+       "push([], 1);",
+       {1},
+       {code::make(code::OpCode::OpGetBuiltIn, {0}),
+        code::make(code::OpCode::OpArray, {0}),
+        code::make(code::OpCode::OpCall, {1}),
+        code::make(code::OpCode::OpPop, {}),
+        code::make(code::OpCode::OpGetBuiltIn, {4}),
+        code::make(code::OpCode::OpArray, {0}),
+        code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpCall, {2}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"fn() { len([]) }",
+       {ConstantType(std::vector<code::Instructions>{
+           code::make(code::OpCode::OpGetBuiltIn, {0}),
+           code::make(code::OpCode::OpArray, {0}),
+           code::make(code::OpCode::OpCall, {1}),
+           code::make(code::OpCode::OpReturnValue, {})})},
+       {code::make(code::OpCode::OpConstant, {0}),
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);

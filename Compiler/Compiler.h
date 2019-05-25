@@ -67,6 +67,7 @@ private:
   code::Instructions &currentInstructions();
   const code::Instructions &currentInstructions() const;
   void replaceLastPopWithReturn();
+  void loadSymbol(const Symbol &);
 
   std::vector<std::shared_ptr<object::Object>> &Constants;
 };

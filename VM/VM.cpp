@@ -40,8 +40,8 @@ VM::VM(compiler::ByteCode &&BC,
        std::array<std::shared_ptr<object::Object>, GlobalsSize> &Globals)
     : Constants(BC.Constants), Stack{nullptr}, SP(0), Globals(Globals),
       FrameIndex(1) {
-  auto MainFn =
-      std::make_shared<object::CompiledFunction>(std::move(BC.Instructions), 0);
+  auto MainFn = std::make_shared<object::CompiledFunction>(
+      std::move(BC.Instructions), 0, 0);
   Frame MainFrame(std::move(MainFn), 0);
   Frames.front() = std::move(MainFrame);
 }
@@ -127,14 +127,14 @@ void VM::run() {
       break;
     }
     case code::OpCode::OpSetLocal: {
-      const int8_t LocalIndex = Instructions.Value.at(IP + 1);
+      const auto LocalIndex = Instructions.Value.at(IP + 1);
       auto &Frame = currentFrame();
       ++Frame.IP;
       Stack.at(Frame.BasePointer + LocalIndex) = pop();
       break;
     }
     case code::OpCode::OpGetLocal: {
-      const int8_t LocalIndex = Instructions.Value.at(IP + 1);
+      const auto LocalIndex = Instructions.Value.at(IP + 1);
       auto &Frame = currentFrame();
       ++Frame.IP;
       push(Stack.at(Frame.BasePointer + LocalIndex));
@@ -167,13 +167,10 @@ void VM::run() {
       break;
     }
     case code::OpCode::OpCall: {
-      const auto &Fn = Stack.at(SP - 1);
-      const auto *FnObj =
-          object::objCast<const object::CompiledFunction *>(Fn.get());
-      if (!FnObj)
-        throw std::runtime_error("calling non-function");
-      pushFrame(Frame(Fn, SP));
-      SP += FnObj->NumLocals;
+      const auto NumArgs = Instructions.Value.at(IP + 1);
+      ++currentFrame().IP;
+
+      callFunction(NumArgs);
       break;
     }
     case code::OpCode::OpReturnValue: {
@@ -418,8 +415,22 @@ void VM::executeHashIndex(const std::shared_ptr<object::Object> &Hash,
 Frame &VM::currentFrame() { return Frames.at(FrameIndex - 1); }
 
 Frame &VM::popFrame() {
-  auto &F = Frames.at(FrameIndex--);
+  auto &F = Frames.at(--FrameIndex);
   return F;
+}
+
+void VM::callFunction(int NumArgs) {
+  const auto &Fn = Stack.at(SP - 1 - NumArgs);
+  const auto *FnObj =
+      object::objCast<const object::CompiledFunction *>(Fn.get());
+  if (!FnObj)
+    throw std::runtime_error("calling non-function");
+  if (NumArgs != FnObj->NumParameters)
+    throw std::runtime_error("wrong number of arguments: want=" +
+                             std::to_string(FnObj->NumParameters) +
+                             ", got=" + std::to_string(NumArgs));
+  pushFrame(Frame(Fn, SP - NumArgs));
+  SP += FnObj->NumLocals + NumArgs;
 }
 
 } // namespace monkey::vm

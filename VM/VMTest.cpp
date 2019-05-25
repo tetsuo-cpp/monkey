@@ -285,6 +285,12 @@ TEST(VMTests, testFirstClassFunctions) {
       {"let returnsOne = fn() { 1; };"
        "let returnsOneReturner = fn() { returnsOne; };"
        "returnsOneReturner()();",
+       1},
+      {"let returnsOneReturner = fn() {"
+       "let returnsOne = fn() { 1; };"
+       "returnsOne;"
+       "};"
+       "returnsOneReturner()();",
        1}};
 
   runVMTests(Tests);
@@ -303,7 +309,7 @@ TEST(VMTests, testCallingFunctionsWithBindings) {
        "oneAndTwo() + threeAndFour();",
        10},
       {"let firstFoobar = fn() { let foobar = 50; foobar; };"
-       "let secondFoobar() = fn() { let foobar = 100; foobar; };"
+       "let secondFoobar = fn() { let foobar = 100; foobar; };"
        "firstFoobar() + secondFoobar();",
        150},
       {"let globalSeed = 50;"
@@ -319,6 +325,77 @@ TEST(VMTests, testCallingFunctionsWithBindings) {
        97}};
 
   runVMTests(Tests);
+}
+
+TEST(VMTests, testCallingFunctionWithArgumentsAndBindings) {
+  const std::vector<VMTestCase<int64_t>> Tests = {
+      {"let identity= fn(a) { a; };"
+       "identity(4);",
+       4},
+      {"let sum = fn(a, b) { a + b; };"
+       "sum(1, 2);",
+       3},
+      {"let sum = fn(a, b) {"
+       "let c = a + b;"
+       "c;"
+       "};"
+       "sum(1, 2);",
+       3},
+      {"let sum = fn(a, b) {"
+       "let c = a + b;"
+       "c;"
+       "};"
+       "sum (1, 2) + sum(3, 4);",
+       10},
+      {"let sum = fn(a, b) {"
+       "let c = a + b;"
+       "c;"
+       "};"
+       "let outer = fn() {"
+       "sum(1, 2) + sum(3, 4);"
+       "};"
+       "outer();",
+       10},
+      {"let globalNum = 10;"
+       "let sum = fn(a, b) {"
+       "let c = a + b;"
+       "c + globalNum;"
+       "};"
+       "let outer = fn() {"
+       "sum(1, 2) + sum(3, 4) + globalNum;"
+       "};"
+       "outer() + globalNum;",
+       50}};
+
+  runVMTests(Tests);
+}
+
+TEST(VMTests, testCallingFunctionWithWrongArguments) {
+  const std::vector<VMTestCase<std::string>> Tests = {
+      {"fn() { 1; }(1);", "wrong number of arguments: want=0, got=1"},
+      {"fn(a) { a; }();", "wrong number of arguments: want=1, got=0"},
+      {"fn(a, b) { a + b; }(1);", "wrong number of arguments: want=2, got=1"}};
+
+  for (const auto &Test : Tests) {
+    const auto Program = parse(Test.Input);
+
+    compiler::SymbolTable ST;
+    std::vector<std::shared_ptr<object::Object>> Constants;
+    compiler::Compiler C(ST, Constants);
+    ASSERT_NO_THROW(C.compile(Program.get()));
+
+    std::array<std::shared_ptr<object::Object>, GlobalsSize> Globals;
+    VM VM(C.byteCode(), Globals);
+    std::string Error;
+    try {
+      VM.run();
+    } catch (const std::runtime_error &RE) {
+      Error = RE.what();
+    }
+
+    ASSERT_FALSE(Error.empty());
+    ASSERT_EQ(Error, Test.Expected);
+  }
 }
 
 } // namespace monkey::vm::test

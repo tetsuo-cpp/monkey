@@ -45,7 +45,8 @@ enum class OpCode : unsigned char {
   OpReturnValue,
   OpReturn,
   OpGetLocal,
-  OpSetLocal
+  OpSetLocal,
+  OpGetBuiltIn
 };
 
 struct Definition {

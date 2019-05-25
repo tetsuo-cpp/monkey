@@ -9,6 +9,7 @@ using SymbolScope = std::string;
 
 static SymbolScope GlobalScope("GLOBAL");
 static SymbolScope LocalScope("LOCAL");
+static SymbolScope BuiltInScope("BUILTIN");
 
 struct Symbol {
   bool operator==(const Symbol &) const;
@@ -25,6 +26,7 @@ public:
   virtual ~SymbolTable() = default;
 
   const Symbol &define(const std::string &);
+  const Symbol &defineBuiltIn(int, const std::string &);
   const Symbol *resolve(const std::string &) const;
 
   const SymbolTable *Outer;

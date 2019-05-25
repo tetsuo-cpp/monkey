@@ -22,6 +22,12 @@ const Symbol &SymbolTable::define(const std::string &Name) {
   return Store[Name];
 }
 
+const Symbol &SymbolTable::defineBuiltIn(int Index, const std::string &Name) {
+  Symbol S{Name, BuiltInScope, Index};
+  Store[Name] = std::move(S);
+  return Store[Name];
+}
+
 const Symbol *SymbolTable::resolve(const std::string &Name) const {
   const auto Iter = Store.find(Name);
   if (Iter == Store.end()) {

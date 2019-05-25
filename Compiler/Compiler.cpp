@@ -1,5 +1,7 @@
 #include "Compiler.h"
 
+#include <Object/BuiltIns.h>
+
 namespace monkey::compiler {
 
 Compiler::Compiler(SymbolTable &SymTable,
@@ -8,6 +10,9 @@ Compiler::Compiler(SymbolTable &SymTable,
       Constants(Constants) {
   // Main scope.
   Scopes.emplace_back();
+
+  for (unsigned int I = 0; I < object::BuiltIns.size(); ++I)
+    GlobalSymTable.defineBuiltIn(I, object::BuiltIns.at(I).first);
 }
 
 void Compiler::compile(const ast::Node *Node) {
@@ -128,10 +133,7 @@ void Compiler::compile(const ast::Node *Node) {
     if (!Symbol)
       throw std::runtime_error("undefined variable " + Identifier->Value);
 
-    if (Symbol->Scope == GlobalScope)
-      emit(code::OpCode::OpGetGlobal, {Symbol->Index});
-    else
-      emit(code::OpCode::OpGetLocal, {Symbol->Index});
+    loadSymbol(*Symbol);
     return;
   }
 
@@ -199,6 +201,9 @@ void Compiler::compile(const ast::Node *Node) {
   const auto *FunctionL = dynamic_cast<const ast::FunctionLiteral *>(Node);
   if (FunctionL) {
     enterScope();
+    for (const auto &P : FunctionL->Parameters)
+      SymTable->define(P->Value);
+
     compile(FunctionL->Body.get());
 
     if (lastInstructionIs(code::OpCode::OpPop))
@@ -208,8 +213,8 @@ void Compiler::compile(const ast::Node *Node) {
 
     const auto NumLocals = SymTable->NumDefinitions;
     auto Ins = leaveScope();
-    auto CompiledFn =
-        std::make_unique<object::CompiledFunction>(std::move(Ins), NumLocals);
+    auto CompiledFn = std::make_unique<object::CompiledFunction>(
+        std::move(Ins), NumLocals, FunctionL->Parameters.size());
     emit(code::OpCode::OpConstant, {addConstant(std::move(CompiledFn))});
     return;
   }
@@ -224,7 +229,10 @@ void Compiler::compile(const ast::Node *Node) {
   const auto *Call = dynamic_cast<const ast::CallExpression *>(Node);
   if (Call) {
     compile(Call->Function.get());
-    emit(code::OpCode::OpCall, {});
+    for (const auto &A : Call->Arguments)
+      compile(A.get());
+
+    emit(code::OpCode::OpCall, {static_cast<int>(Call->Arguments.size())});
     return;
   }
 }
@@ -324,6 +332,15 @@ void Compiler::replaceLastPopWithReturn() {
   replaceInstruction(LastPos, ReturnIns);
 
   CurrentScope.LastInstruction.Op = code::OpCode::OpReturnValue;
+}
+
+void Compiler::loadSymbol(const Symbol &S) {
+  if (S.Scope == GlobalScope)
+    emit(code::OpCode::OpGetGlobal, {S.Index});
+  else if (S.Scope == LocalScope)
+    emit(code::OpCode::OpGetLocal, {S.Index});
+  else if (S.Scope == BuiltInScope)
+    emit(code::OpCode::OpGetBuiltIn, {S.Index});
 }
 
 } // namespace monkey::compiler

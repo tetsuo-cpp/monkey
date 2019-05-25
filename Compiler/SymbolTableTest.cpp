@@ -104,4 +104,30 @@ TEST(SymbolTableTests, testResolveNestedLocal) {
   }
 }
 
+TEST(SymbolTableTests, testDefineResolveBuiltIns) {
+  SymbolTable Global;
+  SymbolTable FirstLocal(&Global);
+  SymbolTable SecondLocal(&FirstLocal);
+
+  const std::vector<Symbol> Expected = {
+      {"a", BuiltInScope, 0},
+      {"c", BuiltInScope, 1},
+      {"e", BuiltInScope, 2},
+      {"f", BuiltInScope, 3},
+  };
+
+  for (unsigned int I = 0; I < Expected.size(); ++I) {
+    const auto &E = Expected.at(I);
+    Global.defineBuiltIn(I, E.Name);
+  }
+
+  for (const auto &Table : {Global, FirstLocal, SecondLocal}) {
+    for (const auto &Sym : Expected) {
+      const auto *Result = Table.resolve(Sym.Name);
+      ASSERT_THAT(Result, testing::NotNull());
+      ASSERT_EQ(*Result, Sym);
+    }
+  }
+}
+
 } // namespace monkey::compiler
