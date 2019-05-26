@@ -104,12 +104,7 @@ template <typename T> void runVMTests(const std::vector<VMTestCase<T>> &Tests) {
 
     std::array<std::shared_ptr<object::Object>, GlobalsSize> Globals;
     VM VM(C.byteCode(), Globals);
-    // ASSERT_NO_THROW(VM.run());
-    try {
-      VM.run();
-    } catch (const std::runtime_error &e) {
-      std::cout << e.what() << std::endl;
-    }
+    ASSERT_NO_THROW(VM.run());
 
     const auto *StackElem = VM.lastPoppedStackElem();
     testExpectedObject(Test.Expected, StackElem);
@@ -419,7 +414,7 @@ TEST(VMTests, testBuiltInFunctions) {
   runVMTests(Tests);
 
   const std::vector<VMTestCase<std::vector<int64_t>>> ArrayTests = {
-	  {"rest([1, 2, 3])", {2, 3}}, {"push([], 1)", {1}}};
+      {"rest([1, 2, 3])", {2, 3}}, {"push([], 1)", {1}}};
 
   runVMTests(ArrayTests);
 
