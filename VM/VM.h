@@ -50,7 +50,10 @@ private:
     Frames.at(FrameIndex++) = std::forward<T>(Frame);
   }
   Frame &popFrame();
-  void callFunction(int);
+  void executeCall(int);
+  void callClosure(const std::shared_ptr<object::Object> &, int);
+  void callBuiltIn(const std::shared_ptr<object::Object> &, int);
+  void pushClosure(int);
 
   std::vector<std::shared_ptr<object::Object>> &Constants;
   std::array<std::shared_ptr<object::Object>, StackSize> Stack;

@@ -1,5 +1,8 @@
 #include "BuiltIns.h"
 
+#include <cassert>
+#include <stdarg.h>
+
 namespace monkey::object {
 
 // Null global should probably go in here. Instead, we check for nullptr in the
@@ -95,13 +98,9 @@ const std::vector<std::pair<std::string, std::shared_ptr<BuiltIn>>> BuiltIns = {
 
        const auto *ArrayObj = objCast<const Array *>(Args.front().get());
        assert(ArrayObj);
-       if (!ArrayObj->Elements.empty()) {
-         auto Pushed = ArrayObj->Elements;
-         Pushed.push_back(Args.at(1));
-         return std::make_shared<Array>(std::move(Pushed));
-       }
-
-       return nullptr;
+       auto Pushed = ArrayObj->Elements;
+       Pushed.push_back(Args.at(1));
+       return std::make_shared<Array>(std::move(Pushed));
      })},
     {"puts", std::make_shared<BuiltIn>(
                  [](const std::vector<std::shared_ptr<Object>> &Args)

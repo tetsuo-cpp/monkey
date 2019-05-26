@@ -37,7 +37,8 @@ std::vector<std::pair<OpCode, Definition>> Definitions = {
     {OpCode::OpReturn, {"OpReturn", {}}},
     {OpCode::OpGetLocal, {"OpGetLocal", {1}}},
     {OpCode::OpSetLocal, {"OpSetLocal", {1}}},
-    {OpCode::OpGetBuiltIn, {"OpGetBuiltIn", {1}}}};
+    {OpCode::OpGetBuiltIn, {"OpGetBuiltIn", {1}}},
+    {OpCode::OpClosure, {"OpClosure", {2, 1}}}};
 
 } // namespace
 
@@ -81,6 +82,9 @@ Instructions::fmtInstructions(const Definition &Def,
     return Def.Name;
   case 1:
     return Def.Name + " " + std::to_string(Operands.front());
+  case 2:
+    return Def.Name + " " + std::to_string(Operands.front()) + " " +
+           std::to_string(Operands.at(1));
   }
 
   return std::string("ERROR: unhandled operandCount for ") + Def.Name + "\n";

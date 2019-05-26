@@ -62,6 +62,13 @@ void testExpectedObject(const std::string &Expected,
   testStringObject(Expected, Obj);
 }
 
+void testExpectedObject(const std::shared_ptr<object::Error> &Expected,
+                        const object::Object *Obj) {
+  const auto *ErrorObj = dynamic_cast<const object::Error *>(Obj);
+  ASSERT_THAT(ErrorObj, testing::NotNull());
+  ASSERT_EQ(ErrorObj->Message, Expected->Message);
+}
+
 template <typename T>
 void testExpectedObject(const std::vector<T> &Expected,
                         const object::Object *Obj) {
@@ -97,7 +104,12 @@ template <typename T> void runVMTests(const std::vector<VMTestCase<T>> &Tests) {
 
     std::array<std::shared_ptr<object::Object>, GlobalsSize> Globals;
     VM VM(C.byteCode(), Globals);
-    ASSERT_NO_THROW(VM.run());
+    // ASSERT_NO_THROW(VM.run());
+    try {
+      VM.run();
+    } catch (const std::runtime_error &e) {
+      std::cout << e.what() << std::endl;
+    }
 
     const auto *StackElem = VM.lastPoppedStackElem();
     testExpectedObject(Test.Expected, StackElem);
@@ -396,6 +408,43 @@ TEST(VMTests, testCallingFunctionWithWrongArguments) {
     ASSERT_FALSE(Error.empty());
     ASSERT_EQ(Error, Test.Expected);
   }
+}
+
+TEST(VMTests, testBuiltInFunctions) {
+  const std::vector<VMTestCase<int64_t>> Tests = {
+      {"len(\"\")", 0},      {"len(\"four\")", 4}, {"len(\"hello world\")", 11},
+      {"len([1, 2, 3])", 3}, {"len([])", 0},       {"first([1, 2, 3])", 1},
+      {"last([1, 2, 3])", 3}};
+
+  runVMTests(Tests);
+
+  const std::vector<VMTestCase<std::vector<int64_t>>> ArrayTests = {
+	  {"rest([1, 2, 3])", {2, 3}}, {"push([], 1)", {1}}};
+
+  runVMTests(ArrayTests);
+
+  const std::vector<VMTestCase<void *>> NullTests = {
+      {"puts(\"hello\", \"world\")", nullptr},
+      {"first([])", nullptr},
+      {"last([])", nullptr},
+      {"rest([])", nullptr}};
+
+  runVMTests(NullTests);
+
+  const std::vector<VMTestCase<std::shared_ptr<object::Error>>> ErrorTests = {
+      {"len(1)", std::make_shared<object::Error>(
+                     "argument to \"len\" not supported, got INTEGER")},
+      {"len(\"one\", \"two\")",
+       std::make_shared<object::Error>(
+           "wrong number of arguments. got=2, want=1")},
+      {"first(1)", std::make_shared<object::Error>(
+                       "argument to \"first\" must be ARRAY, got INTEGER")},
+      {"last(1)", std::make_shared<object::Error>(
+                      "argument to \"last\" must be ARRAY, got INTEGER")},
+      {"push(1, 1)", std::make_shared<object::Error>(
+                         "argument to \"push\" must be ARRAY, got INTEGER")}};
+
+  runVMTests(Tests);
 }
 
 } // namespace monkey::vm::test

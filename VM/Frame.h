@@ -7,12 +7,12 @@ namespace monkey::vm {
 struct Frame {
   Frame();
   template <typename T>
-  Frame(T &&Fn, int BasePointer)
-      : Fn(std::forward<T>(Fn)), IP(-1), BasePointer(BasePointer) {}
+  Frame(T &&Cl, int BasePointer)
+      : Cl(std::forward<T>(Cl)), IP(-1), BasePointer(BasePointer) {}
 
   code::Instructions &instructions();
 
-  std::shared_ptr<object::Object> Fn;
+  std::shared_ptr<object::Object> Cl;
   int IP;
   int BasePointer;
 };

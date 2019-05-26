@@ -28,6 +28,8 @@ const char *objTypeToString(ObjectType Type) {
     return "HASH";
   case ObjectType::COMPILED_FUNCTION_OBJ:
     return "COMPILED_FUNCTION";
+  case ObjectType::CLOSURE_OBJ:
+    return "CLOSURE";
   }
 
   return "UNKNOWN";
@@ -189,6 +191,14 @@ ObjectType CompiledFunction::type() const {
 std::string CompiledFunction::inspect() const {
   std::stringstream SS;
   SS << "CompiledFunction[" << this << "]";
+  return SS.str();
+}
+
+ObjectType Closure::type() const { return ObjectType::CLOSURE_OBJ; }
+
+std::string Closure::inspect() const {
+  std::stringstream SS;
+  SS << "Closure[" << this << "]";
   return SS.str();
 }
 

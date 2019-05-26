@@ -22,7 +22,8 @@ enum class ObjectType : uint64_t {
   BUILTIN_OBJ,
   ARRAY_OBJ,
   HASH_OBJ,
-  COMPILED_FUNCTION_OBJ
+  COMPILED_FUNCTION_OBJ,
+  CLOSURE_OBJ
 };
 
 const char *objTypeToString(ObjectType);
@@ -180,6 +181,20 @@ struct CompiledFunction : public Object {
   const int NumParameters;
 };
 
+struct Closure : public Object {
+  template <typename T> explicit Closure(T &&Fn) : Fn(std::forward<T>(Fn)) {}
+  template <typename T0, typename T1>
+  Closure(T0 &&Fn, T1 &&Free)
+      : Fn(std::forward<T0>(Fn)), Free(std::forward<T1>(Free)) {}
+
+  // Object impl.
+  ObjectType type() const override;
+  std::string inspect() const override;
+
+  const std::shared_ptr<Object> Fn;
+  const std::vector<std::shared_ptr<Object>> Free;
+};
+
 template <typename T, ObjectType ObjType>
 inline T objCastImpl(const Object *Obj) {
   if (Obj && Obj->type() == ObjType)
@@ -240,6 +255,10 @@ inline const CompiledFunction *
 objCast<const CompiledFunction *>(const Object *Obj) {
   return objCastImpl<const CompiledFunction *,
                      ObjectType::COMPILED_FUNCTION_OBJ>(Obj);
+}
+
+template <> inline const Closure *objCast<const Closure *>(const Object *Obj) {
+  return objCastImpl<const Closure *, ObjectType::CLOSURE_OBJ>(Obj);
 }
 
 } // namespace monkey::object

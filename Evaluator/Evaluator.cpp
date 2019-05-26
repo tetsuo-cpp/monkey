@@ -3,7 +3,6 @@
 #include <Object/BuiltIns.h>
 
 #include <cassert>
-#include <stdarg.h>
 
 namespace monkey::evaluator {
 

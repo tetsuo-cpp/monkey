@@ -381,7 +381,7 @@ TEST(CompilerTests, testFunctions) {
             code::make(code::OpCode::OpConstant, {1}),
             code::make(code::OpCode::OpAdd, {}),
             code::make(code::OpCode::OpReturnValue, {})})},
-       {code::make(code::OpCode::OpConstant, {2}),
+       {code::make(code::OpCode::OpClosure, {2, 0}),
         code::make(code::OpCode::OpPop, {})}},
       {"fn() { 5 + 10 }",
        {ConstantType(5), ConstantType(10),
@@ -390,7 +390,7 @@ TEST(CompilerTests, testFunctions) {
             code::make(code::OpCode::OpConstant, {1}),
             code::make(code::OpCode::OpAdd, {}),
             code::make(code::OpCode::OpReturnValue, {})})},
-       {code::make(code::OpCode::OpConstant, {2}),
+       {code::make(code::OpCode::OpClosure, {2, 0}),
         code::make(code::OpCode::OpPop, {})}},
       {"fn() { 1; 2 }",
        {ConstantType(1), ConstantType(2),
@@ -399,7 +399,7 @@ TEST(CompilerTests, testFunctions) {
             code::make(code::OpCode::OpPop, {}),
             code::make(code::OpCode::OpConstant, {1}),
             code::make(code::OpCode::OpReturnValue, {})})},
-       {code::make(code::OpCode::OpConstant, {2}),
+       {code::make(code::OpCode::OpClosure, {2, 0}),
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);
@@ -448,7 +448,7 @@ TEST(CompilerTests, testFunctionsWithoutReturnValue) {
       {"fn() {}",
        {ConstantType(std::vector<code::Instructions>{
            code::make(code::OpCode::OpReturn, {})})},
-       {code::make(code::OpCode::OpConstant, {0}),
+       {code::make(code::OpCode::OpClosure, {0, 0}),
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);
@@ -460,7 +460,7 @@ TEST(CompilerTests, testFunctionCalls) {
        {ConstantType(24), ConstantType(std::vector<code::Instructions>{
                               code::make(code::OpCode::OpConstant, {0}),
                               code::make(code::OpCode::OpReturnValue, {})})},
-       {code::make(code::OpCode::OpConstant, {1}),
+       {code::make(code::OpCode::OpClosure, {1, 0}),
         code::make(code::OpCode::OpCall, {0}),
         code::make(code::OpCode::OpPop, {})}},
       {"let noArg = fn() { 24 };"
@@ -468,7 +468,7 @@ TEST(CompilerTests, testFunctionCalls) {
        {ConstantType(24), ConstantType(std::vector<code::Instructions>{
                               code::make(code::OpCode::OpConstant, {0}),
                               code::make(code::OpCode::OpReturnValue, {})})},
-       {code::make(code::OpCode::OpConstant, {1}),
+       {code::make(code::OpCode::OpClosure, {1, 0}),
         code::make(code::OpCode::OpSetGlobal, {0}),
         code::make(code::OpCode::OpGetGlobal, {0}),
         code::make(code::OpCode::OpCall, {0}),
@@ -479,7 +479,7 @@ TEST(CompilerTests, testFunctionCalls) {
             code::make(code::OpCode::OpGetLocal, {0}),
             code::make(code::OpCode::OpReturnValue, {})}),
         ConstantType(24)},
-       {code::make(code::OpCode::OpConstant, {0}),
+       {code::make(code::OpCode::OpClosure, {0, 0}),
         code::make(code::OpCode::OpSetGlobal, {0}),
         code::make(code::OpCode::OpGetGlobal, {0}),
         code::make(code::OpCode::OpConstant, {1}),
@@ -495,7 +495,7 @@ TEST(CompilerTests, testFunctionCalls) {
             code::make(code::OpCode::OpGetLocal, {2}),
             code::make(code::OpCode::OpReturnValue, {})}),
         ConstantType(24), ConstantType(25), ConstantType(26)},
-       {code::make(code::OpCode::OpConstant, {0}),
+       {code::make(code::OpCode::OpClosure, {0, 0}),
         code::make(code::OpCode::OpSetGlobal, {0}),
         code::make(code::OpCode::OpGetGlobal, {0}),
         code::make(code::OpCode::OpConstant, {1}),
@@ -516,7 +516,7 @@ TEST(CompilerTests, testLetStatementScopes) {
                               code::make(code::OpCode::OpReturnValue, {})})},
        {code::make(code::OpCode::OpConstant, {0}),
         code::make(code::OpCode::OpSetGlobal, {0}),
-        code::make(code::OpCode::OpConstant, {1}),
+        code::make(code::OpCode::OpClosure, {1, 0}),
         code::make(code::OpCode::OpPop, {})}},
       {"fn() {"
        "let num = 55;"
@@ -527,7 +527,7 @@ TEST(CompilerTests, testLetStatementScopes) {
                               code::make(code::OpCode::OpSetLocal, {0}),
                               code::make(code::OpCode::OpGetLocal, {0}),
                               code::make(code::OpCode::OpReturnValue, {})})},
-       {code::make(code::OpCode::OpConstant, {1}),
+       {code::make(code::OpCode::OpClosure, {1, 0}),
         code::make(code::OpCode::OpPop, {})}},
       {"fn() {"
        "let a = 55;"
@@ -544,7 +544,7 @@ TEST(CompilerTests, testLetStatementScopes) {
             code::make(code::OpCode::OpGetLocal, {1}),
             code::make(code::OpCode::OpAdd, {}),
             code::make(code::OpCode::OpReturnValue, {})})},
-       {code::make(code::OpCode::OpConstant, {2}),
+       {code::make(code::OpCode::OpClosure, {2, 0}),
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);
@@ -570,7 +570,7 @@ TEST(CompilerTests, testBuiltIns) {
            code::make(code::OpCode::OpArray, {0}),
            code::make(code::OpCode::OpCall, {1}),
            code::make(code::OpCode::OpReturnValue, {})})},
-       {code::make(code::OpCode::OpConstant, {0}),
+       {code::make(code::OpCode::OpClosure, {0, 0}),
         code::make(code::OpCode::OpPop, {})}}};
 
   runCompilerTests(Tests);

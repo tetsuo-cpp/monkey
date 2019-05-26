@@ -1,6 +1,9 @@
 #include "VM.h"
 
+#include <Object/BuiltIns.h>
+
 #include <arpa/inet.h>
+#include <cassert>
 
 namespace monkey::vm {
 
@@ -42,7 +45,8 @@ VM::VM(compiler::ByteCode &&BC,
       FrameIndex(1) {
   auto MainFn = std::make_shared<object::CompiledFunction>(
       std::move(BC.Instructions), 0, 0);
-  Frame MainFrame(std::move(MainFn), 0);
+  auto MainClosure = std::make_shared<object::Closure>(std::move(MainFn));
+  Frame MainFrame(std::move(MainClosure), 0);
   Frames.front() = std::move(MainFrame);
 }
 
@@ -170,7 +174,7 @@ void VM::run() {
       const auto NumArgs = Instructions.Value.at(IP + 1);
       ++currentFrame().IP;
 
-      callFunction(NumArgs);
+      executeCall(NumArgs);
       break;
     }
     case code::OpCode::OpReturnValue: {
@@ -184,6 +188,21 @@ void VM::run() {
       const auto &Frame = popFrame();
       SP = Frame.BasePointer - 1;
       push(NullGlobal);
+      break;
+    }
+    case code::OpCode::OpGetBuiltIn: {
+      const auto BuiltInIndex = Instructions.Value.at(IP + 1);
+      ++IP;
+
+      const auto &Definition = object::BuiltIns.at(BuiltInIndex);
+      push(Definition.second);
+      break;
+    }
+    case code::OpCode::OpClosure: {
+      const int16_t ConstIndex =
+          ntohs(reinterpret_cast<int16_t &>(Instructions.Value.at(IP + 1)));
+      IP += 3;
+      pushClosure(ConstIndex);
       break;
     }
     default:
@@ -419,18 +438,53 @@ Frame &VM::popFrame() {
   return F;
 }
 
-void VM::callFunction(int NumArgs) {
-  const auto &Fn = Stack.at(SP - 1 - NumArgs);
+void VM::executeCall(int NumArgs) {
+  const auto &Callee = Stack.at(SP - 1 - NumArgs);
+  switch (Callee->type()) {
+  case object::ObjectType::CLOSURE_OBJ:
+    return callClosure(Callee, NumArgs);
+  case object::ObjectType::BUILTIN_OBJ:
+    return callBuiltIn(Callee, NumArgs);
+  default:
+    throw std::runtime_error("calling non-closure and non-built-in");
+  }
+}
+
+void VM::callClosure(const std::shared_ptr<object::Object> &Cl, int NumArgs) {
+  const auto *ClObj = object::objCast<const object::Closure *>(Cl.get());
+  assert(ClObj);
   const auto *FnObj =
-      object::objCast<const object::CompiledFunction *>(Fn.get());
-  if (!FnObj)
-    throw std::runtime_error("calling non-function");
+      object::objCast<const object::CompiledFunction *>(ClObj->Fn.get());
   if (NumArgs != FnObj->NumParameters)
     throw std::runtime_error("wrong number of arguments: want=" +
                              std::to_string(FnObj->NumParameters) +
                              ", got=" + std::to_string(NumArgs));
-  pushFrame(Frame(Fn, SP - NumArgs));
+  pushFrame(Frame(Cl, SP - NumArgs));
   SP += FnObj->NumLocals + NumArgs;
+}
+
+void VM::callBuiltIn(const std::shared_ptr<object::Object> &Fn, int NumArgs) {
+  std::vector<std::shared_ptr<object::Object>> Args;
+  std::copy(Stack.begin() + SP - NumArgs, Stack.begin() + SP,
+            std::back_inserter(Args));
+
+  auto Result = object::objCast<const object::BuiltIn *>(Fn.get())->Fn(Args);
+  SP = SP - NumArgs - 1;
+  if (Result)
+    push(std::move(Result));
+  else
+    push(NullGlobal);
+}
+
+void VM::pushClosure(int ConstIndex) {
+  const auto &Constant = Constants.at(ConstIndex);
+  const auto *Function =
+      object::objCast<const object::CompiledFunction *>(Constant.get());
+  if (!Function)
+    throw std::runtime_error(std::string("not a function: ") +
+                             object::objTypeToString(Constant->type()));
+
+  push(std::make_unique<object::Closure>(Constant));
 }
 
 } // namespace monkey::vm

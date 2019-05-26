@@ -215,7 +215,8 @@ void Compiler::compile(const ast::Node *Node) {
     auto Ins = leaveScope();
     auto CompiledFn = std::make_unique<object::CompiledFunction>(
         std::move(Ins), NumLocals, FunctionL->Parameters.size());
-    emit(code::OpCode::OpConstant, {addConstant(std::move(CompiledFn))});
+    const auto FnIndex = addConstant(std::move(CompiledFn));
+    emit(code::OpCode::OpClosure, {FnIndex, 0});
     return;
   }
 

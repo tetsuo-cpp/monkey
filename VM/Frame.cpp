@@ -2,10 +2,11 @@
 
 namespace monkey::vm {
 
-Frame::Frame() : Fn(nullptr), IP(-1), BasePointer(-1) {}
+Frame::Frame() : Cl(nullptr), IP(-1), BasePointer(-1) {}
 
 code::Instructions &Frame::instructions() {
-  return static_cast<object::CompiledFunction *>(Fn.get())->Ins;
+  auto *ClObj = static_cast<object::Closure *>(Cl.get());
+  return static_cast<object::CompiledFunction *>(ClObj->Fn.get())->Ins;
 }
 
 } // namespace monkey::vm
