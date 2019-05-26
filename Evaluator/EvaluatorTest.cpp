@@ -10,7 +10,7 @@ std::shared_ptr<object::Object> testEval(const std::string &Input) {
   lexer::Lexer L(Input);
   parser::Parser P(L);
   auto Program = P.parseProgram();
-  environment::Environment Env;
+  auto Env = std::make_shared<environment::Environment>();
   return eval(Program.get(), Env);
 }
 

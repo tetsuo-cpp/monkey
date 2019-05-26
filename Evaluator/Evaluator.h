@@ -6,6 +6,7 @@
 
 namespace monkey::evaluator {
 
-std::shared_ptr<object::Object> eval(ast::Node *, environment::Environment &);
+std::shared_ptr<object::Object>
+eval(ast::Node *, std::shared_ptr<environment::Environment> &);
 
 } // namespace monkey::evaluator

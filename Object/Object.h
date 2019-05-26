@@ -88,7 +88,8 @@ struct Error : public Object {
 
 struct Function : public Object {
   Function(std::vector<std::unique_ptr<ast::Identifier>> &&,
-           std::unique_ptr<ast::BlockStatement>, environment::Environment &);
+           std::unique_ptr<ast::BlockStatement>,
+           std::shared_ptr<environment::Environment> &);
   virtual ~Function() = default;
 
   // Object impl.
@@ -97,7 +98,7 @@ struct Function : public Object {
 
   std::vector<std::unique_ptr<ast::Identifier>> Parameters;
   std::unique_ptr<ast::BlockStatement> Body;
-  environment::Environment Env;
+  std::shared_ptr<environment::Environment> Env;
 };
 
 struct String : public Object {

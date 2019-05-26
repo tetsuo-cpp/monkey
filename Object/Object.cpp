@@ -84,7 +84,7 @@ std::string Error::inspect() const { return "ERROR: " + Message; }
 
 Function::Function(std::vector<std::unique_ptr<ast::Identifier>> &&Parameters,
                    std::unique_ptr<ast::BlockStatement> Body,
-                   environment::Environment &Env)
+                   std::shared_ptr<environment::Environment> &Env)
     : Parameters(std::move(Parameters)), Body(std::move(Body)), Env(Env) {}
 
 ObjectType Function::type() const { return ObjectType::FUNCTION_OBJ; }

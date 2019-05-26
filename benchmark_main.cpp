@@ -4,6 +4,7 @@
 #include <Parser/Parser.h>
 #include <VM/VM.h>
 
+#include <chrono>
 #include <iostream>
 
 static const std::string Input("let fibonacci = fn(x) {"
@@ -17,7 +18,7 @@ static const std::string Input("let fibonacci = fn(x) {"
                                "}"
                                "}"
                                "};"
-                               "let x = fibonacci(35);");
+                               "fibonacci(35);");
 
 int main(int argc, char **argv) {
   if (argc != 2)
@@ -32,6 +33,8 @@ int main(int argc, char **argv) {
 
   std::shared_ptr<monkey::object::Object> ResultPtr;
   const monkey::object::Object *Result;
+  std::chrono::high_resolution_clock::time_point Start;
+  std::chrono::high_resolution_clock::time_point End;
   if (Engine == "vm") {
     monkey::compiler::SymbolTable ST;
     std::vector<std::shared_ptr<monkey::object::Object>> Constants;
@@ -44,18 +47,25 @@ int main(int argc, char **argv) {
     }
 
     monkey::vm::VM Machine(C.byteCode(), Globals);
+    Start = std::chrono::high_resolution_clock::now();
     try {
       Machine.run();
     } catch (const std::runtime_error &E) {
       std::cout << "vm error: " << E.what() << "\n";
     }
 
+    End = std::chrono::high_resolution_clock::now();
     Result = Machine.lastPoppedStackElem();
   } else {
-    monkey::environment::Environment Env;
+    auto Env = std::make_shared<monkey::environment::Environment>();
+    Start = std::chrono::high_resolution_clock::now();
     ResultPtr = monkey::evaluator::eval(Program.get(), Env);
+    End = std::chrono::high_resolution_clock::now();
     Result = ResultPtr.get();
   }
 
-  std::cout << "result is " << Result->inspect() << std::endl;
+  std::chrono::duration<double> Duration = End - Start;
+
+  std::cout << "engine=" << Engine << ", result=" << Result->inspect()
+            << ", duration=" << Duration.count() << "\n";
 }

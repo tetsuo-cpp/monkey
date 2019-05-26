@@ -14,7 +14,7 @@ bool isError(const std::shared_ptr<object::Object> &Obj) {
 
 std::shared_ptr<object::Object>
 evalProgram(const std::vector<std::unique_ptr<ast::Statement>> &Statements,
-            environment::Environment &Env) {
+            std::shared_ptr<environment::Environment> &Env) {
   std::shared_ptr<object::Object> Result;
   for (const auto &Statement : Statements) {
     Result = eval(Statement.get(), Env);
@@ -32,7 +32,7 @@ evalProgram(const std::vector<std::unique_ptr<ast::Statement>> &Statements,
 
 std::shared_ptr<object::Object> evalBlockStatement(
     const std::vector<std::unique_ptr<ast::Statement>> &Statements,
-    environment::Environment &Env) {
+    std::shared_ptr<environment::Environment> &Env) {
   std::shared_ptr<object::Object> Result;
   for (const auto &Statement : Statements) {
     Result = eval(Statement.get(), Env);
@@ -220,7 +220,8 @@ bool isTruthy(const object::Object *Obj) {
 }
 
 std::shared_ptr<object::Object>
-evalIfExpression(const ast::IfExpression *Node, environment::Environment &Env) {
+evalIfExpression(const ast::IfExpression *Node,
+                 std::shared_ptr<environment::Environment> &Env) {
   auto Cond = eval(Node->Condition.get(), Env);
   if (isError(Cond))
     return Cond;
@@ -235,8 +236,8 @@ evalIfExpression(const ast::IfExpression *Node, environment::Environment &Env) {
 
 std::shared_ptr<object::Object>
 evalIdentifier(const ast::Identifier *Identifier,
-               environment::Environment &Env) {
-  const auto &Value = Env.get(Identifier->Value);
+               std::shared_ptr<environment::Environment> &Env) {
+  const auto &Value = Env->get(Identifier->Value);
   if (Value)
     return Value;
 
@@ -256,7 +257,7 @@ evalIdentifier(const ast::Identifier *Identifier,
 
 std::vector<std::shared_ptr<object::Object>>
 evalExpressions(const std::vector<std::unique_ptr<ast::Expression>> &Arguments,
-                environment::Environment &Env) {
+                std::shared_ptr<environment::Environment> &Env) {
   std::vector<std::shared_ptr<object::Object>> Results;
 
   for (auto &Arg : Arguments) {
@@ -316,8 +317,9 @@ evalIndexExpression(const std::shared_ptr<object::Object> &Left,
                           object::objTypeToString(Left->type()));
 }
 
-std::shared_ptr<object::Object> evalHashLiteral(const ast::HashLiteral *Hash,
-                                                environment::Environment &Env) {
+std::shared_ptr<object::Object>
+evalHashLiteral(const ast::HashLiteral *Hash,
+                std::shared_ptr<environment::Environment> &Env) {
   std::unordered_map<object::HashKey, std::shared_ptr<object::Object>,
                      object::HashKeyHasher>
       Pairs;
@@ -342,15 +344,15 @@ std::shared_ptr<object::Object> evalHashLiteral(const ast::HashLiteral *Hash,
   return std::make_shared<object::Hash>(std::move(Pairs));
 }
 
-environment::Environment
+std::shared_ptr<environment::Environment>
 extendFunctionEnv(const object::Function *Fn,
                   const std::vector<std::shared_ptr<object::Object>> &Args) {
-  environment::Environment Env(Fn->Env);
+  auto Env = std::make_shared<environment::Environment>(Fn->Env.get());
   assert(Fn->Parameters.size() == Args.size());
   for (size_t Index = 0; Index < Args.size(); ++Index) {
     const auto &ParamName = Fn->Parameters.at(Index)->Value;
     const auto &Arg = Args.at(Index);
-    Env.set(ParamName, Arg);
+    Env->set(ParamName, Arg);
   }
 
   return Env;
@@ -391,8 +393,8 @@ applyFunction(const std::shared_ptr<object::Object> &Fn,
 } // namespace
 
 // TODO: Maybe switch to using a visitor to avoid the constant dynamic casting?
-std::shared_ptr<object::Object> eval(ast::Node *Node,
-                                     environment::Environment &Env) {
+std::shared_ptr<object::Object>
+eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
   const auto *Program = dynamic_cast<const ast::Program *>(Node);
   if (Program)
     return evalProgram(Program->Statements, Env);
@@ -454,7 +456,7 @@ std::shared_ptr<object::Object> eval(ast::Node *Node,
     if (isError(Value))
       return Value;
 
-    Env.set(LetS->Name->Value, std::move(Value));
+    Env->set(LetS->Name->Value, std::move(Value));
   }
 
   const auto *Identifier = dynamic_cast<const ast::Identifier *>(Node);
