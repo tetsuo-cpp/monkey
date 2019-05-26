@@ -201,8 +201,19 @@ void VM::run() {
     case code::OpCode::OpClosure: {
       const int16_t ConstIndex =
           ntohs(reinterpret_cast<int16_t &>(Instructions.Value.at(IP + 1)));
+      const auto NumFree = Instructions.Value.at(IP + 3);
       IP += 3;
-      pushClosure(ConstIndex);
+      pushClosure(ConstIndex, NumFree);
+      break;
+    }
+    case code::OpCode::OpGetFree: {
+      const auto FreeIndex = Instructions.Value.at(IP + 1);
+      ++IP;
+
+      const auto *CurrentClosure =
+          object::objCast<const object::Closure *>(currentFrame().Cl.get());
+      assert(CurrentClosure);
+      push(CurrentClosure->Free.at(FreeIndex));
       break;
     }
     default:
@@ -476,7 +487,7 @@ void VM::callBuiltIn(const std::shared_ptr<object::Object> &Fn, int NumArgs) {
     push(NullGlobal);
 }
 
-void VM::pushClosure(int ConstIndex) {
+void VM::pushClosure(int ConstIndex, int NumFree) {
   const auto &Constant = Constants.at(ConstIndex);
   const auto *Function =
       object::objCast<const object::CompiledFunction *>(Constant.get());
@@ -484,7 +495,13 @@ void VM::pushClosure(int ConstIndex) {
     throw std::runtime_error(std::string("not a function: ") +
                              object::objTypeToString(Constant->type()));
 
-  push(std::make_unique<object::Closure>(Constant));
+  std::vector<std::shared_ptr<object::Object>> Free;
+  Free.reserve(NumFree);
+  for (int I = 0; I < NumFree; ++I)
+    Free.push_back(Stack.at(SP - NumFree + I));
+
+  SP -= NumFree;
+  push(std::make_unique<object::Closure>(Constant, std::move(Free)));
 }
 
 } // namespace monkey::vm

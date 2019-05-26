@@ -53,7 +53,7 @@ private:
   void executeCall(int);
   void callClosure(const std::shared_ptr<object::Object> &, int);
   void callBuiltIn(const std::shared_ptr<object::Object> &, int);
-  void pushClosure(int);
+  void pushClosure(int, int);
 
   std::vector<std::shared_ptr<object::Object>> &Constants;
   std::array<std::shared_ptr<object::Object>, StackSize> Stack;

@@ -38,7 +38,8 @@ std::vector<std::pair<OpCode, Definition>> Definitions = {
     {OpCode::OpGetLocal, {"OpGetLocal", {1}}},
     {OpCode::OpSetLocal, {"OpSetLocal", {1}}},
     {OpCode::OpGetBuiltIn, {"OpGetBuiltIn", {1}}},
-    {OpCode::OpClosure, {"OpClosure", {2, 1}}}};
+    {OpCode::OpClosure, {"OpClosure", {2, 1}}},
+    {OpCode::OpGetFree, {"OpGetFree", {1}}}};
 
 } // namespace
 

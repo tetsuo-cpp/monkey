@@ -2,6 +2,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace monkey::compiler {
 
@@ -10,6 +11,7 @@ using SymbolScope = std::string;
 static SymbolScope GlobalScope("GLOBAL");
 static SymbolScope LocalScope("LOCAL");
 static SymbolScope BuiltInScope("BUILTIN");
+static SymbolScope FreeScope("FREE");
 
 struct Symbol {
   bool operator==(const Symbol &) const;
@@ -22,15 +24,17 @@ struct Symbol {
 class SymbolTable {
 public:
   SymbolTable();
-  explicit SymbolTable(const SymbolTable *);
+  explicit SymbolTable(SymbolTable *);
   virtual ~SymbolTable() = default;
 
   const Symbol &define(const std::string &);
   const Symbol &defineBuiltIn(int, const std::string &);
-  const Symbol *resolve(const std::string &) const;
+  const Symbol &defineFree(const Symbol &);
+  const Symbol *resolve(const std::string &);
 
-  const SymbolTable *Outer;
+  SymbolTable *Outer;
   int NumDefinitions;
+  std::vector<Symbol> FreeSymbols;
 
 private:
   std::unordered_map<std::string, Symbol> Store;

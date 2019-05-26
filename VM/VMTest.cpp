@@ -442,4 +442,71 @@ TEST(VMTests, testBuiltInFunctions) {
   runVMTests(Tests);
 }
 
+TEST(VMTests, testClosures) {
+  const std::vector<VMTestCase<int64_t>> Tests = {
+      {"let newClosure = fn(a) {"
+       "fn() { a; };"
+       "};"
+       "let closure = newClosure(99);"
+       "closure();",
+       99},
+      {"let newAdder = fn(a, b) {"
+       "let c = a + b;"
+       "fn(d) { c + d };"
+       "};"
+       "let adder = newAdder(1, 2);"
+       "adder(8);",
+       11},
+      {"let newAdderOuter = fn(a, b) {"
+       "let c = a + b;"
+       "fn(d) {"
+       "let e = d + c;"
+       "fn(f) { e + f; };"
+       "};"
+       "};"
+       "let newAdderInner = newAdderOuter(1, 2);"
+       "let adder = newAdderInner(3);"
+       "adder(8);",
+       14},
+      {"let a = 1;"
+       "let newAdderOuter = fn(b) {"
+       "fn(c) {"
+       "fn(d) { a + b + c + d };"
+       "};"
+       "};"
+       "let newAdderInner = newAdderOuter(2);"
+       "let adder = newAdderInner(3);"
+       "adder(8);",
+       14},
+      {"let newClosure = fn(a, b) {"
+       "let one = fn() { a; };"
+       "let two = fn() { b; };"
+       "fn() { one() + two(); };"
+       "};"
+       "let closure = newClosure(9, 90);"
+       "closure();",
+       99}};
+
+  runVMTests(Tests);
+}
+
+TEST(VMTests, testRecursiveFibonacci) {
+  const std::vector<VMTestCase<int64_t>> Tests = {
+      {"let fibonacci = fn(x) {"
+       "if (x == 0) {"
+       "return 0;"
+       "} else {"
+       "if (x == 1) {"
+       "return 1;"
+       "} else {"
+       "fibonacci(x - 1) + fibonacci(x - 2);"
+       "}"
+       "}"
+       "};"
+       "fibonacci(15);",
+       610}};
+
+  runVMTests(Tests);
+}
+
 } // namespace monkey::vm::test

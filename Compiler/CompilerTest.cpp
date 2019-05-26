@@ -576,4 +576,91 @@ TEST(CompilerTests, testBuiltIns) {
   runCompilerTests(Tests);
 }
 
+TEST(CompilerTests, testClosures) {
+  const std::vector<CompilerTestCase> Tests = {
+      {"fn(a) {"
+       "fn(b) {"
+       "a + b"
+       "}"
+       "}",
+       {std::vector<code::Instructions>{
+            code::make(code::OpCode::OpGetFree, {0}),
+            code::make(code::OpCode::OpGetLocal, {0}),
+            code::make(code::OpCode::OpAdd, {}),
+            code::make(code::OpCode::OpReturnValue, {})},
+        std::vector<code::Instructions>{
+            code::make(code::OpCode::OpGetLocal, {0}),
+            code::make(code::OpCode::OpClosure, {0, 1}),
+            code::make(code::OpCode::OpReturnValue, {})}},
+       {code::make(code::OpCode::OpClosure, {1, 0}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"fn(a) {"
+       "fn(b) {"
+       "fn(c) {"
+       "a + b + c"
+       "}"
+       "}"
+       "}",
+       {std::vector<code::Instructions>{
+            code::make(code::OpCode::OpGetFree, {0}),
+            code::make(code::OpCode::OpGetFree, {1}),
+            code::make(code::OpCode::OpAdd, {}),
+            code::make(code::OpCode::OpGetLocal, {0}),
+            code::make(code::OpCode::OpAdd, {}),
+            code::make(code::OpCode::OpReturnValue, {})},
+        std::vector<code::Instructions>{
+            code::make(code::OpCode::OpGetFree, {0}),
+            code::make(code::OpCode::OpGetLocal, {0}),
+            code::make(code::OpCode::OpClosure, {0, 2}),
+            code::make(code::OpCode::OpReturnValue, {})},
+        std::vector<code::Instructions>{
+            code::make(code::OpCode::OpGetLocal, {0}),
+            code::make(code::OpCode::OpClosure, {1, 1}),
+            code::make(code::OpCode::OpReturnValue, {})}},
+       {code::make(code::OpCode::OpClosure, {2, 0}),
+        code::make(code::OpCode::OpPop, {})}},
+      {"let global = 55;"
+       "fn() {"
+       "let a = 66;"
+       "fn() {"
+       "let b = 77;"
+       "fn() {"
+       "let c = 88;"
+       "global + a + b + c;"
+       "}"
+       "}"
+       "}",
+       {ConstantType(55), ConstantType(66), ConstantType(77), ConstantType(88),
+        ConstantType(std::vector<code::Instructions>{
+            code::make(code::OpCode::OpConstant, {3}),
+            code::make(code::OpCode::OpSetLocal, {0}),
+            code::make(code::OpCode::OpGetGlobal, {0}),
+            code::make(code::OpCode::OpGetFree, {0}),
+            code::make(code::OpCode::OpAdd, {}),
+            code::make(code::OpCode::OpGetFree, {1}),
+            code::make(code::OpCode::OpAdd, {}),
+            code::make(code::OpCode::OpGetLocal, {0}),
+            code::make(code::OpCode::OpAdd, {}),
+            code::make(code::OpCode::OpReturnValue, {})}),
+        ConstantType(std::vector<code::Instructions>{
+            code::make(code::OpCode::OpConstant, {2}),
+            code::make(code::OpCode::OpSetLocal, {0}),
+            code::make(code::OpCode::OpGetFree, {0}),
+            code::make(code::OpCode::OpGetLocal, {0}),
+            code::make(code::OpCode::OpClosure, {4, 2}),
+            code::make(code::OpCode::OpReturnValue, {})}),
+        ConstantType(std::vector<code::Instructions>{
+            code::make(code::OpCode::OpConstant, {1}),
+            code::make(code::OpCode::OpSetLocal, {0}),
+            code::make(code::OpCode::OpGetLocal, {0}),
+            code::make(code::OpCode::OpClosure, {5, 1}),
+            code::make(code::OpCode::OpReturnValue, {})})},
+       {code::make(code::OpCode::OpConstant, {0}),
+        code::make(code::OpCode::OpSetGlobal, {0}),
+        code::make(code::OpCode::OpClosure, {6, 0}),
+        code::make(code::OpCode::OpPop, {})}}};
+
+  runCompilerTests(Tests);
+}
+
 } // namespace monkey::compiler::test

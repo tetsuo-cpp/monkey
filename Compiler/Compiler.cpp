@@ -118,8 +118,8 @@ void Compiler::compile(const ast::Node *Node) {
 
   const auto *Let = dynamic_cast<const ast::LetStatement *>(Node);
   if (Let) {
-    compile(Let->Value.get());
     const auto &Symbol = SymTable->define(Let->Name->Value);
+    compile(Let->Value.get());
     if (Symbol.Scope == GlobalScope)
       emit(code::OpCode::OpSetGlobal, {Symbol.Index});
     else
@@ -208,15 +208,23 @@ void Compiler::compile(const ast::Node *Node) {
 
     if (lastInstructionIs(code::OpCode::OpPop))
       replaceLastPopWithReturn();
+
     if (!lastInstructionIs(code::OpCode::OpReturnValue))
       emit(code::OpCode::OpReturn, {});
 
+    const auto FreeSymbols = SymTable->FreeSymbols;
     const auto NumLocals = SymTable->NumDefinitions;
     auto Ins = leaveScope();
+
+    for (const auto &Sym : FreeSymbols)
+      loadSymbol(Sym);
+
     auto CompiledFn = std::make_unique<object::CompiledFunction>(
         std::move(Ins), NumLocals, FunctionL->Parameters.size());
+
     const auto FnIndex = addConstant(std::move(CompiledFn));
-    emit(code::OpCode::OpClosure, {FnIndex, 0});
+    emit(code::OpCode::OpClosure,
+         {FnIndex, static_cast<int>(FreeSymbols.size())});
     return;
   }
 
@@ -342,6 +350,8 @@ void Compiler::loadSymbol(const Symbol &S) {
     emit(code::OpCode::OpGetLocal, {S.Index});
   else if (S.Scope == BuiltInScope)
     emit(code::OpCode::OpGetBuiltIn, {S.Index});
+  else if (S.Scope == FreeScope)
+    emit(code::OpCode::OpGetFree, {S.Index});
 }
 
 } // namespace monkey::compiler

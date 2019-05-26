@@ -72,3 +72,26 @@ add_executable(monkey_test ${MONKEY_TEST_SOURCE_FILES})
 
 target_link_libraries(monkey_test gtest gmock)
 target_include_directories(monkey_test PRIVATE .)
+
+# Build the benchmark binary.
+set(
+  BENCHMARK_SOURCE_FILES
+  AST/AST.cpp
+  Code/Code.cpp
+  Compiler/Compiler.cpp
+  Compiler/SymbolTable.cpp
+  Environment/Environment.cpp
+  Evaluator/Evaluator.cpp
+  Lexer/Lexer.cpp
+  Object/BuiltIns.cpp
+  Object/Object.cpp
+  Parser/Parser.cpp
+  REPL/REPL.cpp
+  Token/Token.cpp
+  VM/Frame.cpp
+  VM/VM.cpp
+  benchmark_main.cpp
+  )
+
+add_executable(benchmark ${BENCHMARK_SOURCE_FILES})
+target_include_directories(benchmark PRIVATE .)
