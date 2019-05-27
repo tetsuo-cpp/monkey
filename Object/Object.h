@@ -11,6 +11,12 @@
 
 namespace monkey::object {
 
+extern const std::shared_ptr<Object> TrueGlobal;
+extern const std::shared_ptr<Object> FalseGlobal;
+extern const std::shared_ptr<Object> NullGlobal;
+
+const std::shared_ptr<Object> &nativeBooleanToBooleanObject(bool Val);
+
 enum class ObjectType : uint64_t {
   INTEGER_OBJ,
   BOOLEAN_OBJ,

@@ -9,6 +9,26 @@
 
 namespace monkey::ast {
 
+enum class ASTType : uint64_t {
+  PROGRAM_AST,
+  IDENTIFIER_AST,
+  LET_AST,
+  RETURN_AST,
+  EXPR_STATEMENT_AST,
+  INTEGER_AST,
+  BOOLEAN_AST,
+  STRING_AST,
+  FUNCTION_AST,
+  PREFIX_EXPR_AST,
+  INFIX_EXPR_AST,
+  BLOCK_AST,
+  IF_AST,
+  CALL_AST,
+  ARRAY_AST,
+  INDEX_AST,
+  HASH_AST
+};
+
 struct BlockStatement;
 
 struct Node {
@@ -16,6 +36,7 @@ struct Node {
 
   virtual const std::string &tokenLiteral() const = 0;
   virtual std::string string() const = 0;
+  virtual ASTType type() const = 0;
 };
 
 struct Statement : public Node {
@@ -34,6 +55,7 @@ struct Program : public Node {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   std::vector<std::unique_ptr<Statement>> Statements;
 };
@@ -46,6 +68,7 @@ struct Identifier : public Expression {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   std::string Value;
@@ -59,6 +82,7 @@ struct LetStatement : public Statement {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   std::unique_ptr<Identifier> Name;
@@ -73,6 +97,7 @@ struct ReturnStatement : public Statement {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   std::unique_ptr<Expression> ReturnValue;
@@ -86,6 +111,7 @@ struct ExpressionStatement : public Statement {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   std::unique_ptr<Expression> Expr;
@@ -99,6 +125,7 @@ struct IntegerLiteral : public Expression {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   int64_t Value;
@@ -112,6 +139,7 @@ struct Boolean : public Expression {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   bool Value;
@@ -126,6 +154,7 @@ struct String : public Expression {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   const std::string Value;
@@ -140,6 +169,7 @@ struct FunctionLiteral : public Expression {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   std::vector<std::unique_ptr<Identifier>> Parameters;
@@ -154,6 +184,7 @@ struct PrefixExpression : public Expression {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   std::string Operator;
@@ -169,6 +200,7 @@ struct InfixExpression : public Expression {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   std::string Operator;
@@ -183,6 +215,7 @@ struct BlockStatement : public Statement {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   std::vector<std::unique_ptr<Statement>> Statements;
@@ -198,6 +231,7 @@ struct IfExpression : public Expression {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok; // The 'if' token.
   std::unique_ptr<Expression> Condition;
@@ -213,6 +247,7 @@ struct CallExpression : public Expression {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   std::unique_ptr<Expression> Function;
@@ -227,6 +262,7 @@ struct ArrayLiteral : public Expression {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   std::vector<std::unique_ptr<Expression>> Elements;
@@ -241,6 +277,7 @@ struct IndexExpression : public Expression {
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   std::unique_ptr<Expression> Left;
@@ -255,10 +292,112 @@ public:
   // Node impl.
   const std::string &tokenLiteral() const override;
   std::string string() const override;
+  ASTType type() const override;
 
   Token Tok;
   std::unordered_map<std::unique_ptr<Expression>, std::unique_ptr<Expression>>
       Pairs;
 };
+
+template <typename T, ASTType Type> inline T astCastImpl(const Node *Node) {
+  if (Node && Node->type() == Type)
+    return static_cast<T>(Node);
+  else
+    return nullptr;
+}
+
+template <typename T> inline T astCast(const Node *) {
+  static_assert(sizeof(T) != sizeof(T),
+                "astCast must be specialised for this type");
+}
+
+template <> inline const Program *astCast<const Program *>(const Node *Node) {
+  return astCastImpl<const Program *, ASTType::PROGRAM_AST>(Node);
+}
+
+template <>
+inline const Identifier *astCast<const Identifier *>(const Node *Node) {
+  return astCastImpl<const Identifier *, ASTType::IDENTIFIER_AST>(Node);
+}
+
+template <>
+inline const LetStatement *astCast<const LetStatement *>(const Node *Node) {
+  return astCastImpl<const LetStatement *, ASTType::LET_AST>(Node);
+}
+
+template <>
+inline const ReturnStatement *
+astCast<const ReturnStatement *>(const Node *Node) {
+  return astCastImpl<const ReturnStatement *, ASTType::RETURN_AST>(Node);
+}
+
+template <>
+inline const ExpressionStatement *
+astCast<const ExpressionStatement *>(const Node *Node) {
+  return astCastImpl<const ExpressionStatement *, ASTType::EXPR_STATEMENT_AST>(
+      Node);
+}
+
+template <>
+inline const IntegerLiteral *astCast<const IntegerLiteral *>(const Node *Node) {
+  return astCastImpl<const IntegerLiteral *, ASTType::INTEGER_AST>(Node);
+}
+
+template <> inline const Boolean *astCast<const Boolean *>(const Node *Node) {
+  return astCastImpl<const Boolean *, ASTType::BOOLEAN_AST>(Node);
+}
+
+template <> inline const String *astCast<const String *>(const Node *Node) {
+  return astCastImpl<const String *, ASTType::STRING_AST>(Node);
+}
+
+template <>
+inline FunctionLiteral *astCast<FunctionLiteral *>(const Node *Node) {
+  return const_cast<FunctionLiteral *>(
+      astCastImpl<const FunctionLiteral *, ASTType::FUNCTION_AST>(Node));
+}
+
+template <>
+inline const PrefixExpression *
+astCast<const PrefixExpression *>(const Node *Node) {
+  return astCastImpl<const PrefixExpression *, ASTType::PREFIX_EXPR_AST>(Node);
+}
+
+template <>
+inline const InfixExpression *
+astCast<const InfixExpression *>(const Node *Node) {
+  return astCastImpl<const InfixExpression *, ASTType::INFIX_EXPR_AST>(Node);
+}
+
+template <>
+inline const BlockStatement *astCast<const BlockStatement *>(const Node *Node) {
+  return astCastImpl<const BlockStatement *, ASTType::BLOCK_AST>(Node);
+}
+
+template <>
+inline const IfExpression *astCast<const IfExpression *>(const Node *Node) {
+  return astCastImpl<const IfExpression *, ASTType::IF_AST>(Node);
+}
+
+template <>
+inline const CallExpression *astCast<const CallExpression *>(const Node *Node) {
+  return astCastImpl<const CallExpression *, ASTType::CALL_AST>(Node);
+}
+
+template <>
+inline const ArrayLiteral *astCast<const ArrayLiteral *>(const Node *Node) {
+  return astCastImpl<const ArrayLiteral *, ASTType::ARRAY_AST>(Node);
+}
+
+template <>
+inline const IndexExpression *
+astCast<const IndexExpression *>(const Node *Node) {
+  return astCastImpl<const IndexExpression *, ASTType::INDEX_AST>(Node);
+}
+
+template <>
+inline const HashLiteral *astCast<const HashLiteral *>(const Node *Node) {
+  return astCastImpl<const HashLiteral *, ASTType::HASH_AST>(Node);
+}
 
 } // namespace monkey::ast

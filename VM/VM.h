@@ -20,7 +20,12 @@ public:
 
   const object::Object *lastPoppedStackElem() const;
   void run();
-  void push(const std::shared_ptr<object::Object> &);
+  template <typename T> void push(T &&Obj) {
+    if (SP >= StackSize)
+      throw std::runtime_error("stack overflow");
+
+    Stack.at(SP++) = std::forward<T>(Obj);
+  }
   const std::shared_ptr<object::Object> &pop();
 
 private:

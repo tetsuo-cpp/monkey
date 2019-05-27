@@ -28,12 +28,16 @@ std::string Program::string() const {
   return SS.str();
 }
 
+ASTType Program::type() const { return ASTType::PROGRAM_AST; }
+
 Identifier::Identifier(Token Tok, const std::string &Value)
     : Tok(Tok), Value(Value) {}
 
 const std::string &Identifier::tokenLiteral() const { return Tok.Literal; }
 
 std::string Identifier::string() const { return Value; }
+
+ASTType Identifier::type() const { return ASTType::IDENTIFIER_AST; }
 
 LetStatement::LetStatement(Token Tok, std::unique_ptr<Identifier> Name,
                            std::unique_ptr<Expression> Value)
@@ -51,6 +55,8 @@ std::string LetStatement::string() const {
   return SS.str();
 }
 
+ASTType LetStatement::type() const { return ASTType::LET_AST; }
+
 ReturnStatement::ReturnStatement(Token Tok,
                                  std::unique_ptr<Expression> ReturnValue)
     : Tok(Tok), ReturnValue(std::move(ReturnValue)) {}
@@ -67,6 +73,8 @@ std::string ReturnStatement::string() const {
   return SS.str();
 }
 
+ASTType ReturnStatement::type() const { return ASTType::RETURN_AST; }
+
 ExpressionStatement::ExpressionStatement(Token Tok,
                                          std::unique_ptr<Expression> Expr)
     : Tok(Tok), Expr(std::move(Expr)) {}
@@ -82,6 +90,10 @@ std::string ExpressionStatement::string() const {
   return std::string();
 }
 
+ASTType ExpressionStatement::type() const {
+  return ASTType::EXPR_STATEMENT_AST;
+}
+
 IntegerLiteral::IntegerLiteral(Token Tok, int64_t Value)
     : Tok(Tok), Value(Value) {}
 
@@ -89,15 +101,21 @@ const std::string &IntegerLiteral::tokenLiteral() const { return Tok.Literal; }
 
 std::string IntegerLiteral::string() const { return Tok.Literal; }
 
+ASTType IntegerLiteral::type() const { return ASTType::INTEGER_AST; }
+
 Boolean::Boolean(Token Tok, bool Value) : Tok(Tok), Value(Value) {}
 
 const std::string &Boolean::tokenLiteral() const { return Tok.Literal; }
 
 std::string Boolean::string() const { return Tok.Literal; }
 
+ASTType Boolean::type() const { return ASTType::BOOLEAN_AST; }
+
 const std::string &String::tokenLiteral() const { return Tok.Literal; }
 
 std::string String::string() const { return Tok.Literal; }
+
+ASTType String::type() const { return ASTType::STRING_AST; }
 
 FunctionLiteral::FunctionLiteral(
     Token Tok, std::vector<std::unique_ptr<Identifier>> &&Parameters,
@@ -121,6 +139,8 @@ std::string FunctionLiteral::string() const {
   return SS.str();
 }
 
+ASTType FunctionLiteral::type() const { return ASTType::FUNCTION_AST; }
+
 PrefixExpression::PrefixExpression(Token Tok, const std::string &Operator,
                                    std::unique_ptr<Expression> Right)
     : Tok(Tok), Operator(Operator), Right(std::move(Right)) {}
@@ -137,6 +157,8 @@ std::string PrefixExpression::string() const {
   SS << ")";
   return SS.str();
 }
+
+ASTType PrefixExpression::type() const { return ASTType::PREFIX_EXPR_AST; }
 
 InfixExpression::InfixExpression(Token Tok, const std::string &Operator,
                                  std::unique_ptr<Expression> Left,
@@ -156,6 +178,8 @@ std::string InfixExpression::string() const {
   return SS.str();
 }
 
+ASTType InfixExpression::type() const { return ASTType::INFIX_EXPR_AST; }
+
 BlockStatement::BlockStatement(
     Token Tok, std::vector<std::unique_ptr<Statement>> &&Statements)
     : Tok(Tok), Statements(std::move(Statements)) {}
@@ -169,6 +193,8 @@ std::string BlockStatement::string() const {
 
   return SS.str();
 }
+
+ASTType BlockStatement::type() const { return ASTType::BLOCK_AST; }
 
 IfExpression::IfExpression(Token Tok, std::unique_ptr<Expression> Condition,
                            std::unique_ptr<BlockStatement> Consequence,
@@ -193,6 +219,8 @@ std::string IfExpression::string() const {
   return SS.str();
 }
 
+ASTType IfExpression::type() const { return ASTType::IF_AST; }
+
 CallExpression::CallExpression(
     Token Tok, std::unique_ptr<Expression> Function,
     std::vector<std::unique_ptr<Expression>> &&Arguments)
@@ -215,6 +243,8 @@ std::string CallExpression::string() const {
   return SS.str();
 }
 
+ASTType CallExpression::type() const { return ASTType::CALL_AST; }
+
 ArrayLiteral::ArrayLiteral(Token Tok,
                            std::vector<std::unique_ptr<Expression>> &&Elements)
     : Tok(Tok), Elements(std::move(Elements)) {}
@@ -234,6 +264,8 @@ std::string ArrayLiteral::string() const {
   return SS.str();
 }
 
+ASTType ArrayLiteral::type() const { return ASTType::ARRAY_AST; }
+
 IndexExpression::IndexExpression(Token Tok, std::unique_ptr<Expression> Left,
                                  std::unique_ptr<Expression> Index)
     : Tok(Tok), Left(std::move(Left)), Index(std::move(Index)) {}
@@ -243,6 +275,8 @@ const std::string &IndexExpression::tokenLiteral() const { return Tok.Literal; }
 std::string IndexExpression::string() const {
   return "(" + Left->string() + "[" + Index->string() + "])";
 }
+
+ASTType IndexExpression::type() const { return ASTType::INDEX_AST; }
 
 HashLiteral::HashLiteral(Token Tok) : Tok(Tok) {}
 
@@ -261,5 +295,7 @@ std::string HashLiteral::string() const {
   SS << "}";
   return SS.str();
 }
+
+ASTType HashLiteral::type() const { return ASTType::HASH_AST; }
 
 } // namespace monkey::ast

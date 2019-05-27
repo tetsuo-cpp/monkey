@@ -9,22 +9,6 @@ namespace monkey::vm {
 
 namespace {
 
-static const std::shared_ptr<object::Object> TrueGlobal =
-    std::make_shared<object::Boolean>(true);
-
-static const std::shared_ptr<object::Object> FalseGlobal =
-    std::make_shared<object::Boolean>(false);
-
-static const std::shared_ptr<object::Object> NullGlobal =
-    std::make_shared<object::Null>();
-
-const std::shared_ptr<object::Object> nativeBooleanToBooleanObject(bool Val) {
-  if (Val)
-    return TrueGlobal;
-
-  return FalseGlobal;
-}
-
 bool isTruthy(const object::Object *Obj) {
   const auto *BooleanObj = object::objCast<const object::Boolean *>(Obj);
   if (BooleanObj)
@@ -82,10 +66,10 @@ void VM::run() {
       pop();
       break;
     case code::OpCode::OpTrue:
-      push(TrueGlobal);
+      push(object::TrueGlobal);
       break;
     case code::OpCode::OpFalse:
-      push(FalseGlobal);
+      push(object::FalseGlobal);
       break;
     case code::OpCode::OpEqual:
     case code::OpCode::OpNotEqual:
@@ -114,7 +98,7 @@ void VM::run() {
       break;
     }
     case code::OpCode::OpNull:
-      push(NullGlobal);
+      push(object::NullGlobal);
       break;
     case code::OpCode::OpSetGlobal: {
       const int16_t GlobalIndex =
@@ -187,7 +171,7 @@ void VM::run() {
     case code::OpCode::OpReturn: {
       const auto &Frame = popFrame();
       SP = Frame.BasePointer - 1;
-      push(NullGlobal);
+      push(object::NullGlobal);
       break;
     }
     case code::OpCode::OpGetBuiltIn: {
@@ -220,13 +204,6 @@ void VM::run() {
       break;
     }
   }
-}
-
-void VM::push(const std::shared_ptr<object::Object> &Obj) {
-  if (SP >= StackSize)
-    throw std::runtime_error("stack overflow");
-
-  Stack.at(SP++) = Obj;
 }
 
 const std::shared_ptr<object::Object> &VM::pop() {
@@ -310,10 +287,10 @@ void VM::executeComparison(code::OpCode Op) {
 
   switch (Op) {
   case code::OpCode::OpEqual:
-    push(nativeBooleanToBooleanObject(Right.get() == Left.get()));
+    push(object::nativeBooleanToBooleanObject(Right.get() == Left.get()));
     break;
   case code::OpCode::OpNotEqual:
-    push(nativeBooleanToBooleanObject(Right.get() != Left.get()));
+    push(object::nativeBooleanToBooleanObject(Right.get() != Left.get()));
     break;
   default:
     throw std::runtime_error("unknown operator " +
@@ -331,13 +308,13 @@ void VM::executeIntegerComparison(
 
   switch (Op) {
   case code::OpCode::OpEqual:
-    push(nativeBooleanToBooleanObject(LeftVal == RightVal));
+    push(object::nativeBooleanToBooleanObject(LeftVal == RightVal));
     break;
   case code::OpCode::OpNotEqual:
-    push(nativeBooleanToBooleanObject(LeftVal != RightVal));
+    push(object::nativeBooleanToBooleanObject(LeftVal != RightVal));
     break;
   case code::OpCode::OpGreaterThan:
-    push(nativeBooleanToBooleanObject(LeftVal > RightVal));
+    push(object::nativeBooleanToBooleanObject(LeftVal > RightVal));
     break;
   default:
     throw std::runtime_error("unknown operator: " +
@@ -348,14 +325,14 @@ void VM::executeIntegerComparison(
 void VM::executeBangOperator() {
   const auto &Operand = pop();
 
-  if (Operand.get() == TrueGlobal.get())
-    push(FalseGlobal);
-  else if (Operand.get() == FalseGlobal.get())
-    push(TrueGlobal);
-  else if (Operand.get() == NullGlobal.get())
-    push(TrueGlobal);
+  if (Operand.get() == object::TrueGlobal.get())
+    push(object::FalseGlobal);
+  else if (Operand.get() == object::FalseGlobal.get())
+    push(object::TrueGlobal);
+  else if (Operand.get() == object::NullGlobal.get())
+    push(object::TrueGlobal);
   else
-    push(FalseGlobal);
+    push(object::FalseGlobal);
 }
 
 void VM::executeMinusOperator() {
@@ -419,7 +396,7 @@ void VM::executeArrayIndex(const std::shared_ptr<object::Object> &Array,
   const int Max = ArrayObj->Elements.size() - 1;
 
   if (I < 0 || I > Max) {
-    push(NullGlobal);
+    push(object::NullGlobal);
     return;
   }
 
@@ -437,7 +414,7 @@ void VM::executeHashIndex(const std::shared_ptr<object::Object> &Hash,
 
   const auto HashIter = HashObj->Pairs.find(Key);
   if (HashIter == HashObj->Pairs.end())
-    push(NullGlobal);
+    push(object::NullGlobal);
   else
     push(HashIter->second);
 }
@@ -484,7 +461,7 @@ void VM::callBuiltIn(const std::shared_ptr<object::Object> &Fn, int NumArgs) {
   if (Result)
     push(std::move(Result));
   else
-    push(NullGlobal);
+    push(object::NullGlobal);
 }
 
 void VM::pushClosure(int ConstIndex, int NumFree) {

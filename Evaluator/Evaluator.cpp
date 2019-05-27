@@ -51,13 +51,13 @@ std::shared_ptr<object::Object>
 evalBangOperatorExpression(const std::shared_ptr<object::Object> &Right) {
   const auto *Boolean = object::objCast<const object::Boolean *>(Right.get());
   if (Boolean)
-    return std::make_shared<object::Boolean>(!Boolean->Value);
+    return object::nativeBooleanToBooleanObject(!Boolean->Value);
 
   const auto *Null = object::objCast<const object::Null *>(Right.get());
   if (Null)
-    return std::make_shared<object::Boolean>(true);
+    return object::NullGlobal;
 
-  return std::make_shared<object::Boolean>(false);
+  return object::FalseGlobal;
 }
 
 std::shared_ptr<object::Object> evalMinusPrefixOperatorExpression(
@@ -68,7 +68,7 @@ std::shared_ptr<object::Object> evalMinusPrefixOperatorExpression(
 
   const auto *Integer = object::objCast<const object::Integer *>(Right.get());
   if (!Integer)
-    return std::make_shared<object::Null>();
+    return object::NullGlobal;
 
   return std::make_shared<object::Integer>(-Integer->Value);
 }
@@ -103,13 +103,17 @@ evalIntegerInfixExpression(const std::string &Operator,
   else if (Operator == "/")
     return std::make_shared<object::Integer>(LeftInt->Value / RightInt->Value);
   else if (Operator == "<")
-    return std::make_shared<object::Boolean>(LeftInt->Value < RightInt->Value);
+    return object::nativeBooleanToBooleanObject(LeftInt->Value <
+                                                RightInt->Value);
   else if (Operator == ">")
-    return std::make_shared<object::Boolean>(LeftInt->Value > RightInt->Value);
+    return object::nativeBooleanToBooleanObject(LeftInt->Value >
+                                                RightInt->Value);
   else if (Operator == "==")
-    return std::make_shared<object::Boolean>(LeftInt->Value == RightInt->Value);
+    return object::nativeBooleanToBooleanObject(LeftInt->Value ==
+                                                RightInt->Value);
   else if (Operator == "!=")
-    return std::make_shared<object::Boolean>(LeftInt->Value != RightInt->Value);
+    return object::nativeBooleanToBooleanObject(LeftInt->Value !=
+                                                RightInt->Value);
   else
     return object::newError(
         "unknown operator: %s %s %s", object::objTypeToString(Left->type()),
@@ -134,9 +138,9 @@ evalBooleanInfixExpression(const std::string &Operator,
   }();
 
   if (Operator == "==")
-    return std::make_shared<object::Boolean>(BothEqual);
+    return object::nativeBooleanToBooleanObject(BothEqual);
   else if (Operator == "!=")
-    return std::make_shared<object::Boolean>(!BothEqual);
+    return object::nativeBooleanToBooleanObject(!BothEqual);
   else {
     if ((Left->type() == object::ObjectType::BOOLEAN_OBJ) ^
         (Right->type() == object::ObjectType::BOOLEAN_OBJ))
@@ -158,11 +162,11 @@ evalNullInfixExpression(const std::string &Operator,
                         Right->type() == object::ObjectType::NULL_OBJ;
 
   if (Operator == "==")
-    return std::make_shared<object::Boolean>(BothNull);
+    return object::nativeBooleanToBooleanObject(BothNull);
   else if (Operator == "!=")
-    return std::make_shared<object::Boolean>(!BothNull);
+    return object::nativeBooleanToBooleanObject(!BothNull);
   else
-    return std::make_shared<object::Null>();
+    return object::NullGlobal;
 }
 
 std::shared_ptr<object::Object>
@@ -231,7 +235,7 @@ evalIfExpression(const ast::IfExpression *Node,
   else if (Node->Alternative)
     return eval(Node->Alternative.get(), Env);
   else
-    return std::make_shared<object::Null>();
+    return object::NullGlobal;
 }
 
 std::shared_ptr<object::Object>
@@ -281,7 +285,7 @@ evalArrayIndexExpression(const std::shared_ptr<object::Object> &Array,
 
   if (Idx->Value < 0 ||
       Idx->Value >= static_cast<int64_t>(ArrayObj->Elements.size()))
-    return std::make_shared<object::Null>();
+    return object::NullGlobal;
 
   return ArrayObj->Elements.at(Idx->Value);
 }
@@ -299,7 +303,7 @@ evalHashIndexExpression(const std::shared_ptr<object::Object> &Hash,
 
   const auto Iter = HashObj->Pairs.find(HK);
   if (Iter == HashObj->Pairs.end())
-    return std::make_shared<object::Null>();
+    return object::NullGlobal;
 
   return Iter->second;
 }
@@ -383,7 +387,7 @@ applyFunction(const std::shared_ptr<object::Object> &Fn,
     if (Result)
       return Result;
     else
-      return std::make_shared<object::Null>();
+      return object::NullGlobal;
   }
 
   return object::newError("not a function %s",
@@ -395,23 +399,23 @@ applyFunction(const std::shared_ptr<object::Object> &Fn,
 // TODO: Maybe switch to using a visitor to avoid the constant dynamic casting?
 std::shared_ptr<object::Object>
 eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
-  const auto *Program = dynamic_cast<const ast::Program *>(Node);
+  const auto *Program = ast::astCast<const ast::Program *>(Node);
   if (Program)
     return evalProgram(Program->Statements, Env);
 
-  const auto *ExprS = dynamic_cast<const ast::ExpressionStatement *>(Node);
+  const auto *ExprS = ast::astCast<const ast::ExpressionStatement *>(Node);
   if (ExprS)
     return eval(ExprS->Expr.get(), Env);
 
-  const auto *IntegerL = dynamic_cast<const ast::IntegerLiteral *>(Node);
+  const auto *IntegerL = ast::astCast<const ast::IntegerLiteral *>(Node);
   if (IntegerL)
     return std::make_shared<object::Integer>(IntegerL->Value);
 
-  const auto *BooleanL = dynamic_cast<const ast::Boolean *>(Node);
+  const auto *BooleanL = ast::astCast<const ast::Boolean *>(Node);
   if (BooleanL)
-    return std::make_shared<object::Boolean>(BooleanL->Value);
+    return object::nativeBooleanToBooleanObject(BooleanL->Value);
 
-  const auto *PrefixE = dynamic_cast<const ast::PrefixExpression *>(Node);
+  const auto *PrefixE = ast::astCast<const ast::PrefixExpression *>(Node);
   if (PrefixE) {
     auto Right = eval(PrefixE->Right.get(), Env);
     if (isError(Right))
@@ -420,7 +424,7 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
     return evalPrefixExpression(PrefixE->Operator, Right);
   }
 
-  const auto *InfixE = dynamic_cast<const ast::InfixExpression *>(Node);
+  const auto *InfixE = ast::astCast<const ast::InfixExpression *>(Node);
   if (InfixE) {
     auto Left = eval(InfixE->Left.get(), Env);
     if (isError(Left))
@@ -433,15 +437,15 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
     return evalInfixExpression(InfixE->Operator, Left, Right);
   }
 
-  const auto *BlockS = dynamic_cast<const ast::BlockStatement *>(Node);
+  const auto *BlockS = ast::astCast<const ast::BlockStatement *>(Node);
   if (BlockS)
     return evalBlockStatement(BlockS->Statements, Env);
 
-  const auto *IfE = dynamic_cast<const ast::IfExpression *>(Node);
+  const auto *IfE = ast::astCast<const ast::IfExpression *>(Node);
   if (IfE)
     return evalIfExpression(IfE, Env);
 
-  const auto *ReturnS = dynamic_cast<const ast::ReturnStatement *>(Node);
+  const auto *ReturnS = ast::astCast<const ast::ReturnStatement *>(Node);
   if (ReturnS) {
     auto Value = eval(ReturnS->ReturnValue.get(), Env);
     if (isError(Value))
@@ -450,7 +454,7 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
     return std::make_shared<object::ReturnValue>(std::move(Value));
   }
 
-  const auto *LetS = dynamic_cast<const ast::LetStatement *>(Node);
+  const auto *LetS = ast::astCast<const ast::LetStatement *>(Node);
   if (LetS) {
     auto Value = eval(LetS->Value.get(), Env);
     if (isError(Value))
@@ -459,16 +463,16 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
     Env->set(LetS->Name->Value, std::move(Value));
   }
 
-  const auto *Identifier = dynamic_cast<const ast::Identifier *>(Node);
+  const auto *Identifier = ast::astCast<const ast::Identifier *>(Node);
   if (Identifier)
     return evalIdentifier(Identifier, Env);
 
-  auto *Function = dynamic_cast<ast::FunctionLiteral *>(Node);
+  auto *Function = ast::astCast<ast::FunctionLiteral *>(Node);
   if (Function)
     return std::make_shared<object::Function>(std::move(Function->Parameters),
                                               std::move(Function->Body), Env);
 
-  const auto *Call = dynamic_cast<const ast::CallExpression *>(Node);
+  const auto *Call = ast::astCast<const ast::CallExpression *>(Node);
   if (Call) {
     auto CallFunc = eval(Call->Function.get(), Env);
     if (isError(CallFunc))
@@ -481,11 +485,11 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
     return applyFunction(CallFunc, Args);
   }
 
-  const auto *String = dynamic_cast<const ast::String *>(Node);
+  const auto *String = ast::astCast<const ast::String *>(Node);
   if (String)
     return std::make_shared<object::String>(String->Value);
 
-  const auto *Array = dynamic_cast<const ast::ArrayLiteral *>(Node);
+  const auto *Array = ast::astCast<const ast::ArrayLiteral *>(Node);
   if (Array) {
     auto Elements = evalExpressions(Array->Elements, Env);
     if (Elements.size() == 1 && isError(Elements.front()))
@@ -494,7 +498,7 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
     return std::make_shared<object::Array>(std::move(Elements));
   }
 
-  const auto *IndexExp = dynamic_cast<const ast::IndexExpression *>(Node);
+  const auto *IndexExp = ast::astCast<const ast::IndexExpression *>(Node);
   if (IndexExp) {
     auto Left = eval(IndexExp->Left.get(), Env);
     if (isError(Left))
@@ -507,7 +511,7 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
     return evalIndexExpression(Left, Index);
   }
 
-  const auto *Hash = dynamic_cast<const ast::HashLiteral *>(Node);
+  const auto *Hash = ast::astCast<const ast::HashLiteral *>(Node);
   if (Hash)
     return evalHashLiteral(Hash, Env);
 

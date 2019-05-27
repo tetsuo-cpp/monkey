@@ -4,6 +4,17 @@
 
 namespace monkey::object {
 
+const std::shared_ptr<Object> TrueGlobal = std::make_shared<Boolean>(true);
+const std::shared_ptr<Object> FalseGlobal = std::make_shared<Boolean>(false);
+const std::shared_ptr<Object> NullGlobal = std::make_shared<Null>();
+
+const std::shared_ptr<Object> &nativeBooleanToBooleanObject(bool Val) {
+  if (Val)
+    return TrueGlobal;
+
+  return FalseGlobal;
+}
+
 const char *objTypeToString(ObjectType Type) {
   switch (Type) {
   case ObjectType::INTEGER_OBJ:
