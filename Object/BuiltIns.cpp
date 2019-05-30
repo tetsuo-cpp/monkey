@@ -18,11 +18,11 @@ const std::vector<std::pair<std::string, std::shared_ptr<BuiltIn>>> BuiltIns = {
 
        const auto *StringObj = objCast<const String *>(Args.front().get());
        if (StringObj)
-         return std::make_shared<Integer>(StringObj->Value.size());
+         return object::makeInteger(StringObj->Value.size());
 
        const auto *ArrayObj = objCast<const Array *>(Args.front().get());
        if (ArrayObj)
-         return std::make_shared<Integer>(ArrayObj->Elements.size());
+         return object::makeInteger(ArrayObj->Elements.size());
 
        return newError("argument to \"len\" not supported, got %s",
                        objTypeToString(Args.front()->type()));

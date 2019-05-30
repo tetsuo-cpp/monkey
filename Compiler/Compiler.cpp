@@ -148,14 +148,14 @@ void Compiler::compile(const ast::Node *Node) {
 
   const auto *IntegerL = dynamic_cast<const ast::IntegerLiteral *>(Node);
   if (IntegerL) {
-    auto Integer = std::make_shared<object::Integer>(IntegerL->Value);
+    auto Integer = object::makeInteger(IntegerL->Value);
     emit(code::OpCode::OpConstant, {addConstant(std::move(Integer))});
     return;
   }
 
   const auto *StringL = dynamic_cast<const ast::String *>(Node);
   if (StringL) {
-    auto String = std::make_shared<object::String>(StringL->Value);
+    auto String = object::makeString(StringL->Value);
     emit(code::OpCode::OpConstant, {addConstant(std::move(String))});
     return;
   }

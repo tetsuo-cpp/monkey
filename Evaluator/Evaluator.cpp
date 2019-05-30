@@ -70,7 +70,7 @@ std::shared_ptr<object::Object> evalMinusPrefixOperatorExpression(
   if (!Integer)
     return object::NullGlobal;
 
-  return std::make_shared<object::Integer>(-Integer->Value);
+  return object::makeInteger(-Integer->Value);
 }
 
 std::shared_ptr<object::Object>
@@ -95,13 +95,13 @@ evalIntegerInfixExpression(const std::string &Operator,
   assert(RightInt);
 
   if (Operator == "+")
-    return std::make_shared<object::Integer>(LeftInt->Value + RightInt->Value);
+    return object::makeInteger(LeftInt->Value + RightInt->Value);
   else if (Operator == "-")
-    return std::make_shared<object::Integer>(LeftInt->Value - RightInt->Value);
+    return object::makeInteger(LeftInt->Value - RightInt->Value);
   else if (Operator == "*")
-    return std::make_shared<object::Integer>(LeftInt->Value * RightInt->Value);
+    return object::makeInteger(LeftInt->Value * RightInt->Value);
   else if (Operator == "/")
-    return std::make_shared<object::Integer>(LeftInt->Value / RightInt->Value);
+    return object::makeInteger(LeftInt->Value / RightInt->Value);
   else if (Operator == "<")
     return object::nativeBooleanToBooleanObject(LeftInt->Value <
                                                 RightInt->Value);
@@ -182,7 +182,7 @@ evalStringInfixExpression(const std::string &Operator,
   const auto *RightS = object::objCast<const object::String *>(Right.get());
   assert(LeftS);
   assert(RightS);
-  return std::make_shared<object::String>(LeftS->Value + RightS->Value);
+  return object::makeString(LeftS->Value + RightS->Value);
 }
 
 std::shared_ptr<object::Object>
@@ -345,7 +345,7 @@ evalHashLiteral(const ast::HashLiteral *Hash,
     Pairs.emplace(std::move(HK), Value);
   }
 
-  return std::make_shared<object::Hash>(std::move(Pairs));
+  return object::makeHash(std::move(Pairs));
 }
 
 std::shared_ptr<environment::Environment>
@@ -409,7 +409,7 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
 
   const auto *IntegerL = ast::astCast<const ast::IntegerLiteral *>(Node);
   if (IntegerL)
-    return std::make_shared<object::Integer>(IntegerL->Value);
+    return object::makeInteger(IntegerL->Value);
 
   const auto *BooleanL = ast::astCast<const ast::Boolean *>(Node);
   if (BooleanL)
@@ -451,7 +451,7 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
     if (isError(Value))
       return Value;
 
-    return std::make_shared<object::ReturnValue>(std::move(Value));
+    return object::makeReturn(std::move(Value));
   }
 
   const auto *LetS = ast::astCast<const ast::LetStatement *>(Node);
@@ -469,8 +469,8 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
 
   auto *Function = ast::astCast<ast::FunctionLiteral *>(Node);
   if (Function)
-    return std::make_shared<object::Function>(std::move(Function->Parameters),
-                                              std::move(Function->Body), Env);
+    return object::makeFunction(std::move(Function->Parameters),
+                                std::move(Function->Body), Env);
 
   const auto *Call = ast::astCast<const ast::CallExpression *>(Node);
   if (Call) {
@@ -487,7 +487,7 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
 
   const auto *String = ast::astCast<const ast::String *>(Node);
   if (String)
-    return std::make_shared<object::String>(String->Value);
+    return object::makeString(String->Value);
 
   const auto *Array = ast::astCast<const ast::ArrayLiteral *>(Node);
   if (Array) {
@@ -495,7 +495,7 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
     if (Elements.size() == 1 && isError(Elements.front()))
       return Elements.front();
 
-    return std::make_shared<object::Array>(std::move(Elements));
+    return object::makeArray(std::move(Elements));
   }
 
   const auto *IndexExp = ast::astCast<const ast::IndexExpression *>(Node);

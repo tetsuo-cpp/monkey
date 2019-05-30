@@ -6,6 +6,8 @@
 #include <Code/Code.h>
 #include <Environment/Environment.h>
 
+#include <boost/pool/pool_alloc.hpp>
+
 #include <functional>
 #include <memory>
 
@@ -70,7 +72,8 @@ struct Null : public Object {
 };
 
 struct ReturnValue : public Object {
-  explicit ReturnValue(std::shared_ptr<object::Object>);
+  template <typename T>
+  explicit ReturnValue(T &&Value) : Value(std::forward<T>(Value)) {}
   virtual ~ReturnValue() = default;
 
   // Object impl.
@@ -266,6 +269,62 @@ objCast<const CompiledFunction *>(const Object *Obj) {
 
 template <> inline const Closure *objCast<const Closure *>(const Object *Obj) {
   return objCastImpl<const Closure *, ObjectType::CLOSURE_OBJ>(Obj);
+}
+
+extern boost::pool_allocator<object::Integer> IntegerAlloc;
+extern boost::pool_allocator<object::ReturnValue> ReturnAlloc;
+extern boost::pool_allocator<object::Function> FunctionAlloc;
+extern boost::pool_allocator<object::String> StringAlloc;
+extern boost::pool_allocator<object::Array> ArrayAlloc;
+extern boost::pool_allocator<object::Hash> HashAlloc;
+extern boost::pool_allocator<object::Closure> ClosureAlloc;
+
+inline std::shared_ptr<Integer> makeInteger(int Value) {
+  return std::allocate_shared<Integer, boost::pool_allocator<Integer>>(
+      IntegerAlloc, Value);
+}
+
+template <typename T>
+inline std::shared_ptr<ReturnValue> makeReturn(T &&Return) {
+  return std::allocate_shared<ReturnValue, boost::pool_allocator<ReturnValue>>(
+      ReturnAlloc, std::forward<T>(Return));
+}
+
+inline std::shared_ptr<Function>
+makeFunction(std::vector<std::unique_ptr<ast::Identifier>> &&Parameters,
+             std::unique_ptr<ast::BlockStatement> Body,
+             std::shared_ptr<environment::Environment> &Env) {
+  return std::allocate_shared<Function, boost::pool_allocator<Function>>(
+      FunctionAlloc, std::move(Parameters), std::move(Body), Env);
+}
+
+template <typename T> inline std::shared_ptr<String> makeString(T &&Value) {
+  return std::allocate_shared<String, boost::pool_allocator<String>>(
+      StringAlloc, std::forward<T>(Value));
+}
+
+inline std::shared_ptr<Array>
+makeArray(std::vector<std::shared_ptr<Object>> &&Value) {
+  return std::allocate_shared<Array, boost::pool_allocator<Array>>(
+      ArrayAlloc, std::move(Value));
+}
+
+inline std::shared_ptr<Hash> makeHash(
+    std::unordered_map<HashKey, std::shared_ptr<object::Object>, HashKeyHasher>
+        &&Value) {
+  return std::allocate_shared<Hash, boost::pool_allocator<Hash>>(
+      HashAlloc, std::move(Value));
+}
+
+template <typename T> inline std::shared_ptr<Closure> makeClosure(T &&Value) {
+  return std::allocate_shared<Closure, boost::pool_allocator<Closure>>(
+      ClosureAlloc, std::forward<T>(Value));
+}
+
+template <typename T0, typename T1>
+inline std::shared_ptr<Closure> makeClosure(T0 &&Fn, T1 &&Free) {
+  return std::allocate_shared<Closure, boost::pool_allocator<Closure>>(
+      ClosureAlloc, std::forward<T0>(Fn), std::forward<T1>(Free));
 }
 
 } // namespace monkey::object

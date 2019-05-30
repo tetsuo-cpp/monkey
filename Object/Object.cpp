@@ -8,6 +8,14 @@ const std::shared_ptr<Object> TrueGlobal = std::make_shared<Boolean>(true);
 const std::shared_ptr<Object> FalseGlobal = std::make_shared<Boolean>(false);
 const std::shared_ptr<Object> NullGlobal = std::make_shared<Null>();
 
+boost::pool_allocator<object::Integer> IntegerAlloc;
+boost::pool_allocator<object::ReturnValue> ReturnAlloc;
+boost::pool_allocator<object::Function> FunctionAlloc;
+boost::pool_allocator<object::String> StringAlloc;
+boost::pool_allocator<object::Array> ArrayAlloc;
+boost::pool_allocator<object::Hash> HashAlloc;
+boost::pool_allocator<object::Closure> ClosureAlloc;
+
 const std::shared_ptr<Object> &nativeBooleanToBooleanObject(bool Val) {
   if (Val)
     return TrueGlobal;
@@ -81,9 +89,6 @@ bool Boolean::equals(const Object &Obj) const {
 ObjectType Null::type() const { return ObjectType::NULL_OBJ; }
 
 std::string Null::inspect() const { return "null"; }
-
-ReturnValue::ReturnValue(std::shared_ptr<object::Object> Value)
-    : Value(std::move(Value)) {}
 
 ObjectType ReturnValue::type() const { return ObjectType::RETURN_VALUE_OBJ; }
 

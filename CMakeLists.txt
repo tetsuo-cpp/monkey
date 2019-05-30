@@ -16,7 +16,11 @@ set_target_properties(gtest_main PROPERTIES FOLDER extern)
 set_target_properties(gmock PROPERTIES FOLDER extern)
 set_target_properties(gmock_main PROPERTIES FOLDER extern)
 
+find_package(Boost REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
+add_definitions(-D_LIBCPP_HAS_NO_THREADS -DBOOST_DISABLE_THREADS)
 
 # Build interpreter binary.
 set(

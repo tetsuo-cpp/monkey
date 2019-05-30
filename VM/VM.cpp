@@ -29,7 +29,7 @@ VM::VM(compiler::ByteCode &&BC,
       FrameIndex(1) {
   auto MainFn = std::make_shared<object::CompiledFunction>(
       std::move(BC.Instructions), 0, 0);
-  auto MainClosure = std::make_shared<object::Closure>(std::move(MainFn));
+  auto MainClosure = object::makeClosure(std::move(MainFn));
   Frame MainFrame(std::move(MainClosure), 0);
   Frames.front() = std::move(MainFrame);
 }
@@ -257,7 +257,7 @@ void VM::executeBinaryIntegerOperation(
     }
   }();
 
-  push(std::make_shared<object::Integer>(Result));
+  push(object::makeInteger(Result));
 }
 
 void VM::executeBinaryStringOperation(
@@ -272,7 +272,7 @@ void VM::executeBinaryStringOperation(
   const auto &RightVal =
       object::objCast<const object::String *>(Right.get())->Value;
 
-  push(std::make_shared<object::String>(LeftVal + RightVal));
+  push(object::makeString(LeftVal + RightVal));
 }
 
 void VM::executeComparison(code::OpCode Op) {
@@ -343,7 +343,7 @@ void VM::executeMinusOperator() {
                              object::objTypeToString(Operand->type()));
 
   auto Value = static_cast<const object::Integer *>(Operand.get())->Value;
-  push(std::make_shared<object::Integer>(-Value));
+  push(object::makeInteger(-Value));
 }
 
 std::shared_ptr<object::Object> VM::buildArray(int StartIndex,
@@ -354,7 +354,7 @@ std::shared_ptr<object::Object> VM::buildArray(int StartIndex,
   for (int I = StartIndex; I < EndIndex; ++I)
     Elements.at(I - StartIndex) = Stack.at(I);
 
-  return std::make_shared<object::Array>(std::move(Elements));
+  return object::makeArray(std::move(Elements));
 }
 
 std::shared_ptr<object::Object> VM::buildHash(int StartIndex,
@@ -374,7 +374,7 @@ std::shared_ptr<object::Object> VM::buildHash(int StartIndex,
     HashedPairs[object::HashKey(Key)] = Value;
   }
 
-  return std::make_shared<object::Hash>(std::move(HashedPairs));
+  return object::makeHash(std::move(HashedPairs));
 }
 
 void VM::executeIndexExpression(const std::shared_ptr<object::Object> &Left,
@@ -478,7 +478,7 @@ void VM::pushClosure(int ConstIndex, int NumFree) {
     Free.push_back(Stack.at(SP - NumFree + I));
 
   SP -= NumFree;
-  push(std::make_unique<object::Closure>(Constant, std::move(Free)));
+  push(object::makeClosure(Constant, std::move(Free)));
 }
 
 } // namespace monkey::vm
