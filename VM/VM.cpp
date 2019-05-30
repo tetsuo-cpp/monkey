@@ -144,7 +144,7 @@ void VM::run() {
       IP += 2;
       const auto Hash = buildHash(SP - NumElem, SP);
       SP -= NumElem;
-      push(Hash);
+      push(std::move(Hash));
       break;
     }
     case code::OpCode::OpIndex: {

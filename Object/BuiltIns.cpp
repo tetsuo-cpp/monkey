@@ -18,11 +18,11 @@ const std::vector<std::pair<std::string, std::shared_ptr<BuiltIn>>> BuiltIns = {
 
        const auto *StringObj = objCast<const String *>(Args.front().get());
        if (StringObj)
-         return object::makeInteger(StringObj->Value.size());
+         return makeInteger(StringObj->Value.size());
 
        const auto *ArrayObj = objCast<const Array *>(Args.front().get());
        if (ArrayObj)
-         return object::makeInteger(ArrayObj->Elements.size());
+         return makeInteger(ArrayObj->Elements.size());
 
        return newError("argument to \"len\" not supported, got %s",
                        objTypeToString(Args.front()->type()));
@@ -100,7 +100,7 @@ const std::vector<std::pair<std::string, std::shared_ptr<BuiltIn>>> BuiltIns = {
        assert(ArrayObj);
        auto Pushed = ArrayObj->Elements;
        Pushed.push_back(Args.at(1));
-       return std::make_shared<Array>(std::move(Pushed));
+       return makeArray(std::move(Pushed));
      })},
     {"puts", std::make_shared<BuiltIn>(
                  [](const std::vector<std::shared_ptr<Object>> &Args)
