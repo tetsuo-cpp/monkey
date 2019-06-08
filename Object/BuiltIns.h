@@ -5,7 +5,7 @@
 namespace monkey::object {
 
 extern const std::vector<std::pair<std::string, std::shared_ptr<BuiltIn>>>
-    BuiltIns;
+    BUILTINS;
 
 std::shared_ptr<Error> newError(const char *, ...);
 

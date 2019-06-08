@@ -11,26 +11,26 @@ Compiler::Compiler(SymbolTable &SymTable,
   // Main scope.
   Scopes.emplace_back();
 
-  for (unsigned int I = 0; I < object::BuiltIns.size(); ++I)
-    GlobalSymTable.defineBuiltIn(I, object::BuiltIns.at(I).first);
+  for (unsigned int I = 0; I < object::BUILTINS.size(); ++I)
+    GlobalSymTable.defineBuiltIn(I, object::BUILTINS.at(I).first);
 }
 
 void Compiler::compile(const ast::Node *Node) {
-  const auto *Program = dynamic_cast<const ast::Program *>(Node);
+  const auto *Program = ast::astCast<const ast::Program *>(Node);
   if (Program) {
     for (const auto &Statement : Program->Statements)
       compile(Statement.get());
     return;
   }
 
-  const auto *ExprS = dynamic_cast<const ast::ExpressionStatement *>(Node);
+  const auto *ExprS = ast::astCast<const ast::ExpressionStatement *>(Node);
   if (ExprS) {
     compile(ExprS->Expr.get());
     emit(code::OpCode::OpPop, {});
     return;
   }
 
-  const auto *InfixExpr = dynamic_cast<const ast::InfixExpression *>(Node);
+  const auto *InfixExpr = ast::astCast<const ast::InfixExpression *>(Node);
   if (InfixExpr) {
     if (InfixExpr->Operator == "<") {
       compile(InfixExpr->Right.get());
@@ -63,7 +63,7 @@ void Compiler::compile(const ast::Node *Node) {
     return;
   }
 
-  const auto *PrefixE = dynamic_cast<const ast::PrefixExpression *>(Node);
+  const auto *PrefixE = ast::astCast<const ast::PrefixExpression *>(Node);
   if (PrefixE) {
     compile(PrefixE->Right.get());
 
@@ -76,7 +76,7 @@ void Compiler::compile(const ast::Node *Node) {
     return;
   }
 
-  const auto *IfE = dynamic_cast<const ast::IfExpression *>(Node);
+  const auto *IfE = ast::astCast<const ast::IfExpression *>(Node);
   if (IfE) {
     compile(IfE->Condition.get());
 
@@ -108,7 +108,7 @@ void Compiler::compile(const ast::Node *Node) {
     return;
   }
 
-  const auto *Block = dynamic_cast<const ast::BlockStatement *>(Node);
+  const auto *Block = ast::astCast<const ast::BlockStatement *>(Node);
   if (Block) {
     for (const auto &Statement : Block->Statements)
       compile(Statement.get());
@@ -116,18 +116,18 @@ void Compiler::compile(const ast::Node *Node) {
     return;
   }
 
-  const auto *Let = dynamic_cast<const ast::LetStatement *>(Node);
+  const auto *Let = ast::astCast<const ast::LetStatement *>(Node);
   if (Let) {
     const auto &Symbol = SymTable->define(Let->Name->Value);
     compile(Let->Value.get());
-    if (Symbol.Scope == GlobalScope)
+    if (Symbol.Scope == SymbolScope::GLOBAL_SCOPE)
       emit(code::OpCode::OpSetGlobal, {Symbol.Index});
     else
       emit(code::OpCode::OpSetLocal, {Symbol.Index});
     return;
   }
 
-  const auto *Identifier = dynamic_cast<const ast::Identifier *>(Node);
+  const auto *Identifier = ast::astCast<const ast::Identifier *>(Node);
   if (Identifier) {
     const auto *Symbol = SymTable->resolve(Identifier->Value);
     if (!Symbol)
@@ -137,7 +137,7 @@ void Compiler::compile(const ast::Node *Node) {
     return;
   }
 
-  const auto *Bool = dynamic_cast<const ast::Boolean *>(Node);
+  const auto *Bool = ast::astCast<const ast::Boolean *>(Node);
   if (Bool) {
     if (Bool->Value)
       emit(code::OpCode::OpTrue, {});
@@ -146,21 +146,21 @@ void Compiler::compile(const ast::Node *Node) {
     return;
   }
 
-  const auto *IntegerL = dynamic_cast<const ast::IntegerLiteral *>(Node);
+  const auto *IntegerL = ast::astCast<const ast::IntegerLiteral *>(Node);
   if (IntegerL) {
     auto Integer = object::makeInteger(IntegerL->Value);
     emit(code::OpCode::OpConstant, {addConstant(std::move(Integer))});
     return;
   }
 
-  const auto *StringL = dynamic_cast<const ast::String *>(Node);
+  const auto *StringL = ast::astCast<const ast::String *>(Node);
   if (StringL) {
     auto String = object::makeString(StringL->Value);
     emit(code::OpCode::OpConstant, {addConstant(std::move(String))});
     return;
   }
 
-  const auto *ArrayL = dynamic_cast<const ast::ArrayLiteral *>(Node);
+  const auto *ArrayL = ast::astCast<const ast::ArrayLiteral *>(Node);
   if (ArrayL) {
     for (const auto &Elem : ArrayL->Elements)
       compile(Elem.get());
@@ -169,7 +169,7 @@ void Compiler::compile(const ast::Node *Node) {
     return;
   }
 
-  const auto *HashL = dynamic_cast<const ast::HashLiteral *>(Node);
+  const auto *HashL = ast::astCast<const ast::HashLiteral *>(Node);
   if (HashL) {
     std::vector<std::pair<ast::Expression *, ast::Expression *>> Keys;
     for (const auto &K : HashL->Pairs)
@@ -190,7 +190,7 @@ void Compiler::compile(const ast::Node *Node) {
     return;
   }
 
-  const auto *Index = dynamic_cast<const ast::IndexExpression *>(Node);
+  const auto *Index = ast::astCast<const ast::IndexExpression *>(Node);
   if (Index) {
     compile(Index->Left.get());
     compile(Index->Index.get());
@@ -198,7 +198,7 @@ void Compiler::compile(const ast::Node *Node) {
     return;
   }
 
-  const auto *FunctionL = dynamic_cast<const ast::FunctionLiteral *>(Node);
+  const auto *FunctionL = ast::astCast<ast::FunctionLiteral *>(Node);
   if (FunctionL) {
     enterScope();
     for (const auto &P : FunctionL->Parameters)
@@ -228,14 +228,14 @@ void Compiler::compile(const ast::Node *Node) {
     return;
   }
 
-  const auto *Return = dynamic_cast<const ast::ReturnStatement *>(Node);
+  const auto *Return = ast::astCast<const ast::ReturnStatement *>(Node);
   if (Return) {
     compile(Return->ReturnValue.get());
     emit(code::OpCode::OpReturnValue, {});
     return;
   }
 
-  const auto *Call = dynamic_cast<const ast::CallExpression *>(Node);
+  const auto *Call = ast::astCast<const ast::CallExpression *>(Node);
   if (Call) {
     compile(Call->Function.get());
     for (const auto &A : Call->Arguments)
@@ -258,7 +258,7 @@ int Compiler::emit(code::OpCode Op, const std::vector<int> &Operands) {
   return Pos;
 }
 
-int Compiler::addInstruction(const std::vector<unsigned char> &Ins) {
+int Compiler::addInstruction(const std::vector<char> &Ins) {
   auto &CurrentIns = currentInstructions();
   const auto PosNewInstruction = CurrentIns.Value.size();
   std::copy(Ins.begin(), Ins.end(), std::back_inserter(CurrentIns.Value));
@@ -290,10 +290,10 @@ void Compiler::removeLastPop() {
 }
 
 void Compiler::replaceInstruction(unsigned int Pos,
-                                  std::vector<unsigned char> &NewInstruction) {
+                                  std::vector<char> &NewInstruction) {
   auto &CurrentIns = currentInstructions();
-  for (unsigned int Index = 0; Index < NewInstruction.size(); ++Index)
-    CurrentIns.Value.at(Pos + Index) = NewInstruction.at(Index);
+  for (unsigned int I = 0; I < NewInstruction.size(); ++I)
+    CurrentIns.Value.at(Pos + I) = NewInstruction.at(I);
 }
 
 void Compiler::changeOperand(unsigned int OpPos, int Operand) {
@@ -344,13 +344,13 @@ void Compiler::replaceLastPopWithReturn() {
 }
 
 void Compiler::loadSymbol(const Symbol &S) {
-  if (S.Scope == GlobalScope)
+  if (S.Scope == SymbolScope::GLOBAL_SCOPE)
     emit(code::OpCode::OpGetGlobal, {S.Index});
-  else if (S.Scope == LocalScope)
+  else if (S.Scope == SymbolScope::LOCAL_SCOPE)
     emit(code::OpCode::OpGetLocal, {S.Index});
-  else if (S.Scope == BuiltInScope)
+  else if (S.Scope == SymbolScope::BUILTIN_SCOPE)
     emit(code::OpCode::OpGetBuiltIn, {S.Index});
-  else if (S.Scope == FreeScope)
+  else if (S.Scope == SymbolScope::FREE_SCOPE)
     emit(code::OpCode::OpGetFree, {S.Index});
 }
 

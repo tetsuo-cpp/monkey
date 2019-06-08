@@ -24,7 +24,7 @@ bool isTruthy(const object::Object *Obj) {
 } // namespace
 
 VM::VM(compiler::ByteCode &&BC,
-       std::array<std::shared_ptr<object::Object>, GlobalsSize> &Globals)
+       std::array<std::shared_ptr<object::Object>, GLOBALS_SIZE> &Globals)
     : Constants(BC.Constants), Stack{nullptr}, SP(0), Globals(Globals),
       FrameIndex(1) {
   auto MainFn = std::make_shared<object::CompiledFunction>(
@@ -40,7 +40,7 @@ const object::Object *VM::lastPoppedStackElem() const {
 
 void VM::run() {
   while (currentFrame().IP <
-         (int)currentFrame().instructions().Value.size() - 1) {
+         static_cast<int>(currentFrame().instructions().Value.size()) - 1) {
     ++currentFrame().IP;
 
     auto &IP = currentFrame().IP;
@@ -66,10 +66,10 @@ void VM::run() {
       pop();
       break;
     case code::OpCode::OpTrue:
-      push(object::TrueGlobal);
+      push(object::TRUE_GLOBAL);
       break;
     case code::OpCode::OpFalse:
-      push(object::FalseGlobal);
+      push(object::FALSE_GLOBAL);
       break;
     case code::OpCode::OpEqual:
     case code::OpCode::OpNotEqual:
@@ -98,7 +98,7 @@ void VM::run() {
       break;
     }
     case code::OpCode::OpNull:
-      push(object::NullGlobal);
+      push(object::NULL_GLOBAL);
       break;
     case code::OpCode::OpSetGlobal: {
       const int16_t GlobalIndex =
@@ -151,7 +151,7 @@ void VM::run() {
       const auto &Index = pop();
       const auto &Left = pop();
 
-      executeIndexExpression(Left, Index);
+      executeIndexExpression(*Left, Index);
       break;
     }
     case code::OpCode::OpCall: {
@@ -171,14 +171,14 @@ void VM::run() {
     case code::OpCode::OpReturn: {
       const auto &Frame = popFrame();
       SP = Frame.BasePointer - 1;
-      push(object::NullGlobal);
+      push(object::NULL_GLOBAL);
       break;
     }
     case code::OpCode::OpGetBuiltIn: {
       const auto BuiltInIndex = Instructions.Value.at(IP + 1);
       ++IP;
 
-      const auto &Definition = object::BuiltIns.at(BuiltInIndex);
+      const auto &Definition = object::BUILTINS.at(BuiltInIndex);
       push(Definition.second);
       break;
     }
@@ -221,10 +221,10 @@ void VM::executeBinaryOperation(code::OpCode Op) {
 
   if (LeftType == object::ObjectType::INTEGER_OBJ &&
       RightType == object::ObjectType::INTEGER_OBJ) {
-    executeBinaryIntegerOperation(Op, Left, Right);
+    executeBinaryIntegerOperation(Op, *Left, *Right);
   } else if (LeftType == object::ObjectType::STRING_OBJ &&
              RightType == object::ObjectType::STRING_OBJ) {
-    executeBinaryStringOperation(Op, Left, Right);
+    executeBinaryStringOperation(Op, *Left, *Right);
   } else {
     throw std::runtime_error(
         std::string("unsupported types for binary operation ") +
@@ -233,13 +233,11 @@ void VM::executeBinaryOperation(code::OpCode Op) {
   }
 }
 
-void VM::executeBinaryIntegerOperation(
-    code::OpCode Op, const std::shared_ptr<object::Object> &Left,
-    const std::shared_ptr<object::Object> &Right) {
-  const auto LeftVal =
-      object::objCast<const object::Integer *>(Left.get())->Value;
-  const auto RightVal =
-      object::objCast<const object::Integer *>(Right.get())->Value;
+void VM::executeBinaryIntegerOperation(code::OpCode Op,
+                                       const object::Object &Left,
+                                       const object::Object &Right) {
+  const auto LeftVal = object::objCast<const object::Integer *>(&Left)->Value;
+  const auto RightVal = object::objCast<const object::Integer *>(&Right)->Value;
 
   const int64_t Result = [Op, LeftVal, RightVal]() {
     switch (Op) {
@@ -253,24 +251,22 @@ void VM::executeBinaryIntegerOperation(
       return LeftVal / RightVal;
     default:
       throw std::runtime_error("unknown integer operator: " +
-                               std::to_string(static_cast<unsigned char>(Op)));
+                               std::to_string(static_cast<char>(Op)));
     }
   }();
 
   push(object::makeInteger(Result));
 }
 
-void VM::executeBinaryStringOperation(
-    code::OpCode Op, const std::shared_ptr<object::Object> &Left,
-    const std::shared_ptr<object::Object> &Right) {
+void VM::executeBinaryStringOperation(code::OpCode Op,
+                                      const object::Object &Left,
+                                      const object::Object &Right) {
   if (Op != code::OpCode::OpAdd)
     throw std::runtime_error("unknown string operator: " +
-                             std::to_string(static_cast<unsigned char>(Op)));
+                             std::to_string(static_cast<char>(Op)));
 
-  const auto &LeftVal =
-      object::objCast<const object::String *>(Left.get())->Value;
-  const auto &RightVal =
-      object::objCast<const object::String *>(Right.get())->Value;
+  const auto &LeftVal = object::objCast<const object::String *>(&Left)->Value;
+  const auto &RightVal = object::objCast<const object::String *>(&Right)->Value;
 
   push(object::makeString(LeftVal + RightVal));
 }
@@ -281,7 +277,7 @@ void VM::executeComparison(code::OpCode Op) {
 
   if (Left->type() == object::ObjectType::INTEGER_OBJ &&
       Right->type() == object::ObjectType::INTEGER_OBJ) {
-    executeIntegerComparison(Op, Left, Right);
+    executeIntegerComparison(Op, *Left, *Right);
     return;
   }
 
@@ -300,11 +296,10 @@ void VM::executeComparison(code::OpCode Op) {
   }
 }
 
-void VM::executeIntegerComparison(
-    code::OpCode Op, const std::shared_ptr<object::Object> &Left,
-    const std::shared_ptr<object::Object> &Right) {
-  const auto LeftVal = static_cast<object::Integer *>(Left.get())->Value;
-  const auto RightVal = static_cast<object::Integer *>(Right.get())->Value;
+void VM::executeIntegerComparison(code::OpCode Op, const object::Object &Left,
+                                  const object::Object &Right) {
+  const auto LeftVal = static_cast<const object::Integer &>(Left).Value;
+  const auto RightVal = static_cast<const object::Integer &>(Right).Value;
 
   switch (Op) {
   case code::OpCode::OpEqual:
@@ -325,14 +320,14 @@ void VM::executeIntegerComparison(
 void VM::executeBangOperator() {
   const auto &Operand = pop();
 
-  if (Operand.get() == object::TrueGlobal.get())
-    push(object::FalseGlobal);
-  else if (Operand.get() == object::FalseGlobal.get())
-    push(object::TrueGlobal);
-  else if (Operand.get() == object::NullGlobal.get())
-    push(object::TrueGlobal);
+  if (Operand.get() == object::TRUE_GLOBAL.get())
+    push(object::FALSE_GLOBAL);
+  else if (Operand.get() == object::FALSE_GLOBAL.get())
+    push(object::TRUE_GLOBAL);
+  else if (Operand.get() == object::NULL_GLOBAL.get())
+    push(object::TRUE_GLOBAL);
   else
-    push(object::FalseGlobal);
+    push(object::FALSE_GLOBAL);
 }
 
 void VM::executeMinusOperator() {
@@ -377,35 +372,35 @@ std::shared_ptr<object::Object> VM::buildHash(int StartIndex,
   return object::makeHash(std::move(HashedPairs));
 }
 
-void VM::executeIndexExpression(const std::shared_ptr<object::Object> &Left,
+void VM::executeIndexExpression(const object::Object &Left,
                                 const std::shared_ptr<object::Object> &Index) {
-  if (Left->type() == object::ObjectType::ARRAY_OBJ &&
+  if (Left.type() == object::ObjectType::ARRAY_OBJ &&
       Index->type() == object::ObjectType::INTEGER_OBJ)
-    executeArrayIndex(Left, Index);
-  else if (Left->type() == object::ObjectType::HASH_OBJ)
+    executeArrayIndex(Left, *Index);
+  else if (Left.type() == object::ObjectType::HASH_OBJ)
     executeHashIndex(Left, Index);
   else
     throw std::runtime_error(std::string("index operator not supported: ") +
-                             object::objTypeToString(Left->type()));
+                             object::objTypeToString(Left.type()));
 }
 
-void VM::executeArrayIndex(const std::shared_ptr<object::Object> &Array,
-                           const std::shared_ptr<object::Object> &Index) {
-  const auto *ArrayObj = object::objCast<const object::Array *>(Array.get());
-  const auto I = object::objCast<const object::Integer *>(Index.get())->Value;
+void VM::executeArrayIndex(const object::Object &Array,
+                           const object::Object &Index) {
+  const auto *ArrayObj = object::objCast<const object::Array *>(&Array);
+  const auto I = object::objCast<const object::Integer *>(&Index)->Value;
   const int Max = ArrayObj->Elements.size() - 1;
 
   if (I < 0 || I > Max) {
-    push(object::NullGlobal);
+    push(object::NULL_GLOBAL);
     return;
   }
 
   push(ArrayObj->Elements.at(I));
 }
 
-void VM::executeHashIndex(const std::shared_ptr<object::Object> &Hash,
+void VM::executeHashIndex(const object::Object &Hash,
                           const std::shared_ptr<object::Object> &Index) {
-  const auto *HashObj = object::objCast<const object::Hash *>(Hash.get());
+  const auto *HashObj = object::objCast<const object::Hash *>(&Hash);
   const object::HashKey Key(Index);
 
   if (!object::hasHashKey(Key))
@@ -414,7 +409,7 @@ void VM::executeHashIndex(const std::shared_ptr<object::Object> &Hash,
 
   const auto HashIter = HashObj->Pairs.find(Key);
   if (HashIter == HashObj->Pairs.end())
-    push(object::NullGlobal);
+    push(object::NULL_GLOBAL);
   else
     push(HashIter->second);
 }
@@ -432,13 +427,13 @@ void VM::executeCall(int NumArgs) {
   case object::ObjectType::CLOSURE_OBJ:
     return callClosure(Callee, NumArgs);
   case object::ObjectType::BUILTIN_OBJ:
-    return callBuiltIn(Callee, NumArgs);
+    return callBuiltIn(*Callee, NumArgs);
   default:
     throw std::runtime_error("calling non-closure and non-built-in");
   }
 }
 
-void VM::callClosure(const std::shared_ptr<object::Object> &Cl, int NumArgs) {
+ void VM::callClosure(const std::shared_ptr<object::Object> &Cl, int NumArgs) {
   const auto *ClObj = object::objCast<const object::Closure *>(Cl.get());
   assert(ClObj);
   const auto *FnObj =
@@ -451,17 +446,14 @@ void VM::callClosure(const std::shared_ptr<object::Object> &Cl, int NumArgs) {
   SP += FnObj->NumLocals + NumArgs;
 }
 
-void VM::callBuiltIn(const std::shared_ptr<object::Object> &Fn, int NumArgs) {
+void VM::callBuiltIn(const object::Object &Fn, int NumArgs) {
   std::vector<std::shared_ptr<object::Object>> Args;
   std::copy(Stack.begin() + SP - NumArgs, Stack.begin() + SP,
             std::back_inserter(Args));
 
-  auto Result = object::objCast<const object::BuiltIn *>(Fn.get())->Fn(Args);
-  SP = SP - NumArgs - 1;
-  if (Result)
-    push(std::move(Result));
-  else
-    push(object::NullGlobal);
+  auto Result = object::objCast<const object::BuiltIn *>(&Fn)->Fn(Args);
+  SP -= (NumArgs + 1);
+  push(std::move(Result));
 }
 
 void VM::pushClosure(int ConstIndex, int NumFree) {

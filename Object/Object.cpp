@@ -4,23 +4,23 @@
 
 namespace monkey::object {
 
-const std::shared_ptr<Object> TrueGlobal = std::make_shared<Boolean>(true);
-const std::shared_ptr<Object> FalseGlobal = std::make_shared<Boolean>(false);
-const std::shared_ptr<Object> NullGlobal = std::make_shared<Null>();
+const std::shared_ptr<Object> TRUE_GLOBAL = std::make_shared<Boolean>(true);
+const std::shared_ptr<Object> FALSE_GLOBAL = std::make_shared<Boolean>(false);
+const std::shared_ptr<Object> NULL_GLOBAL = std::make_shared<Null>();
 
-boost::pool_allocator<object::Integer> IntegerAlloc;
-boost::pool_allocator<object::ReturnValue> ReturnAlloc;
-boost::pool_allocator<object::Function> FunctionAlloc;
-boost::pool_allocator<object::String> StringAlloc;
-boost::pool_allocator<object::Array> ArrayAlloc;
-boost::pool_allocator<object::Hash> HashAlloc;
-boost::pool_allocator<object::Closure> ClosureAlloc;
+boost::pool_allocator<object::Integer> INTEGER_ALLOC;
+boost::pool_allocator<object::ReturnValue> RETURN_ALLOC;
+boost::pool_allocator<object::Function> FUNCTION_ALLOC;
+boost::pool_allocator<object::String> STRING_ALLOC;
+boost::pool_allocator<object::Array> ARRAY_ALLOC;
+boost::pool_allocator<object::Hash> HASH_ALLOC;
+boost::pool_allocator<object::Closure> CLOSURE_ALLOC;
 
 const std::shared_ptr<Object> &nativeBooleanToBooleanObject(bool Val) {
   if (Val)
-    return TrueGlobal;
+    return TRUE_GLOBAL;
 
-  return FalseGlobal;
+  return FALSE_GLOBAL;
 }
 
 const char *objTypeToString(ObjectType Type) {

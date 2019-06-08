@@ -40,35 +40,31 @@ public:
   void compile(const ast::Node *);
   ByteCode byteCode();
 
-  // TODO: Don't mark this stuff as public.
-  // Should probably subclass a TestCompiler that exposes this.
-  int emit(code::OpCode, const std::vector<int> &);
-  void enterScope();
-  code::Instructions leaveScope();
-
-  std::vector<CompilationScope> Scopes;
-  int ScopeIndex;
-  SymbolTable &GlobalSymTable;
-  SymbolTable *SymTable;
-  std::vector<std::unique_ptr<SymbolTable>> SymTables;
-
-private:
+protected:
   template <typename T> int addConstant(T &&Obj) {
     Constants.push_back(std::forward<T>(Obj));
     return Constants.size() - 1;
   }
 
-  int addInstruction(const std::vector<unsigned char> &);
+  int emit(code::OpCode, const std::vector<int> &);
+  void enterScope();
+  code::Instructions leaveScope();
+  int addInstruction(const std::vector<char> &);
   void setLastInstruction(code::OpCode, unsigned int);
   bool lastInstructionIs(code::OpCode) const;
   void removeLastPop();
-  void replaceInstruction(unsigned int, std::vector<unsigned char> &);
+  void replaceInstruction(unsigned int, std::vector<char> &);
   void changeOperand(unsigned int, int);
   code::Instructions &currentInstructions();
   const code::Instructions &currentInstructions() const;
   void replaceLastPopWithReturn();
   void loadSymbol(const Symbol &);
 
+  std::vector<CompilationScope> Scopes;
+  int ScopeIndex;
+  SymbolTable &GlobalSymTable;
+  SymbolTable *SymTable;
+  std::vector<std::unique_ptr<SymbolTable>> SymTables;
   std::vector<std::shared_ptr<object::Object>> &Constants;
 };
 

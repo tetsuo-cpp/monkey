@@ -45,24 +45,24 @@ std::vector<std::pair<OpCode, Definition>> Definitions = {
 
 std::string Instructions::string() const {
   std::stringstream SS;
-  unsigned int Index = 0;
-  while (Index < Value.size()) {
+  unsigned int I = 0;
+  while (I < Value.size()) {
     const Definition *Def;
     try {
-      Def = &lookup(Value.at(Index));
+      Def = &lookup(Value.at(I));
     } catch (const std::runtime_error &E) {
       SS << "ERROR: " << E.what() << "\n";
-      continue; // TODO: Does this make sense?
+      continue;
     }
 
     code::Instructions RemainingOps(
-        std::vector<unsigned char>(Value.begin() + Index + 1, Value.end()));
+        std::vector<char>(Value.begin() + I + 1, Value.end()));
 
     const auto Result = readOperands(*Def, RemainingOps);
-    SS << std::setfill('0') << std::setw(4) << Index << " ";
+    SS << std::setfill('0') << std::setw(4) << I << " ";
     SS << fmtInstructions(*Def, Result.first) << "\n";
 
-    Index += Result.second + 1;
+    I += Result.second + 1;
   }
 
   return SS.str();
@@ -91,7 +91,7 @@ Instructions::fmtInstructions(const Definition &Def,
   return std::string("ERROR: unhandled operandCount for ") + Def.Name + "\n";
 }
 
-const Definition &lookup(unsigned char Op) {
+const Definition &lookup(char Op) {
   const auto Iter =
       std::find_if(Definitions.begin(), Definitions.end(),
                    [Op](const std::pair<OpCode, Definition> &Def) {
@@ -104,7 +104,7 @@ const Definition &lookup(unsigned char Op) {
   return Iter->second;
 }
 
-std::vector<unsigned char> make(OpCode Op, const std::vector<int> &Operands) {
+std::vector<char> make(OpCode Op, const std::vector<int> &Operands) {
   const auto Iter =
       std::find_if(Definitions.begin(), Definitions.end(),
                    [Op](const std::pair<OpCode, Definition> &Def) {
@@ -118,19 +118,19 @@ std::vector<unsigned char> make(OpCode Op, const std::vector<int> &Operands) {
   for (const auto W : Iter->second.OperandWidths)
     InstructionLen += W;
 
-  std::vector<unsigned char> Instruction(InstructionLen, 0);
-  Instruction.front() = static_cast<unsigned char>(Op);
+  std::vector<char> Instruction(InstructionLen, 0);
+  Instruction.front() = static_cast<char>(Op);
 
-  unsigned Offset = 1;
-  for (unsigned int Index = 0; Index < Operands.size(); ++Index) {
-    const auto Width = Iter->second.OperandWidths.at(Index);
+  unsigned int Offset = 1;
+  for (unsigned int I = 0; I < Operands.size(); ++I) {
+    const auto Width = Iter->second.OperandWidths.at(I);
     switch (Width) {
     case 1:
-      Instruction.at(Offset) = Operands.at(Index);
+      Instruction.at(Offset) = Operands.at(I);
       break;
     case 2:
       int16_t &WritePos = reinterpret_cast<int16_t &>(Instruction.at(Offset));
-      WritePos = htons(Operands.at(Index));
+      WritePos = htons(Operands.at(I));
       break;
     }
 
@@ -143,18 +143,18 @@ std::vector<unsigned char> make(OpCode Op, const std::vector<int> &Operands) {
 std::pair<std::vector<int>, int> readOperands(const Definition &Def,
                                               const Instructions &Ins) {
   std::vector<int> Operands(Def.OperandWidths.size(), 0);
-  unsigned int Offset = 0;
+  int Offset = 0;
 
-  for (unsigned int Index = 0; Index < Operands.size(); ++Index) {
-    const auto Width = Def.OperandWidths.at(Index);
+  for (unsigned int I = 0; I < Operands.size(); ++I) {
+    const auto Width = Def.OperandWidths.at(I);
     switch (Width) {
     case 2: {
-      uint16_t Val = reinterpret_cast<const uint16_t &>(Ins.Value.at(Offset));
-      Operands.at(Index) = ntohs(Val);
+      const auto Val = reinterpret_cast<const uint16_t &>(Ins.Value.at(Offset));
+      Operands.at(I) = ntohs(Val);
       break;
     }
     case 1:
-      Operands.at(Index) = Ins.Value.at(Offset);
+      Operands.at(I) = reinterpret_cast<const uint8_t &>(Ins.Value.at(Offset));
       break;
     }
 

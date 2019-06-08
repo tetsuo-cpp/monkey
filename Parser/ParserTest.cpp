@@ -67,9 +67,8 @@ void testInfixExpression(ast::Expression *E, const T0 &Left,
 void checkParserErrors(Parser &P) {
   const auto &Errors = P.errors();
   ASSERT_TRUE(Errors.empty());
-  for (const auto &E : Errors) {
+  for (const auto &E : Errors)
     std::cout << "parser error: " << E << "\n";
-  }
 }
 
 template <typename T>
@@ -427,9 +426,9 @@ TEST(ParserTests, testFunctionParameterParsing) {
 
     ASSERT_EQ(Function->Parameters.size(), std::get<1>(Test).size());
 
-    for (unsigned int Index = 0; Index < Function->Parameters.size(); ++Index) {
-      testLiteralExpression(Function->Parameters.at(Index).get(),
-                            std::get<1>(Test).at(Index));
+    for (unsigned int I = 0; I < Function->Parameters.size(); ++I) {
+      testLiteralExpression(Function->Parameters.at(I).get(),
+                            std::get<1>(Test).at(I));
     }
   }
 }

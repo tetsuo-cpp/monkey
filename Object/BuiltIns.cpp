@@ -8,7 +8,7 @@ namespace monkey::object {
 // Null global should probably go in here. Instead, we check for nullptr in the
 // evaluator and vm and then return a Null object. So it's just a wasted
 // construction of a shared_ptr.
-const std::vector<std::pair<std::string, std::shared_ptr<BuiltIn>>> BuiltIns = {
+const std::vector<std::pair<std::string, std::shared_ptr<BuiltIn>>> BUILTINS = {
     {"len",
      std::make_shared<BuiltIn>([](const std::vector<std::shared_ptr<Object>>
                                       &Args) -> std::shared_ptr<Object> {
@@ -43,7 +43,7 @@ const std::vector<std::pair<std::string, std::shared_ptr<BuiltIn>>> BuiltIns = {
        if (!ArrayObj->Elements.empty())
          return ArrayObj->Elements.front();
 
-       return nullptr;
+       return NULL_GLOBAL;
      })},
     {"last",
      std::make_shared<BuiltIn>([](const std::vector<std::shared_ptr<Object>>
@@ -61,7 +61,7 @@ const std::vector<std::pair<std::string, std::shared_ptr<BuiltIn>>> BuiltIns = {
        if (!ArrayObj->Elements.empty())
          return ArrayObj->Elements.back();
 
-       return nullptr;
+       return NULL_GLOBAL;
      })},
     {"rest",
      std::make_shared<BuiltIn>([](const std::vector<std::shared_ptr<Object>>
@@ -83,7 +83,7 @@ const std::vector<std::pair<std::string, std::shared_ptr<BuiltIn>>> BuiltIns = {
          return std::make_shared<Array>(std::move(Rest));
        }
 
-       return nullptr;
+       return NULL_GLOBAL;
      })},
     {"push",
      std::make_shared<BuiltIn>([](const std::vector<std::shared_ptr<Object>>
@@ -108,7 +108,7 @@ const std::vector<std::pair<std::string, std::shared_ptr<BuiltIn>>> BuiltIns = {
                    for (const auto &Arg : Args)
                      printf("%s\n", Arg->inspect().c_str());
 
-                   return nullptr;
+                   return NULL_GLOBAL;
                  })}};
 
 std::shared_ptr<Error> newError(const char *Format, ...) {
@@ -123,12 +123,12 @@ std::shared_ptr<Error> newError(const char *Format, ...) {
 
 std::shared_ptr<BuiltIn> getBuiltInByName(const std::string &Name) {
   const auto Iter = std::find_if(
-      BuiltIns.begin(), BuiltIns.end(),
+      BUILTINS.begin(), BUILTINS.end(),
       [&Name](const std::pair<std::string, std::shared_ptr<BuiltIn>> &P) {
         return P.first == Name;
       });
 
-  if (Iter == BuiltIns.end())
+  if (Iter == BUILTINS.end())
     return nullptr;
 
   return Iter->second;

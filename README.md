@@ -2,8 +2,8 @@
 This project includes C++ implementations of an interpreter, bytecode compiler and virtual machine for the Monkey programming language described in Thorsten Ball's books: "Writing an Interpreter In Go" and "Writing a Compiler In Go".
 ## Progress
 * Interpreter (Finished).
-* Compiler (In Progress).
-* Virtual Machine (In Progress).
+* Compiler (Finished).
+* Virtual Machine (Finished).
 ## Dependencies
 * CMake.
 * Google Test.
@@ -27,4 +27,8 @@ Run the interpreter.
 Run the unit tests.
 ```
 ./monkey_test
+```
+Run the fibonacci program.
+```
+./benchmark [vm/eval]
 ```

@@ -9,17 +9,17 @@ struct Definition;
 
 struct Instructions {
   Instructions() = default;
-  Instructions(const std::vector<unsigned char> &Value) : Value(Value) {}
-  Instructions(std::vector<unsigned char> &&Value) : Value(std::move(Value)) {}
+  Instructions(const std::vector<char> &Value) : Value(Value) {}
+  Instructions(std::vector<char> &&Value) : Value(std::move(Value)) {}
 
   std::string string() const;
   std::string fmtInstructions(const Definition &,
                               const std::vector<int> &) const;
 
-  std::vector<unsigned char> Value;
+  std::vector<char> Value;
 };
 
-enum class OpCode : unsigned char {
+enum class OpCode : char {
   OpConstant,
   OpAdd,
   OpPop,
@@ -56,10 +56,8 @@ struct Definition {
   std::vector<int> OperandWidths;
 };
 
-const Definition &lookup(unsigned char);
-
-std::vector<unsigned char> make(OpCode, const std::vector<int> &);
-
+const Definition &lookup(char);
+std::vector<char> make(OpCode, const std::vector<int> &);
 std::pair<std::vector<int>, int> readOperands(const Definition &,
                                               const Instructions &);
 

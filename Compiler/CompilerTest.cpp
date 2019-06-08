@@ -16,6 +16,30 @@ std::unique_ptr<ast::Program> parse(const std::string &Input) {
   return P.parseProgram();
 }
 
+class TestCompiler : public Compiler {
+public:
+  TestCompiler(SymbolTable &ST,
+               std::vector<std::shared_ptr<object::Object>> &Constants)
+      : Compiler(ST, Constants) {}
+  virtual ~TestCompiler() = default;
+
+  // Expose some protected functions for testing.
+  int emit(code::OpCode Op, const std::vector<int> &Operands) {
+    return Compiler::emit(Op, Operands);
+  }
+  void enterScope() { Compiler::enterScope(); }
+  code::Instructions leaveScope() { return Compiler::leaveScope(); }
+
+  // Expose some protected data for testing.
+  const std::vector<CompilationScope> &getScopes() const { return Scopes; }
+  int getScopeIndex() const { return ScopeIndex; }
+  const SymbolTable &getGlobalSymbolTable() const { return GlobalSymTable; }
+  const SymbolTable *getSymbolTable() const { return SymTable; }
+  const std::vector<std::unique_ptr<SymbolTable>> &getSymbolTables() const {
+    return SymTables;
+  }
+};
+
 using ConstantType =
     std::variant<int, std::string, std::vector<code::Instructions>>;
 
@@ -52,8 +76,8 @@ void testInstructions(const std::vector<code::Instructions> &Expected,
                       const code::Instructions &Actual) {
   auto Concatted = concatInstructions(Expected);
   ASSERT_EQ(Actual.Value.size(), Concatted.Value.size());
-  for (unsigned int Index = 0; Index < Actual.Value.size(); ++Index)
-    ASSERT_EQ(Actual.Value.at(Index), Concatted.Value.at(Index));
+  for (unsigned int I = 0; I < Actual.Value.size(); ++I)
+    ASSERT_EQ(Actual.Value.at(I), Concatted.Value.at(I));
 }
 
 template <typename... Ts> struct Overloaded : Ts... {
@@ -65,22 +89,22 @@ template <typename... Ts> Overloaded(Ts...)->Overloaded<Ts...>;
 void testConstants(const std::vector<ConstantType> &Expected,
                    const std::vector<std::shared_ptr<object::Object>> &Actual) {
   ASSERT_EQ(Expected.size(), Actual.size());
-  for (unsigned int Index = 0; Index < Expected.size(); ++Index) {
-    std::visit(Overloaded{[&Actual, Index](const int Arg) {
-                            testIntegerObject(Arg, Actual.at(Index).get());
-                          },
-                          [&Actual, Index](const std::string &Arg) {
-                            testStringObject(Arg, Actual.at(Index).get());
-                          },
-                          [&Actual,
-                           Index](const std::vector<code::Instructions> &Arg) {
-                            const auto *Fn =
-                                dynamic_cast<const object::CompiledFunction *>(
-                                    Actual.at(Index).get());
-                            ASSERT_THAT(Fn, testing::NotNull());
-                            testInstructions(Arg, Fn->Ins);
-                          }},
-               Expected.at(Index));
+  for (unsigned int I = 0; I < Expected.size(); ++I) {
+    std::visit(
+        Overloaded{[&Actual, I](const int Arg) {
+                     testIntegerObject(Arg, Actual.at(I).get());
+                   },
+                   [&Actual, I](const std::string &Arg) {
+                     testStringObject(Arg, Actual.at(I).get());
+                   },
+                   [&Actual, I](const std::vector<code::Instructions> &Arg) {
+                     const auto *Fn =
+                         dynamic_cast<const object::CompiledFunction *>(
+                             Actual.at(I).get());
+                     ASSERT_THAT(Fn, testing::NotNull());
+                     testInstructions(Arg, Fn->Ins);
+                   }},
+        Expected.at(I));
   }
 }
 
@@ -90,7 +114,7 @@ void runCompilerTests(const std::vector<CompilerTestCase> &Tests) {
 
     SymbolTable ST;
     std::vector<std::shared_ptr<object::Object>> Constants;
-    Compiler C(ST, Constants);
+    TestCompiler C(ST, Constants);
     ASSERT_NO_THROW(C.compile(Program.get()));
 
     const auto ByteCode = C.byteCode();
@@ -408,38 +432,38 @@ TEST(CompilerTests, testFunctions) {
 TEST(CompilerTests, testCompilerScopes) {
   SymbolTable ST;
   std::vector<std::shared_ptr<object::Object>> Constants;
-  Compiler C(ST, Constants);
-  ASSERT_EQ(C.ScopeIndex, 0);
+  TestCompiler C(ST, Constants);
+  ASSERT_EQ(C.getScopeIndex(), 0);
 
-  const auto *GlobalSymbolTable = C.SymTable;
+  const auto *GlobalSymbolTable = C.getSymbolTable();
 
   C.emit(code::OpCode::OpMul, {});
 
   C.enterScope();
-  ASSERT_EQ(C.ScopeIndex, 1);
+  ASSERT_EQ(C.getScopeIndex(), 1);
 
   C.emit(code::OpCode::OpSub, {});
 
-  ASSERT_EQ(C.Scopes.at(C.ScopeIndex).Instructions.Value.size(), 1);
+  ASSERT_EQ(C.getScopes().at(C.getScopeIndex()).Instructions.Value.size(), 1);
 
-  auto Last = C.Scopes.at(C.ScopeIndex).LastInstruction;
+  auto Last = C.getScopes().at(C.getScopeIndex()).LastInstruction;
   ASSERT_EQ(Last.Op, code::OpCode::OpSub);
 
-  EXPECT_EQ(C.SymTable->Outer, GlobalSymbolTable);
+  EXPECT_EQ(C.getSymbolTable()->Outer, GlobalSymbolTable);
 
   C.leaveScope();
-  ASSERT_EQ(C.ScopeIndex, 0);
+  ASSERT_EQ(C.getScopeIndex(), 0);
 
-  EXPECT_EQ(C.SymTable, GlobalSymbolTable);
-  EXPECT_THAT(C.SymTable->Outer, testing::IsNull());
+  EXPECT_EQ(C.getSymbolTable(), GlobalSymbolTable);
+  EXPECT_THAT(C.getSymbolTable()->Outer, testing::IsNull());
 
   C.emit(code::OpCode::OpAdd, {});
-  ASSERT_EQ(C.Scopes.at(C.ScopeIndex).Instructions.Value.size(), 2);
+  ASSERT_EQ(C.getScopes().at(C.getScopeIndex()).Instructions.Value.size(), 2);
 
-  Last = C.Scopes.at(C.ScopeIndex).LastInstruction;
+  Last = C.getScopes().at(C.getScopeIndex()).LastInstruction;
   ASSERT_EQ(Last.Op, code::OpCode::OpAdd);
 
-  auto Prev = C.Scopes.at(C.ScopeIndex).PreviousInstruction;
+  auto Prev = C.getScopes().at(C.getScopeIndex()).PreviousInstruction;
   ASSERT_EQ(Prev.Op, code::OpCode::OpMul);
 }
 

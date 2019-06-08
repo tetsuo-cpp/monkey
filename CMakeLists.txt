@@ -3,7 +3,7 @@ project(monkey)
 
 # Compiler flags.
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 # Setup GTest/GMock.
 add_subdirectory(
@@ -22,9 +22,9 @@ include_directories(${Boost_INCLUDE_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 add_definitions(-D_LIBCPP_HAS_NO_THREADS -DBOOST_DISABLE_THREADS)
 
-# Build interpreter binary.
+# Build monkey lib.
 set(
-  MONKEY_SOURCE_FILES
+  MONKEY_LIB_FILES
   AST/AST.cpp
   Code/Code.cpp
   Compiler/Compiler.cpp
@@ -42,60 +42,44 @@ set(
   main.cpp
   )
 
+add_library(monkey_lib ${MONKEY_LIB_FILES})
+target_include_directories(monkey_lib PRIVATE .)
+
+# Build interpreter binary.
+set(
+  MONKEY_SOURCE_FILES
+  main.cpp
+  )
+
 add_executable(monkey ${MONKEY_SOURCE_FILES})
+target_link_libraries(monkey monkey_lib)
 target_include_directories(monkey PRIVATE .)
 
 # Build unit test binary.
 set(
   MONKEY_TEST_SOURCE_FILES
-  AST/AST.cpp
   AST/ASTTest.cpp
-  Code/Code.cpp
   Code/CodeTest.cpp
-  Compiler/Compiler.cpp
   Compiler/CompilerTest.cpp
-  Compiler/SymbolTable.cpp
   Compiler/SymbolTableTest.cpp
-  Environment/Environment.cpp
-  Evaluator/Evaluator.cpp
   Evaluator/EvaluatorTest.cpp
-  Lexer/Lexer.cpp
   Lexer/LexerTest.cpp
-  Object/BuiltIns.cpp
-  Object/Object.cpp
-  Parser/Parser.cpp
   Parser/ParserTest.cpp
-  Token/Token.cpp
-  VM/Frame.cpp
-  VM/VM.cpp
   VM/VMTest.cpp
   test_main.cpp
   )
 
 add_executable(monkey_test ${MONKEY_TEST_SOURCE_FILES})
 
-target_link_libraries(monkey_test gtest gmock)
+target_link_libraries(monkey_test monkey_lib gtest gmock)
 target_include_directories(monkey_test PRIVATE .)
 
 # Build the benchmark binary.
 set(
   BENCHMARK_SOURCE_FILES
-  AST/AST.cpp
-  Code/Code.cpp
-  Compiler/Compiler.cpp
-  Compiler/SymbolTable.cpp
-  Environment/Environment.cpp
-  Evaluator/Evaluator.cpp
-  Lexer/Lexer.cpp
-  Object/BuiltIns.cpp
-  Object/Object.cpp
-  Parser/Parser.cpp
-  REPL/REPL.cpp
-  Token/Token.cpp
-  VM/Frame.cpp
-  VM/VM.cpp
   benchmark_main.cpp
   )
 
 add_executable(benchmark ${BENCHMARK_SOURCE_FILES})
+target_link_libraries(benchmark monkey_lib)
 target_include_directories(benchmark PRIVATE .)

@@ -7,9 +7,12 @@ namespace monkey::compiler {
 
 TEST(SymbolTableTests, testDefine) {
   std::unordered_map<std::string, Symbol> Expected = {
-      {"a", {"a", GlobalScope, 0}}, {"b", {"b", GlobalScope, 1}},
-      {"c", {"c", LocalScope, 0}},  {"d", {"d", LocalScope, 1}},
-      {"e", {"e", LocalScope, 0}},  {"f", {"f", LocalScope, 1}}};
+      {"a", {"a", SymbolScope::GLOBAL_SCOPE, 0}},
+      {"b", {"b", SymbolScope::GLOBAL_SCOPE, 1}},
+      {"c", {"c", SymbolScope::LOCAL_SCOPE, 0}},
+      {"d", {"d", SymbolScope::LOCAL_SCOPE, 1}},
+      {"e", {"e", SymbolScope::LOCAL_SCOPE, 0}},
+      {"f", {"f", SymbolScope::LOCAL_SCOPE, 1}}};
 
   SymbolTable Global;
   const auto &A = Global.define("a");
@@ -38,8 +41,8 @@ TEST(SymbolTableTests, testResolveGlobal) {
   Global.define("a");
   Global.define("b");
 
-  const std::vector<Symbol> Expected = {{"a", GlobalScope, 0},
-                                        {"b", GlobalScope, 1}};
+  const std::vector<Symbol> Expected = {{"a", SymbolScope::GLOBAL_SCOPE, 0},
+                                        {"b", SymbolScope::GLOBAL_SCOPE, 1}};
 
   for (const auto &E : Expected) {
     const auto *Result = Global.resolve(E.Name);
@@ -57,10 +60,10 @@ TEST(SymbolTableTests, testResolveLocal) {
   Local.define("c");
   Local.define("d");
 
-  const std::vector<Symbol> Expected = {{"a", GlobalScope, 0},
-                                        {"b", GlobalScope, 1},
-                                        {"c", LocalScope, 0},
-                                        {"d", LocalScope, 1}};
+  const std::vector<Symbol> Expected = {{"a", SymbolScope::GLOBAL_SCOPE, 0},
+                                        {"b", SymbolScope::GLOBAL_SCOPE, 1},
+                                        {"c", SymbolScope::LOCAL_SCOPE, 0},
+                                        {"d", SymbolScope::LOCAL_SCOPE, 1}};
 
   for (const auto &E : Expected) {
     const auto *Result = Local.resolve(E.Name);
@@ -84,15 +87,15 @@ TEST(SymbolTableTests, testResolveNestedLocal) {
 
   const std::vector<std::pair<SymbolTable *, std::vector<Symbol>>> Tests = {
       {&FirstLocal,
-       {{"a", GlobalScope, 0},
-        {"b", GlobalScope, 1},
-        {"c", LocalScope, 0},
-        {"d", LocalScope, 1}}},
+       {{"a", SymbolScope::GLOBAL_SCOPE, 0},
+        {"b", SymbolScope::GLOBAL_SCOPE, 1},
+        {"c", SymbolScope::LOCAL_SCOPE, 0},
+        {"d", SymbolScope::LOCAL_SCOPE, 1}}},
       {&SecondLocal,
-       {{"a", GlobalScope, 0},
-        {"b", GlobalScope, 1},
-        {"e", LocalScope, 0},
-        {"f", LocalScope, 1}}}};
+       {{"a", SymbolScope::GLOBAL_SCOPE, 0},
+        {"b", SymbolScope::GLOBAL_SCOPE, 1},
+        {"e", SymbolScope::LOCAL_SCOPE, 0},
+        {"f", SymbolScope::LOCAL_SCOPE, 1}}}};
 
   for (auto &Test : Tests) {
     auto &ST = *Test.first;
@@ -110,10 +113,10 @@ TEST(SymbolTableTests, testDefineResolveBuiltIns) {
   SymbolTable SecondLocal(&FirstLocal);
 
   const std::vector<Symbol> Expected = {
-      {"a", BuiltInScope, 0},
-      {"c", BuiltInScope, 1},
-      {"e", BuiltInScope, 2},
-      {"f", BuiltInScope, 3},
+      {"a", SymbolScope::BUILTIN_SCOPE, 0},
+      {"c", SymbolScope::BUILTIN_SCOPE, 1},
+      {"e", SymbolScope::BUILTIN_SCOPE, 2},
+      {"f", SymbolScope::BUILTIN_SCOPE, 3},
   };
 
   for (unsigned int I = 0; I < Expected.size(); ++I) {
@@ -146,19 +149,20 @@ TEST(SymbolTableTests, testResolveFree) {
   const std::vector<
       std::tuple<SymbolTable *, std::vector<Symbol>, std::vector<Symbol>>>
       Tests = {{&FirstLocal,
-                {{"a", GlobalScope, 0},
-                 {"b", GlobalScope, 1},
-                 {"c", LocalScope, 0},
-                 {"d", LocalScope, 1}},
+                {{"a", SymbolScope::GLOBAL_SCOPE, 0},
+                 {"b", SymbolScope::GLOBAL_SCOPE, 1},
+                 {"c", SymbolScope::LOCAL_SCOPE, 0},
+                 {"d", SymbolScope::LOCAL_SCOPE, 1}},
                 {}},
                {&SecondLocal,
-                {{"a", GlobalScope, 0},
-                 {"b", GlobalScope, 1},
-                 {"c", FreeScope, 0},
-                 {"d", FreeScope, 1},
-                 {"e", LocalScope, 0},
-                 {"f", LocalScope, 1}},
-                {{"c", LocalScope, 0}, {"d", LocalScope, 1}}}};
+                {{"a", SymbolScope::GLOBAL_SCOPE, 0},
+                 {"b", SymbolScope::GLOBAL_SCOPE, 1},
+                 {"c", SymbolScope::FREE_SCOPE, 0},
+                 {"d", SymbolScope::FREE_SCOPE, 1},
+                 {"e", SymbolScope::LOCAL_SCOPE, 0},
+                 {"f", SymbolScope::LOCAL_SCOPE, 1}},
+                {{"c", SymbolScope::LOCAL_SCOPE, 0},
+                 {"d", SymbolScope::LOCAL_SCOPE, 1}}}};
 
   for (auto &Test : Tests) {
     auto *Table = std::get<0>(Test);
@@ -185,10 +189,10 @@ TEST(SymbolTableTests, testResolveUnresolvableFree) {
   SecondLocal.define("e");
   SecondLocal.define("f");
 
-  const std::vector<Symbol> Expected = {{"a", GlobalScope, 0},
-                                        {"c", FreeScope, 0},
-                                        {"e", LocalScope, 0},
-                                        {"f", LocalScope, 1}};
+  const std::vector<Symbol> Expected = {{"a", SymbolScope::GLOBAL_SCOPE, 0},
+                                        {"c", SymbolScope::FREE_SCOPE, 0},
+                                        {"e", SymbolScope::LOCAL_SCOPE, 0},
+                                        {"f", SymbolScope::LOCAL_SCOPE, 1}};
 
   for (const auto &Sym : Expected) {
     const auto *Result = SecondLocal.resolve(Sym.Name);

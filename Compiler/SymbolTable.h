@@ -6,12 +6,9 @@
 
 namespace monkey::compiler {
 
-using SymbolScope = std::string;
+enum class SymbolScope { GLOBAL_SCOPE, LOCAL_SCOPE, BUILTIN_SCOPE, FREE_SCOPE };
 
-static SymbolScope GlobalScope("GLOBAL");
-static SymbolScope LocalScope("LOCAL");
-static SymbolScope BuiltInScope("BUILTIN");
-static SymbolScope FreeScope("FREE");
+const char *symbolScopeToString(SymbolScope);
 
 struct Symbol {
   bool operator==(const Symbol &) const;

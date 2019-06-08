@@ -5,19 +5,20 @@
 namespace monkey::code::test {
 
 TEST(CodeTests, testMake) {
-  const std::vector<
-      std::tuple<OpCode, std::vector<int>, std::vector<unsigned char>>>
+  const std::vector<std::tuple<OpCode, std::vector<int>, std::vector<char>>>
       Tests = {
           {OpCode::OpConstant,
            {65534},
-           {static_cast<unsigned char>(OpCode::OpConstant), 255, 254}},
-          {OpCode::OpAdd, {}, {static_cast<unsigned char>(OpCode::OpAdd)}},
+           {static_cast<char>(OpCode::OpConstant), static_cast<char>(255),
+            static_cast<char>(254)}},
+          {OpCode::OpAdd, {}, {static_cast<char>(OpCode::OpAdd)}},
           {OpCode::OpGetLocal,
            {255},
-           {static_cast<unsigned char>(OpCode::OpGetLocal), 255}},
+           {static_cast<char>(OpCode::OpGetLocal), static_cast<char>(255)}},
           {OpCode::OpClosure,
            {65534, 255},
-           {static_cast<unsigned char>(OpCode::OpClosure), 255, 254, 255}}};
+           {static_cast<char>(OpCode::OpClosure), static_cast<char>(255),
+            static_cast<char>(254), static_cast<char>(255)}}};
 
   for (const auto &Test : Tests) {
     const auto &Op = std::get<0>(Test);
@@ -27,8 +28,8 @@ TEST(CodeTests, testMake) {
 
     ASSERT_EQ(Instruction.size(), Expected.size());
 
-    for (unsigned int Index = 0; Index < Instruction.size(); ++Index)
-      ASSERT_EQ(Instruction.at(Index), Expected.at(Index));
+    for (unsigned int I = 0; I < Instruction.size(); ++I)
+      ASSERT_EQ(Instruction.at(I), Expected.at(I));
   }
 }
 
@@ -64,7 +65,7 @@ TEST(CodeTests, testReadOperands) {
     const auto BytesRead = std::get<2>(Test);
 
     const auto Instruction = make(Op, Operands);
-    const auto &Def = lookup(static_cast<unsigned char>(Op));
+    const auto &Def = lookup(static_cast<char>(Op));
 
     // Get the non-opcode part.
     Instructions OperandsPart;
@@ -74,8 +75,8 @@ TEST(CodeTests, testReadOperands) {
     const auto Value = readOperands(Def, OperandsPart.Value);
     EXPECT_EQ(Value.second, BytesRead);
 
-    for (unsigned int Index = 0; Index < Operands.size(); ++Index)
-      EXPECT_EQ(Operands.at(Index), Value.first.at(Index));
+    for (unsigned int I = 0; I < Operands.size(); ++I)
+      EXPECT_EQ(Operands.at(I), Value.first.at(I));
   }
 }
 

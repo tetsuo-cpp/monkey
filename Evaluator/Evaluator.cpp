@@ -48,50 +48,49 @@ std::shared_ptr<object::Object> evalBlockStatement(
 }
 
 std::shared_ptr<object::Object>
-evalBangOperatorExpression(const std::shared_ptr<object::Object> &Right) {
-  const auto *Boolean = object::objCast<const object::Boolean *>(Right.get());
+evalBangOperatorExpression(const object::Object &Right) {
+  const auto *Boolean = object::objCast<const object::Boolean *>(&Right);
   if (Boolean)
     return object::nativeBooleanToBooleanObject(!Boolean->Value);
 
-  const auto *Null = object::objCast<const object::Null *>(Right.get());
+  const auto *Null = object::objCast<const object::Null *>(&Right);
   if (Null)
-    return object::NullGlobal;
+    return object::NULL_GLOBAL;
 
-  return object::FalseGlobal;
+  return object::FALSE_GLOBAL;
 }
 
-std::shared_ptr<object::Object> evalMinusPrefixOperatorExpression(
-    const std::shared_ptr<object::Object> &Right) {
-  if (Right->type() != object::ObjectType::INTEGER_OBJ)
+std::shared_ptr<object::Object>
+evalMinusPrefixOperatorExpression(const object::Object &Right) {
+  if (Right.type() != object::ObjectType::INTEGER_OBJ)
     return object::newError("unknown operator: -%s",
-                            object::objTypeToString(Right->type()));
+                            object::objTypeToString(Right.type()));
 
-  const auto *Integer = object::objCast<const object::Integer *>(Right.get());
+  const auto *Integer = object::objCast<const object::Integer *>(&Right);
   if (!Integer)
-    return object::NullGlobal;
+    return object::NULL_GLOBAL;
 
   return object::makeInteger(-Integer->Value);
 }
 
 std::shared_ptr<object::Object>
-evalPrefixExpression(const std::string &Operator,
-                     const std::shared_ptr<object::Object> &Right) {
+evalPrefixExpression(const std::string &Operator, const object::Object &Right) {
   if (Operator == "!")
     return evalBangOperatorExpression(Right);
   else if (Operator == "-")
     return evalMinusPrefixOperatorExpression(Right);
   else
     return object::newError("unknown operator: %s:%s", Operator.c_str(),
-                            object::objTypeToString(Right->type()));
+                            object::objTypeToString(Right.type()));
 }
 
 std::shared_ptr<object::Object>
 evalIntegerInfixExpression(const std::string &Operator,
-                           const std::shared_ptr<object::Object> &Left,
-                           const std::shared_ptr<object::Object> &Right) {
-  const auto *LeftInt = object::objCast<const object::Integer *>(Left.get());
+                           const object::Object &Left,
+                           const object::Object &Right) {
+  const auto *LeftInt = object::objCast<const object::Integer *>(&Left);
   assert(LeftInt);
-  const auto *RightInt = object::objCast<const object::Integer *>(Right.get());
+  const auto *RightInt = object::objCast<const object::Integer *>(&Right);
   assert(RightInt);
 
   if (Operator == "+")
@@ -116,21 +115,21 @@ evalIntegerInfixExpression(const std::string &Operator,
                                                 RightInt->Value);
   else
     return object::newError(
-        "unknown operator: %s %s %s", object::objTypeToString(Left->type()),
-        Operator.c_str(), object::objTypeToString(Right->type()));
+        "unknown operator: %s %s %s", object::objTypeToString(Left.type()),
+        Operator.c_str(), object::objTypeToString(Right.type()));
 }
 
 std::shared_ptr<object::Object>
 evalBooleanInfixExpression(const std::string &Operator,
-                           const std::shared_ptr<object::Object> &Left,
-                           const std::shared_ptr<object::Object> &Right) {
+                           const object::Object &Left,
+                           const object::Object &Right) {
   const bool BothEqual = [&Left, &Right]() {
-    if ((Left->type() == object::ObjectType::BOOLEAN_OBJ) ^
-        (Right->type() == object::ObjectType::BOOLEAN_OBJ))
+    if ((Left.type() == object::ObjectType::BOOLEAN_OBJ) ^
+        (Right.type() == object::ObjectType::BOOLEAN_OBJ))
       return false;
 
-    const auto *L = object::objCast<const object::Boolean *>(Left.get());
-    const auto *R = object::objCast<const object::Boolean *>(Right.get());
+    const auto *L = object::objCast<const object::Boolean *>(&Left);
+    const auto *R = object::objCast<const object::Boolean *>(&Right);
     assert(L);
     assert(R);
 
@@ -142,73 +141,71 @@ evalBooleanInfixExpression(const std::string &Operator,
   else if (Operator == "!=")
     return object::nativeBooleanToBooleanObject(!BothEqual);
   else {
-    if ((Left->type() == object::ObjectType::BOOLEAN_OBJ) ^
-        (Right->type() == object::ObjectType::BOOLEAN_OBJ))
+    if ((Left.type() == object::ObjectType::BOOLEAN_OBJ) ^
+        (Right.type() == object::ObjectType::BOOLEAN_OBJ))
       return object::newError(
-          "type mismatch: %s %s %s", object::objTypeToString(Left->type()),
-          Operator.c_str(), object::objTypeToString(Right->type()));
+          "type mismatch: %s %s %s", object::objTypeToString(Left.type()),
+          Operator.c_str(), object::objTypeToString(Right.type()));
     else
       return object::newError(
-          "unknown operator: %s %s %s", object::objTypeToString(Left->type()),
-          Operator.c_str(), object::objTypeToString(Right->type()));
+          "unknown operator: %s %s %s", object::objTypeToString(Left.type()),
+          Operator.c_str(), object::objTypeToString(Right.type()));
   }
 }
 
 std::shared_ptr<object::Object>
-evalNullInfixExpression(const std::string &Operator,
-                        const std::shared_ptr<object::Object> &Left,
-                        const std::shared_ptr<object::Object> &Right) {
-  const bool BothNull = Left->type() == object::ObjectType::NULL_OBJ &&
-                        Right->type() == object::ObjectType::NULL_OBJ;
+evalNullInfixExpression(const std::string &Operator, const object::Object &Left,
+                        const object::Object &Right) {
+  const bool BothNull = Left.type() == object::ObjectType::NULL_OBJ &&
+                        Right.type() == object::ObjectType::NULL_OBJ;
 
   if (Operator == "==")
     return object::nativeBooleanToBooleanObject(BothNull);
   else if (Operator == "!=")
     return object::nativeBooleanToBooleanObject(!BothNull);
   else
-    return object::NullGlobal;
+    return object::NULL_GLOBAL;
 }
 
 std::shared_ptr<object::Object>
 evalStringInfixExpression(const std::string &Operator,
-                          const std::shared_ptr<object::Object> &Left,
-                          const std::shared_ptr<object::Object> &Right) {
+                          const object::Object &Left,
+                          const object::Object &Right) {
   if (Operator != "+")
     return object::newError(
-        "unknown operator: %s %s %s", object::objTypeToString(Left->type()),
-        Operator.c_str(), object::objTypeToString(Right->type()));
+        "unknown operator: %s %s %s", object::objTypeToString(Left.type()),
+        Operator.c_str(), object::objTypeToString(Right.type()));
 
-  const auto *LeftS = object::objCast<const object::String *>(Left.get());
-  const auto *RightS = object::objCast<const object::String *>(Right.get());
+  const auto *LeftS = object::objCast<const object::String *>(&Left);
+  const auto *RightS = object::objCast<const object::String *>(&Right);
   assert(LeftS);
   assert(RightS);
   return object::makeString(LeftS->Value + RightS->Value);
 }
 
 std::shared_ptr<object::Object>
-evalInfixExpression(const std::string &Operator,
-                    const std::shared_ptr<object::Object> &Left,
-                    const std::shared_ptr<object::Object> &Right) {
-  if (Left->type() == object::ObjectType::INTEGER_OBJ &&
-      Right->type() == object::ObjectType::INTEGER_OBJ)
+evalInfixExpression(const std::string &Operator, const object::Object &Left,
+                    const object::Object &Right) {
+  if (Left.type() == object::ObjectType::INTEGER_OBJ &&
+      Right.type() == object::ObjectType::INTEGER_OBJ)
     return evalIntegerInfixExpression(Operator, Left, Right);
-  else if (Left->type() == object::ObjectType::NULL_OBJ ||
-           Right->type() == object::ObjectType::NULL_OBJ)
+  else if (Left.type() == object::ObjectType::NULL_OBJ ||
+           Right.type() == object::ObjectType::NULL_OBJ)
     return evalNullInfixExpression(Operator, Left, Right);
-  else if (Left->type() == object::ObjectType::BOOLEAN_OBJ ||
-           Right->type() == object::ObjectType::BOOLEAN_OBJ)
+  else if (Left.type() == object::ObjectType::BOOLEAN_OBJ ||
+           Right.type() == object::ObjectType::BOOLEAN_OBJ)
     return evalBooleanInfixExpression(Operator, Left, Right);
-  else if (Left->type() == object::ObjectType::STRING_OBJ ||
-           Right->type() == object::ObjectType::STRING_OBJ)
+  else if (Left.type() == object::ObjectType::STRING_OBJ ||
+           Right.type() == object::ObjectType::STRING_OBJ)
     return evalStringInfixExpression(Operator, Left, Right);
-  else if (Left->type() != Right->type())
+  else if (Left.type() != Right.type())
     return object::newError(
-        "type mismatch: %s %s %s", object::objTypeToString(Left->type()),
-        Operator.c_str(), object::objTypeToString(Right->type()));
+        "type mismatch: %s %s %s", object::objTypeToString(Left.type()),
+        Operator.c_str(), object::objTypeToString(Right.type()));
   else
     return object::newError(
-        "unknown operator: %s %s %s", object::objTypeToString(Left->type()),
-        Operator.c_str(), object::objTypeToString(Right->type()));
+        "unknown operator: %s %s %s", object::objTypeToString(Left.type()),
+        Operator.c_str(), object::objTypeToString(Right.type()));
 }
 
 bool isTruthy(const object::Object *Obj) {
@@ -235,7 +232,7 @@ evalIfExpression(const ast::IfExpression *Node,
   else if (Node->Alternative)
     return eval(Node->Alternative.get(), Env);
   else
-    return object::NullGlobal;
+    return object::NULL_GLOBAL;
 }
 
 std::shared_ptr<object::Object>
@@ -246,13 +243,13 @@ evalIdentifier(const ast::Identifier *Identifier,
     return Value;
 
   const auto BIter = std::find_if(
-      object::BuiltIns.begin(), object::BuiltIns.end(),
+      object::BUILTINS.begin(), object::BUILTINS.end(),
       [Identifier](
           const std::pair<std::string, std::shared_ptr<object::BuiltIn>> &Fn) {
         return Fn.first == Identifier->Value;
       });
 
-  if (BIter != object::BuiltIns.end())
+  if (BIter != object::BUILTINS.end())
     return BIter->second;
 
   return object::newError("identifier not found: %s",
@@ -285,7 +282,7 @@ evalArrayIndexExpression(const std::shared_ptr<object::Object> &Array,
 
   if (Idx->Value < 0 ||
       Idx->Value >= static_cast<int64_t>(ArrayObj->Elements.size()))
-    return object::NullGlobal;
+    return object::NULL_GLOBAL;
 
   return ArrayObj->Elements.at(Idx->Value);
 }
@@ -303,7 +300,7 @@ evalHashIndexExpression(const std::shared_ptr<object::Object> &Hash,
 
   const auto Iter = HashObj->Pairs.find(HK);
   if (Iter == HashObj->Pairs.end())
-    return object::NullGlobal;
+    return object::NULL_GLOBAL;
 
   return Iter->second;
 }
@@ -353,9 +350,9 @@ extendFunctionEnv(const object::Function *Fn,
                   const std::vector<std::shared_ptr<object::Object>> &Args) {
   auto Env = std::make_shared<environment::Environment>(Fn->Env.get());
   assert(Fn->Parameters.size() == Args.size());
-  for (size_t Index = 0; Index < Args.size(); ++Index) {
-    const auto &ParamName = Fn->Parameters.at(Index)->Value;
-    const auto &Arg = Args.at(Index);
+  for (unsigned int I = 0; I < Args.size(); ++I) {
+    const auto &ParamName = Fn->Parameters.at(I)->Value;
+    const auto &Arg = Args.at(I);
     Env->set(ParamName, Arg);
   }
 
@@ -383,11 +380,7 @@ applyFunction(const std::shared_ptr<object::Object> &Fn,
 
   const auto *BuiltIn = object::objCast<const object::BuiltIn *>(Fn.get());
   if (BuiltIn) {
-    auto Result = BuiltIn->Fn(Args);
-    if (Result)
-      return Result;
-    else
-      return object::NullGlobal;
+    return BuiltIn->Fn(Args);
   }
 
   return object::newError("not a function %s",
@@ -396,7 +389,6 @@ applyFunction(const std::shared_ptr<object::Object> &Fn,
 
 } // namespace
 
-// TODO: Maybe switch to using a visitor to avoid the constant dynamic casting?
 std::shared_ptr<object::Object>
 eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
   const auto *Program = ast::astCast<const ast::Program *>(Node);
@@ -421,7 +413,7 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
     if (isError(Right))
       return Right;
 
-    return evalPrefixExpression(PrefixE->Operator, Right);
+    return evalPrefixExpression(PrefixE->Operator, *Right);
   }
 
   const auto *InfixE = ast::astCast<const ast::InfixExpression *>(Node);
@@ -434,7 +426,7 @@ eval(ast::Node *Node, std::shared_ptr<environment::Environment> &Env) {
     if (isError(Right))
       return Right;
 
-    return evalInfixExpression(InfixE->Operator, Left, Right);
+    return evalInfixExpression(InfixE->Operator, *Left, *Right);
   }
 
   const auto *BlockS = ast::astCast<const ast::BlockStatement *>(Node);

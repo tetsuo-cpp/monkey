@@ -19,7 +19,7 @@ void REPL::start() {
   environment::Environment Env;
   compiler::SymbolTable ST;
   std::vector<std::shared_ptr<object::Object>> Constants;
-  std::array<std::shared_ptr<object::Object>, GlobalsSize> Globals;
+  std::array<std::shared_ptr<object::Object>, GLOBALS_SIZE> Globals;
 
   while (std::cin) {
     std::cout << Prompt;
