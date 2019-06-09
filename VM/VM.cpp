@@ -433,7 +433,7 @@ void VM::executeCall(int NumArgs) {
   }
 }
 
- void VM::callClosure(const std::shared_ptr<object::Object> &Cl, int NumArgs) {
+void VM::callClosure(const std::shared_ptr<object::Object> &Cl, int NumArgs) {
   const auto *ClObj = object::objCast<const object::Closure *>(Cl.get());
   assert(ClObj);
   const auto *FnObj =

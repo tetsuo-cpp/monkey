@@ -60,8 +60,6 @@ void testHashObject(
   for (const auto &Exp : Expected) {
     const auto HashIter = HashL->Pairs.find(Exp.first);
     ASSERT_NE(HashIter, HashL->Pairs.end());
-    std::cout << "object type is: "
-              << object::objTypeToString(HashIter->second->type()) << std::endl;
     testIntegerObject(Exp.second, HashIter->second.get());
   }
 }
@@ -115,7 +113,7 @@ public:
   virtual ~TestVM() = default;
 
   void push(const std::shared_ptr<object::Object> &Obj) { VM::push(Obj); }
-  const std::shared_ptr<object::Object> &pop() { return VM::pop(); }
+  const std::shared_ptr<object::Object> &pop() override { return VM::pop(); }
 };
 
 void runVMTests(const std::vector<VMTestCase> &Tests) {

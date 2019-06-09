@@ -385,7 +385,7 @@ std::unique_ptr<ast::Expression> Parser::parseHashLiteral() {
     nextToken();
     auto Value = parseExpression(Precedence::LOWEST);
 
-    Hash->Pairs[std::move(Key)] = std::move(Value);
+    Hash->Pairs.emplace_back(std::move(Key), std::move(Value));
 
     if (!peekTokenIs(TokenType::RBRACE) && !expectPeek(TokenType::COMMA))
       return nullptr;

@@ -295,7 +295,8 @@ public:
   ASTType type() const override;
 
   Token Tok;
-  std::unordered_map<std::unique_ptr<Expression>, std::unique_ptr<Expression>>
+  std::vector<
+      std::pair<std::unique_ptr<Expression>, std::unique_ptr<Expression>>>
       Pairs;
 };
 

@@ -27,27 +27,26 @@ SymbolTable::SymbolTable(SymbolTable *Outer)
     : Outer(Outer), NumDefinitions(0) {}
 
 const Symbol &SymbolTable::define(const std::string &Name) {
-  if (Outer)
-    Store[Name] = Symbol{Name, SymbolScope::LOCAL_SCOPE, NumDefinitions};
-  else
-    Store[Name] = Symbol{Name, SymbolScope::GLOBAL_SCOPE, NumDefinitions};
+  Symbol S{Name, Outer ? SymbolScope::LOCAL_SCOPE : SymbolScope::GLOBAL_SCOPE,
+           NumDefinitions};
+  const auto &NewSym = (Store[Name] = std::move(S));
 
-  // TODO: Avoid double lookup.
   ++NumDefinitions;
-  return Store[Name];
+  return NewSym;
 }
 
 const Symbol &SymbolTable::defineBuiltIn(int Index, const std::string &Name) {
   Symbol S{Name, SymbolScope::BUILTIN_SCOPE, Index};
-  Store[Name] = std::move(S);
-  return Store[Name];
+  const auto &NewSym = (Store[Name] = std::move(S));
+  return NewSym;
 }
 
 const Symbol &SymbolTable::defineFree(const Symbol &Original) {
   FreeSymbols.push_back(Original);
-  Store[Original.Name] = Symbol{Original.Name, SymbolScope::FREE_SCOPE,
-                                static_cast<int>(FreeSymbols.size() - 1)};
-  return Store[Original.Name];
+  Symbol S{Original.Name, SymbolScope::FREE_SCOPE,
+           static_cast<int>(FreeSymbols.size() - 1)};
+  const auto &NewSym = (Store[Original.Name] = std::move(S));
+  return NewSym;
 }
 
 const Symbol *SymbolTable::resolve(const std::string &Name) {

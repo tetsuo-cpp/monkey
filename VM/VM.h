@@ -28,7 +28,7 @@ protected:
 
     Stack.at(SP++) = std::forward<T>(Obj);
   }
-  const std::shared_ptr<object::Object> &pop();
+  virtual const std::shared_ptr<object::Object> &pop();
   void executeBinaryOperation(code::OpCode);
   void executeBinaryIntegerOperation(code::OpCode, const object::Object &,
                                      const object::Object &);
